@@ -2,7 +2,7 @@
 
 > Continuação e evolução do AndroidIDE original para uma IDE de desenvolvimento Android on-device moderna, modular, extensível e tecnicamente rastreável.
 
-**Status atual:** auditoria estrutural e fundação documental. Nenhum código funcional do produto foi alterado.  
+**Status atual:** auditoria estrutural inicial concluída; primeira fundação funcional do Build System adicionada.  
 **Branch de desenvolvimento:** `work/androidide-pro-dev-foundation`  
 **Base:** `dev` / `77ee1a315f34b9ed74a9da94f94a0dc276f72ff6`  
 **Data:** 2026-09-24
@@ -69,6 +69,9 @@ Application, emulator, shared e view.
 
 ### Utilities
 Templates, UI Designer, tree view, preferences e recursos compartilhados.
+
+### Build
+`build:api` — primeira API independente do futuro Build Engine.
 
 ### Testing
 Unit, Android, LSP, Gradle Tooling e benchmarks.
@@ -196,17 +199,24 @@ Adapter       Engine
        Toolchain / Cache
 ```
 
-O engine próprio deverá suportar:
+A primeira camada implementada em `build:api` fornece:
 
-- BuildRequest;
-- BuildResult;
-- BuildDiagnostic;
-- Task;
-- TaskGraph;
-- cancellation;
+- `BuildProject` / `BuildModule`;
+- `BuildRequest` / `BuildResult`;
+- `BuildDiagnostic`;
+- `BuildSystem`;
+- `BuildTask` / `TaskResult`;
+- `BuildGraph` com validação de dependências, ciclos e ordenação topológica;
+- `BuildExecutor` como contrato;
+- `CancellationToken`;
+- `BuildDiagnosticSink`.
+
+Ainda faltam:
+
+- executor real;
 - fingerprints;
-- persistent cache;
-- dependency resolution;
+- cache;
+- dependency resolver;
 - Android pipeline;
 - native pipeline.
 
@@ -404,7 +414,10 @@ Build fixtures serão usados para validar:
 - [x] Project Manager/Workspace;
 - [x] Tooling API;
 - [x] LSP API/Java LSP em nível inicial;
-- [x] arquitetura alvo.
+- [x] arquitetura alvo;
+- [x] contrato inicial do Build System;
+- [x] `:build:api` registrado na árvore do projeto;
+- [x] testes do `BuildGraph` para ordenação, dependência ausente e ciclo.
 
 ### Em andamento
 
@@ -424,7 +437,7 @@ Build fixtures serão usados para validar:
 - [ ] plugin runtime;
 - [ ] IA provider layer.
 
-**Próxima ação:** terminar a auditoria de Indexing, Editor, Termux e toolchain; depois executar uma validação do build da própria IDE antes de qualquer refatoração grande.
+**Próxima ação:** validar o novo módulo em build/test e depois criar o Gradle Adapter atrás do `BuildSystem`, sem alterar ainda o backend Gradle existente.
 
 ---
 

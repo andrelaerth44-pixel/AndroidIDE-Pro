@@ -98,6 +98,14 @@ class NativeBuildCoordinator(
     val llvmToolchain = coreToolchainManager.resolveLlvm()
     val kotlinCompilerClassLoader =
       if (hasKotlinSources) coreKotlinToolchainManager.resolveClassLoader() else null
+    val kotlinCompilerPluginClasspaths =
+      if (hasKotlinSources) {
+        listOfNotNull(
+          coreKotlinToolchainManager.resolveComposeCompilerPlugin()
+        )
+      } else {
+        emptyList()
+      }
 
     logger(coreToolchainManager.describe())
 
@@ -162,7 +170,8 @@ class NativeBuildCoordinator(
         .filter { Files.isDirectory(it) },
       javaSourceLevel = module.compilerSettings.getJavaSourceVersion(),
       javaBytecodeLevel = module.compilerSettings.getJavaBytecodeVersion(),
-      kotlinCompilerClassLoader = kotlinCompilerClassLoader
+      kotlinCompilerClassLoader = kotlinCompilerClassLoader,
+      kotlinCompilerPluginClasspaths = kotlinCompilerPluginClasspaths
     )
 
     val keystore = ensureDebugKeystore()

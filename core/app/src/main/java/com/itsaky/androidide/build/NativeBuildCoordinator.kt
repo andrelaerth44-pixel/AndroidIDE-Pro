@@ -9,6 +9,7 @@ import com.itsaky.androidide.build.api.BuildRequest
 import com.itsaky.androidide.build.api.BuildResult
 import com.itsaky.androidide.projects.IWorkspace
 import com.itsaky.androidide.projects.android.AndroidModule
+import com.itsaky.androidide.toolchain.CoreKotlinToolchainManager
 import com.itsaky.androidide.toolchain.CoreToolchainManager
 import java.nio.file.Files
 import java.nio.file.Path
@@ -29,6 +30,10 @@ class NativeBuildCoordinator(
 
   private val coreToolchainManager by lazy {
     CoreToolchainManager(appContext)
+  }
+
+  private val coreKotlinToolchainManager by lazy {
+    CoreKotlinToolchainManager(appContext)
   }
 
   fun assembleDebug(
@@ -87,10 +92,21 @@ class NativeBuildCoordinator(
     )
 
     val sourceDir = module.projectDir.toPath().resolve("src/main/cpp")
+    val kotlinSourceDir = module.projectDir.toPath().resolve("src/main/kotlin")
     val hasNativeSources = hasNativeSources(sourceDir)
+    val hasKotlinSources = hasKotlinSources(kotlinSourceDir)
     val llvmToolchain = coreToolchainManager.resolveLlvm()
+    val kotlinCompilerClassLoader =
+      if (hasKotlinSources) coreKotlinToolchainManager.resolveClassLoader() else null
 
     logger(coreToolchainManager.describe())
+
+    if (hasKotlinSources && kotlinCompilerClassLoader == null) {
+      return BuildResult(
+        success = false,
+        message = "Este projeto contém Kotlin, mas o Core Kotlin Toolchain APK não está instalado."
+      )
+    }
 
     if (hasNativeSources && llvmToolchain == null) {
       return BuildResult(
@@ -152,6 +168,15 @@ class NativeBuildCoordinator(
         variant = "debug"
       )
     )
+  }
+
+  private fun hasKotlinSources(root: Path): Boolean {
+    if (!Files.isDirectory(root)) return false
+    return Files.walk(root).use { stream ->
+      stream.anyMatch {
+        Files.isRegularFile(it) && it.fileName.toString().endsWith(".kt")
+      }
+    }
   }
 
   private fun hasNativeSources(root: Path): Boolean {

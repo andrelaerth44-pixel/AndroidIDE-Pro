@@ -1,10 +1,6 @@
 package com.itsaky.androidide.ui.pro
 
 import android.content.Intent
-import androidx.core.content.FileProvider
-import com.itsaky.androidide.activities.toolchain.ToolchainCenterActivity
-import com.itsaky.androidide.toolchain.CoreToolchainManager
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,9 +25,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -43,10 +39,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import com.itsaky.androidide.R
+import com.itsaky.androidide.activities.toolchain.ToolchainCenterActivity
 import com.itsaky.androidide.build.BuildRouter
 import com.itsaky.androidide.build.api.BuildResult
 import com.itsaky.androidide.projects.IProjectManager
+import com.itsaky.androidide.toolchain.CoreToolchainManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -119,19 +118,6 @@ fun BuildCenterScreen(
           .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
       ) {
-        val current = result
-
-        if (current == null) {
-          LinearProgressIndicator(
-            modifier = Modifier.fillMaxWidth()
-          )
-
-          Text(
-            text = stringResource(R.string.build_center_running),
-            style = MaterialTheme.typography.titleMedium
-          )
-        }
-
         Card(
           modifier = Modifier.fillMaxWidth(),
           shape = RoundedCornerShape(18.dp),
@@ -166,6 +152,7 @@ fun BuildCenterScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
               )
             }
+
             Button(
               onClick = {
                 context.startActivity(
@@ -179,7 +166,18 @@ fun BuildCenterScreen(
         }
 
         val current = result
+
         if (current == null) {
+          LinearProgressIndicator(
+            modifier = Modifier.fillMaxWidth()
+          )
+
+          Text(
+            text = stringResource(R.string.build_center_running),
+            style = MaterialTheme.typography.titleMedium
+          )
+        } else {
+          val success = current.success
 
           Card(
             modifier = Modifier.fillMaxWidth(),

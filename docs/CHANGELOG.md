@@ -19,6 +19,12 @@
 
 O `GradleBuildService`, `ToolingServerRunner` e backend Gradle continuam sem alterações funcionais.
 
+### Correções da etapa
+
+- `settings.gradle.kts` passou a incluir `:build:api`;
+- verificação de dependências do `BuildGraph` foi tornada explícita para reduzir ambiguidade de inferência Kotlin;
+- compilação/testes do fork continuam pendentes porque o ambiente de execução desta sessão não possui acesso de rede ao repositório para montar o checkout local.
+
 ### Não concluído
 
 - executor real;

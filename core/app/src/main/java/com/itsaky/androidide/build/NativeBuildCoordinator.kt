@@ -288,7 +288,7 @@ class NativeBuildCoordinator(
       stream.anyMatch {
         Files.isRegularFile(it) &&
           it.fileName.toString().substringAfterLast('.', "") in setOf(
-            "c", "cc", "cpp", "cxx"
+            "c", "cc", "cpp", "cxx", "cppm", "ixx"
           )
       }
     }

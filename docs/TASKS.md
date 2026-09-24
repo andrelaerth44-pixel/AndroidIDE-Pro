@@ -36,6 +36,7 @@ Legend:
 [x] Pro Home  
 [x] Build Center  
 [x] resizable workspace  
+[x] Language Backend API
 [ ] Project Explorer Pro  
 [ ] Editor shell refresh  
 [ ] tablet split layout  

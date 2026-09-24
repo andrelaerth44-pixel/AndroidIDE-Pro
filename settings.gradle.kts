@@ -137,6 +137,7 @@ include(
   ":core:lsp-api",
   ":core:lsp-models",
   ":core:plugin-api",
+  ":core:toolchain-api",
   ":core:projects",
   ":core:resources",
   ":editor:api",

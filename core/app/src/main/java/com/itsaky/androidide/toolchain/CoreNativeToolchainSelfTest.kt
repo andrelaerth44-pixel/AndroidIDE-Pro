@@ -101,7 +101,8 @@ class CoreNativeToolchainSelfTest {
   ) {
     ProcessTools.run(
       executable = if (cpp) toolchain.cppCompiler else toolchain.compiler,
-      args = buildList { add("--driver-mode=g++")
+      args = buildList {
+        if (cpp) add("--driver-mode=g++")
         add("--target=aarch64-linux-android26")
         add("--sysroot")
         add(toolchain.sysroot.toString())

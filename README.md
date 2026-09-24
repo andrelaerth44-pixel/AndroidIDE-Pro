@@ -61,9 +61,10 @@ AndroidIDE Pro
     ├── AAPT2
     ├── Java / Kotlin
     ├── C / C++
+    ├── JNI / NativeActivity
     ├── Core Toolchain Manager
-    ├── D8 / R8
-    ├── APK / AAB
+    ├── D8
+    ├── APK
     ├── Align
     └── Sign
 ~~~
@@ -117,7 +118,7 @@ A próxima evolução visual será Workspace, Project Explorer, Editor, Build pa
 
 ## Native Build Engine
 
-A fundação inicial está em:
+A fundação nativa está em:
 
 ~~~text
 core/build-api/
@@ -153,7 +154,7 @@ zipalignDebug
 signDebug
 ~~~
 
-O alvo é chegar a um APK instalável sem depender do Gradle para esse caminho.
+O caminho atual já gera APK nativo sem Gradle para o usuário final. O trabalho restante é ampliar compatibilidade Android e validar em aparelho físico.
 
 ## Task Graph
 
@@ -337,12 +338,24 @@ Esta ponte foi projetada para reutilizar o modelo de projeto existente do Androi
 
 ### Fase 6 — Native
 
-- [~] Android-hosted LLVM toolchain
-- [x] C/C++ native task
+- [x] Android-hosted LLVM toolchain
+- [x] C17
+- [x] C++20
+- [x] pure C projects
+- [x] pure C++ projects
+- [x] mixed C/C++ projects
+- [x] Java/Kotlin + JNI hybrid projects
+- [x] NativeActivity
+- [x] native configuration
+- [x] static .a inputs
+- [x] prebuilt .so in jniLibs
+- [x] compile_commands.json
+- [x] clangd packaged in Core LLVM
+- [~] clangd editor/LSP integration
 - [ ] CMake
-- [ ] JNI
+- [ ] multiple ABIs
 - [ ] native diagnostics
-- [ ] native incremental builds
+- [ ] native debugging
 
 ### Fase 7 — Multi-language IDE
 

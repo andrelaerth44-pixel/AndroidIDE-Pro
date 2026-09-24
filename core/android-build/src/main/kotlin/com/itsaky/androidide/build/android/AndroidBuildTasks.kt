@@ -7,6 +7,12 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.io.File
+import java.nio.charset.StandardCharsets
+import java.util.Locale
+import jdkx.tools.DiagnosticListener
+import jdkx.tools.JavaFileObject
+import jdkx.tools.StandardLocation
+import openjdk.tools.javac.api.JavacTool
 import java.util.zip.ZipOutputStream
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.common.Services
@@ -194,18 +200,64 @@ class CompileJavaTask(
 
     if (sources.isEmpty()) return@runCatching TaskResult(true, "No Java sources")
 
-    val javac = Path.of(System.getProperty("java.home"), "bin", "javac")
+    val compiler = JavacTool.create()
+    val diagnostics = DiagnosticListener<JavaFileObject> { diagnostic ->
+      val source = diagnostic.source?.name ?: "<unknown>"
+      context.log(
+        "javac " + diagnostic.kind + ": " + source + ":" +
+          (diagnostic.lineNumber.takeIf { it > 0 } ?: 0) +
+          ": " + diagnostic.getMessage(Locale.ROOT)
+      )
+    }
 
-    ProcessTools.run(
-      javac,
-      listOf(
-        "-source", "17",
-        "-target", "17",
-        "-classpath", module.sdk.androidJar().toString(),
-        "-d", module.classesDir.toString()
-      ) + sources.map(Path::toString),
-      logger = context::log
+    val fileManager = compiler.getStandardFileManager(
+      diagnostics,
+      Locale.ROOT,
+      StandardCharsets.UTF_8
     )
+
+    try {
+      fileManager.setLocation(
+        StandardLocation.CLASS_PATH,
+        listOf(module.sdk.androidJar().toFile(), module.classesDir.toFile())
+      )
+      fileManager.setLocation(
+        StandardLocation.SOURCE_PATH,
+        listOf(
+          module.sourceDir.toFile(),
+          module.generatedRDir.toFile(),
+          module.generatedBuildConfigDir.toFile()
+        ).filter { it.exists() }
+      )
+      fileManager.setLocation(
+        StandardLocation.CLASS_OUTPUT,
+        listOf(module.classesDir.toFile())
+      )
+
+      val units = fileManager.getJavaFileObjectsFromFiles(
+        sources.map(Path::toFile)
+      )
+
+      val task = compiler.getTask(
+        null,
+        fileManager,
+        diagnostics,
+        listOf(
+          "-source", "17",
+          "-target", "17",
+          "-proc:none",
+          "-g"
+        ),
+        null,
+        units
+      )
+
+      require(task.call() == true) {
+        "Embedded Java compiler failed"
+      }
+    } finally {
+      fileManager.close()
+    }
 
     TaskResult(true)
   }.getOrElse { TaskResult(false, it.message ?: "javac failed") }
@@ -315,7 +367,8 @@ class PackageApkTask(
   override val id = "packageApkDebug"
   override val inputs = listOf(
     module.resourcesApk,
-    module.dexDir.resolve("classes.dex")
+    module.dexDir.resolve("classes.dex"),
+    module.nativeLibDir
   )
   override val outputs = listOf(module.unsignedApk)
 

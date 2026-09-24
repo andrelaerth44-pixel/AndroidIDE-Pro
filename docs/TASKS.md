@@ -1,121 +1,114 @@
 # AndroidIDE Pro — Tasks
 
-Legenda:
-
-- [ ] não iniciado
-- [~] em andamento
-- [x] concluído
+Legenda: [ ] não iniciado · [~] em andamento · [x] concluído
 
 ## Build Engine
 
-[x] Build API  
-[x] TaskGraph  
-[x] fingerprints SHA-256 persistentes  
-[x] invalidação por output ausente  
-[x] AndroidModule adapter  
-[x] AAPT2 compile/link  
-[x] Java build path — JavacTool/nb-javac  
-[x] Kotlin build path — Core Kotlin Toolchain classloader  
-[x] C/C++ build path — Core LLVM Toolchain  
-[x] D8 path  
-[x] projeto puramente nativo sem D8 desnecessário  
-[x] APK package  
-[x] zipalign  
-[x] debug signing  
-[x] Build Center  
-[x] APK install action  
-[x] Native-only BuildRouter  
-[~] AAR/JAR dependency/resource edge cases  
-[ ] validação física de Hello World  
-[ ] build cancellation  
-[ ] structured task events  
-[ ] parallel task execution  
-[ ] persistent build output cache  
-[ ] desugaring completo  
-[ ] Compose compiler integration  
-[ ] multidex de produção  
-[ ] R8  
-[ ] AAB  
-[ ] release signing UI  
+[x] Build API
+[x] TaskGraph
+[x] persistent SHA-256 fingerprints
+[x] output-aware invalidation
+[x] AndroidModule adapter
+[x] AAPT2 compile/link
+[x] Java/JavacTool
+[x] JNI headers via javac -h
+[x] Kotlin/Core Kotlin Toolchain
+[x] C/C++/Core LLVM Toolchain
+[x] pure native project without D8
+[x] hybrid Java/Kotlin + JNI
+[x] NativeActivity path
+[x] configurable native link flags
+[x] static library inputs
+[x] local jniLibs packaging
+[x] dependency AAR JNI/assets/JAR connection
+[x] compile_commands.json
+[x] APK package/zipalign/sign
+[x] Build Center
+[x] Install/Run actions
+[~] AAR/JAR edge cases
+[ ] physical Java Hello World
+[ ] physical Kotlin Hello World
+[ ] physical C Hello World
+[ ] physical C++ Hello World
+[ ] physical Kotlin + C++ JNI Hello World
+[ ] build cancellation
+[ ] structured task events
+[ ] parallel task execution
+[ ] persistent build output cache
+[ ] desugaring
+[ ] Compose compiler validation on a real Compose project
+[ ] multidex production
+[ ] R8
+[ ] AAB
+[ ] release signing UI
 
-## UI Pro
+## Native Pro
 
-[x] Compose  
-[x] Material 3  
-[x] Pro Home  
-[x] Build Center  
-[x] Core Toolchain Center  
-[x] resizable workspace  
-[x] built-in language core  
-[ ] Project Explorer Pro  
-[ ] Editor shell refresh  
-[ ] tablet split layout  
-[ ] command palette  
-[ ] Problems panel  
-[ ] Run/Install center  
-[ ] theme manager  
+[x] C built-in language
+[x] C++ built-in language
+[x] C17
+[x] C++20
+[x] arm64-v8a
+[x] Android-hosted LLVM
+[x] clang
+[x] clang++
+[x] lld
+[x] clangd packaged in Core LLVM
+[x] NativeActivity
+[x] JNI header generation
+[x] pure C project path
+[x] pure C++ project path
+[x] mixed C/C++ path
+[x] Java/Kotlin + C/C++ hybrid path
+[x] configurable include/library paths
+[x] .a static libraries
+[x] prebuilt .so in jniLibs
+[x] compile_commands.json
+[~] clangd editor/LSP integration
+[ ] multiple ABIs
+[ ] CMake generator/importer
+[ ] ndk-build importer
+[ ] native unit-test runner
+[ ] LLDB
+[ ] native profiler
 
 ## Core Toolchains
 
-[x] Core Toolchain API  
-[x] Core Kotlin Toolchain APK  
-[x] Kotlin package classloader  
-[x] Core LLVM toolchain model  
-[x] Android arm64 LLVM build script  
-[x] Core LLVM Toolchain APK module  
-[x] Core Toolchain Center  
-[x] pack checksum metadata  
-[ ] online authenticated update  
-[ ] resumable update  
-[ ] multiple device ABIs  
+[x] Core Toolchain API
+[x] Core Kotlin Toolchain APK
+[x] Kotlin package classloader
+[x] Compose compiler hosted pack
+[x] Core LLVM APK
+[x] Android-hosted clang/clang++/lld
+[x] Android-hosted clangd
+[x] sysroot/runtime pack
+[x] checksum metadata
+[ ] authenticated online updates
+[ ] resumable updates
+[ ] multiple device ABIs
 
-## Native
+## IDE/UI
 
-[x] C source discovery  
-[x] C++ source discovery  
-[x] C17  
-[x] C++20  
-[x] Android-hosted clang/LLVM contract  
-[x] lld integration  
-[x] arm64-v8a .so packaging  
-[ ] clangd integration  
-[ ] CMake  
-[ ] JNI Wizard  
-[ ] ABI manager  
-[ ] static libraries  
-[ ] native unit-test runner  
-[ ] LLDB/native debugging  
-[ ] native profiler  
-
-## Dependencies
-
-[x] Workspace compile classpath connected to Java/Kotlin/D8  
-[x] Android library resources enter AAPT2  
-[~] complete AAR parsing/resource merging  
-[ ] dependency artifact cache  
-[ ] Maven resolver independent from Gradle  
-[ ] version conflict solver  
-
-## Extensibility
-
-[x] Plugin API  
-[x] plugin capability model excludes languages/builds  
-[x] immutable built-in language registry  
-[ ] permission model  
-[ ] plugin sandbox  
-[ ] asset provider manager  
-[ ] theme providers  
-[ ] tool providers  
+[x] Compose/Material 3 Pro surfaces
+[x] Build Center
+[x] Core Toolchain Center
+[x] install/run flow
+[ ] Project Explorer Pro
+[ ] Problems panel
+[ ] native diagnostics panel
+[ ] clangd completion/definition/references
+[ ] tablet split workspace
+[ ] command palette
+[ ] Run/Debug center
 
 ## Documentation
 
-[x] BUILD_ENGINE.md  
-[x] LANGUAGE_SUPPORT.md  
-[x] NDK_SUPPORT.md  
-[x] TOOLCHAINS.md  
-[x] ROADMAP.md  
-[x] TASKS.md  
-[x] CHANGELOG.md  
-[x] DECISIONS.md  
-[ ] architecture diagrams per subsystem  
-[ ] API reference
+[x] BUILD_ENGINE.md
+[x] LANGUAGE_SUPPORT.md
+[x] NDK_SUPPORT.md
+[x] NATIVE_PROJECTS.md
+[x] TOOLCHAINS.md
+[x] ROADMAP.md
+[x] TASKS.md
+[x] CHANGELOG.md
+[x] DECISIONS.md

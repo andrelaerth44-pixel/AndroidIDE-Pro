@@ -103,6 +103,7 @@ class AndroidApplicationBuildPlan(
       generatedRDir = generatedR,
       resourcesAp = resourcesAp,
       aapt2 = aapt2,
+      extraPackages = input.extraResourcePackages,
       dependencies = setOf(compileId),
     )
     val java = JavaCompileTask(

@@ -6,6 +6,14 @@ import com.itsaky.androidide.build.api.TaskResult
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.io.File
+import java.util.zip.ZipOutputStream
+import org.jetbrains.kotlin.cli.common.ExitCode
+import org.jetbrains.kotlin.cli.common.Services
+import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
+import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
+import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
+import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.exists
@@ -184,7 +192,7 @@ class CompileJavaTask(
       }
     }
 
-    require(sources.isNotEmpty()) { "No Java sources found" }
+    if (sources.isEmpty()) return@runCatching TaskResult(true, "No Java sources")
 
     val javac = Path.of(System.getProperty("java.home"), "bin", "javac")
 
@@ -203,11 +211,82 @@ class CompileJavaTask(
   }.getOrElse { TaskResult(false, it.message ?: "javac failed") }
 }
 
+class KotlinCompileTask(
+  private val module: AndroidModule
+) : BuildTask {
+  override val id = "compileKotlinDebug"
+
+  override val inputs: List<Path>
+    get() = listOf(
+      module.sourceDir,
+      module.kotlinSourceDir,
+      module.classesDir,
+      module.sdk.androidJar()
+    )
+
+  override val outputs = listOf(module.kotlinOutputJar)
+
+  override fun execute(context: BuildContext): TaskResult = runCatching {
+    module.kotlinOutputJar.ensureParent()
+    Files.deleteIfExists(module.kotlinOutputJar)
+
+    val sources = buildList {
+      if (module.kotlinSourceDir.exists()) {
+        module.kotlinSourceDir.walk().filter { it.extension == "kt" }.forEach(::add)
+      }
+      if (module.sourceDir.exists()) {
+        module.sourceDir.walk().filter { it.extension == "kt" }.forEach(::add)
+      }
+    }.distinct()
+
+    if (sources.isEmpty()) {
+      ZipOutputStream(module.kotlinOutputJar.outputStream()).use { }
+      return@runCatching TaskResult(true, "No Kotlin sources")
+    }
+
+    module.classesDir.createDirectories()
+
+    val arguments = K2JVMCompilerArguments().apply {
+      freeArgs = sources.map(Path::toString).toMutableList()
+      destination = module.kotlinOutputJar.toString()
+      classpath = listOf(
+        module.sdk.androidJar(),
+        module.classesDir
+      ).joinToString(File.pathSeparator)
+      includeRuntime = true
+      noReflect = true
+      jvmTarget = "17"
+      moduleName = module.name.replace(Regex("[^A-Za-z0-9_]"), "_")
+      skipRuntimeVersionCheck = true
+    }
+
+    val collector = PrintingMessageCollector(
+      System.out,
+      MessageRenderer.PLAIN_RELATIVE_PATHS,
+      false
+    )
+
+    val exitCode = K2JVMCompiler().exec(
+      collector,
+      Services.EMPTY,
+      arguments
+    )
+
+    require(exitCode == ExitCode.OK) {
+      "Kotlin compiler failed: " + exitCode
+    }
+
+    TaskResult(true)
+  }.getOrElse {
+    TaskResult(false, it.message ?: "Kotlin compilation failed")
+  }
+}
+
 class DexBuilderTask(
   private val module: AndroidModule
 ) : BuildTask {
   override val id = "dexBuilderDebug"
-  override val inputs = listOf(module.classesDir, module.sdk.d8, module.sdk.androidJar())
+  override val inputs = listOf(module.classesDir, module.kotlinOutputJar, module.sdk.d8, module.sdk.androidJar())
   override val outputs = listOf(module.dexDir.resolve("classes.dex"))
 
   override fun execute(context: BuildContext): TaskResult = runCatching {
@@ -220,7 +299,8 @@ class DexBuilderTask(
         "--lib", module.sdk.androidJar().toString(),
         "--min-api", module.minSdk.toString(),
         "--output", module.dexDir.toString(),
-        module.classesDir.toString()
+        module.classesDir.toString(),
+        module.kotlinOutputJar.toString()
       ),
       logger = context::log
     )
@@ -242,6 +322,7 @@ class PackageApkTask(
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.unsignedApk.ensureParent()
 
+    val nativeLib = module.nativeLibDir.resolve("arm64-v8a/libappnative.so")
     val seen = HashSet<String>()
     java.util.zip.ZipFile(module.resourcesApk.toFile()).use { input ->
       java.util.zip.ZipOutputStream(module.unsignedApk.outputStream()).use { output ->
@@ -258,6 +339,15 @@ class PackageApkTask(
           output.putNextEntry(java.util.zip.ZipEntry("classes.dex"))
           module.dexDir.resolve("classes.dex").inputStream().use { it.copyTo(output) }
           output.closeEntry()
+        }
+
+        if (Files.exists(nativeLib)) {
+          val name = "lib/arm64-v8a/libappnative.so"
+          if (seen.add(name)) {
+            output.putNextEntry(java.util.zip.ZipEntry(name))
+            nativeLib.inputStream().use { it.copyTo(output) }
+            output.closeEntry()
+          }
         }
 
         if (module.assetDir.exists()) {

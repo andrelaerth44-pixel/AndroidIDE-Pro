@@ -1,0 +1,73 @@
+name: AndroidIDE Pro validation
+
+on:
+  pull_request:
+    branches: [ "dev" ]
+  push:
+    branches: [ "work/native-build-engine-v1" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "17"
+
+jobs:
+  validate:
+    name: Build AndroidIDE Pro
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Enable Gradle wrapper
+        run: chmod +x ./gradlew
+
+      - name: Compile built-in language core and native build engine
+        run: ./gradlew :core:language-support:test :core:android-build:compileKotlin --stacktrace
+
+      - name: Assemble AndroidIDE Pro debug APK
+        run: ./gradlew :core:app:assembleDebug --stacktrace
+
+      - name: Inspect APK size
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          : > build/apk-size.txt
+          shopt -s nullglob
+          apks=(core/app/build/outputs/apk/debug/*.apk)
+          if [ "${#apks[@]}" -eq 0 ]; then
+            echo "No debug APK was generated." | tee build/apk-size.txt
+            exit 1
+          fi
+          for apk in "${apks[@]}"; do
+            size=$(stat -c '%s' "$apk")
+            human=$(du -h "$apk" | cut -f1)
+            echo "$apk $size bytes ($human)" | tee -a build/apk-size.txt
+          done
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidide-pro-debug-apk
+          path: core/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload APK size report
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidide-pro-apk-size
+          path: build/apk-size.txt

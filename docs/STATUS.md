@@ -30,6 +30,7 @@
 - [x] smoke test do `BuildGraph` validado;
 - [ ] build Gradle completo do repositório validado
 - [x] Primeiro código funcional do AndroidIDE Pro iniciado
+- [x] Gradle Adapter de planejamento adicionado sem substituir o backend atual
 
 ## Constatações principais
 
@@ -76,7 +77,7 @@ O manifest atual inclui permissões amplas de armazenamento, instalação/remoç
 
 ## Primeiro código funcional
 
-O módulo `:build:api` foi adicionado sem alterar o backend Gradle existente.
+Os módulos `:build:api` e `:build:gradle-adapter` foram registrados sem alterar o backend Gradle existente.
 
 Implementado:
 
@@ -87,23 +88,28 @@ Implementado:
 - diagnósticos estruturados;
 - cancelamento cooperativo;
 - contrato de `BuildExecutor`;
-- testes unitários do grafo.
+- testes unitários do grafo;
+- `GradleBuildSystem` com planejamento de tasks;
+- `GradleProjectAdapter` para converter `IProject` em `BuildProject`;
+- `GradleTaskExecutor` injetável, com fallback seguro que não executa Gradle.
 
 Validação:
 
 - [x] árvore e arquivos verificados via GitHub;
-- [x] inclusão do módulo no `settings.gradle.kts` corrigida;
+- [x] inclusão de `:build:api` e `:build:gradle-adapter` no `settings.gradle.kts` corrigida;
 - [x] implementação do `BuildGraph` revisada estaticamente;
 - [x] compilação independente e smoke test executados localmente;
-- [ ] compilação/testes completos via Gradle/CI.
+- [ ] compilação/testes completos via Gradle/CI;
+- [ ] bridge com `GradleBuildService`.
 
 Ainda não implementado:
 
-- executor real;
-- Gradle adapter;
+- bridge de execução real;
+- descoberta completa do catálogo de tasks;
+- executor incremental;
 - cache/fingerprints;
 - integração com `core:projects`/`GradleBuildService`.
 
 ## Próximo item
 
-Validar o módulo em ambiente de build/teste disponível e então implementar o Gradle Adapter sem alterar o comportamento atual do backend Gradle.
+Validar os módulos em ambiente Gradle/CI e implementar a ponte do GradleTaskExecutor para o BuildService existente, mantendo o comportamento atual como fallback.

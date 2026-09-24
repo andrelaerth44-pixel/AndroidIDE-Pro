@@ -157,14 +157,24 @@ O cache deverá possuir:
 
 ## Gradle Adapter
 
-O adapter deverá:
+A primeira implementação está em `:build:gradle-adapter`.
 
-1. abrir um projeto Gradle;
-2. obter metadata/model;
-3. produzir Project Model;
-4. mapear tasks;
-5. executar Gradle quando não houver equivalente interno;
-6. converter diagnósticos e resultados.
+Ela já:
+
+1. converte `IProject` para `BuildProject`;
+2. preserva o diretório e os caminhos dos módulos;
+3. planeja `assemble`, `assemble<Variant>` e tasks requisitadas;
+4. adiciona `clean` como dependência quando solicitado;
+5. mantém a execução atrás de `GradleTaskExecutor`.
+
+Ainda faltam:
+
+6. descobrir o catálogo completo de tasks;
+7. conectar `GradleTaskExecutor` ao `GradleBuildService`;
+8. converter logs/diagnósticos do Tooling API em `BuildDiagnostic`;
+9. mapear de forma autoritativa Android application vs library.
+
+O executor default é deliberadamente não-operacional para impedir que o novo SPI passe a executar builds antes da integração segura.
 
 ## Migração
 

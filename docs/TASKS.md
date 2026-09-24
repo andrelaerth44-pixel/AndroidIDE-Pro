@@ -27,7 +27,9 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [x] Mapear recursos/XML pipeline
 - [x] Mapear build fixtures/testes/CI
 - [~] Matriz de riscos
-- [ ] Validar build/test do novo módulo
+- [x] Criar `:build:api`
+- [x] Criar `:build:gradle-adapter`
+- [ ] Validar build/test completo dos novos módulos
 
 ## Fase 1 — Build Core
 
@@ -43,7 +45,9 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [ ] fingerprints
 - [ ] persistent cache
 - [ ] dependency model
-- [ ] Gradle adapter
+- [x] Gradle adapter de planejamento
+- [ ] bridge Gradle Adapter -> GradleBuildService
+- [ ] descoberta completa de tasks do projeto
 
 ## Fase 2 — Android pipeline
 

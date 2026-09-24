@@ -1,5 +1,26 @@
 # Changelog de Engenharia
 
+## 2026-09-24 — Gradle Adapter foundation
+
+### Adicionado
+
+- módulo `:build:gradle-adapter`;
+- `GradleBuildSystem` para planejamento de tasks Gradle;
+- `GradleProjectAdapter` para converter o `IProject` existente em `BuildProject`;
+- `GradleTaskExecutor` como ponte injetável;
+- fallback seguro que impede execução acidental antes da integração com `GradleBuildService`;
+- testes de planejamento de variante, limpeza e suporte a tipos de módulo.
+
+### Preservado
+
+O `GradleBuildService`, `ToolingServerRunner` e `ToolingApiServerImpl` continuam sendo o backend de execução atual.
+
+### Limitações conhecidas
+
+- descoberta completa do catálogo de tasks ainda não está conectada;
+- classificação Android application/library continua propositalmente UNKNOWN até existir uma fonte autoritativa no modelo AGP;
+- a ponte efetiva para `GradleBuildService` ainda não foi ligada.
+
 ## 2026-09-24 — Build System API foundation
 
 ### Adicionado
@@ -21,7 +42,7 @@ O `GradleBuildService`, `ToolingServerRunner` e backend Gradle continuam sem alt
 
 ### Correções da etapa
 
-- `settings.gradle.kts` passou a incluir `:build:api`;
+- `settings.gradle.kts` passou a incluir `:build:api` e `:build:gradle-adapter`;
 - verificação de dependências do `BuildGraph` foi tornada explícita para reduzir ambiguidade de inferência Kotlin;
 - compilação/testes do fork continuam pendentes porque o ambiente de execução desta sessão não possui acesso de rede ao repositório para montar o checkout local.
 

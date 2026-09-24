@@ -83,7 +83,11 @@ A primeira fronteira é:
 
 `BuildProject -> BuildSystem -> BuildGraph -> BuildExecutor`
 
-Essa separação permite adicionar o Gradle Adapter sem obrigar a UI a conhecer Gradle.
+O `:build:gradle-adapter` ocupa o lado Gradle dessa fronteira sem substituir o backend de execução atual.
+
+GradleProjectAdapter converte IProject/Tooling API para BuildProject.
+
+GradleBuildSystem planeja tasks e aceita um GradleTaskExecutor injetável. O executor padrão falha de forma explícita para impedir execução acidental antes da ponte com GradleBuildService.
 
 ## 6. Arquitetura-alvo
 
@@ -98,6 +102,10 @@ Build System SPI
  +-------------------------+
  |                         |
 Gradle Adapter          Native/Native-like Engine
+      |
+GradleTaskExecutor
+      |
+GradleBuildService (compatibilidade)
  |                         |
 Tooling API            Task Graph
                          |

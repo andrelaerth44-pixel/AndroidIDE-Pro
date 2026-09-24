@@ -2,7 +2,7 @@
 
 > Continuação e evolução do AndroidIDE original para uma IDE de desenvolvimento Android on-device moderna, modular, extensível e tecnicamente rastreável.
 
-**Status atual:** auditoria estrutural inicial concluída; primeira fundação funcional do Build System adicionada.  
+**Status atual:** auditoria estrutural inicial concluída; primeira fundação funcional do Build System e o Gradle Adapter de planejamento adicionados.  
 **Branch de desenvolvimento:** `work/androidide-pro-dev-foundation`  
 **Base:** `dev` / `77ee1a315f34b9ed74a9da94f94a0dc276f72ff6`  
 **Data:** 2026-09-24
@@ -71,7 +71,9 @@ Application, emulator, shared e view.
 Templates, UI Designer, tree view, preferences e recursos compartilhados.
 
 ### Build
-`build:api` — primeira API independente do futuro Build Engine.
+`build:api` — contratos independentes do futuro Build Engine.
+
+`build:gradle-adapter` — ponte de planejamento entre o modelo Tooling API existente e o BuildSystem SPI.
 
 ### Testing
 Unit, Android, LSP, Gradle Tooling e benchmarks.
@@ -213,14 +215,14 @@ A primeira camada implementada em `build:api` fornece:
 
 Ainda faltam:
 
-- executor real;
+- bridge de execução real para GradleBuildService;
 - fingerprints;
 - cache;
 - dependency resolver;
 - Android pipeline;
 - native pipeline.
 
-O Gradle atual será mantido como compatibilidade até haver cobertura equivalente.
+O Gradle atual será mantido como compatibilidade até haver cobertura equivalente. O Gradle Adapter inicial não substitui o GradleBuildService; ele traduz o modelo e planeja tasks, deixando a execução atrás de um executor injetável.
 
 ---
 
@@ -416,7 +418,9 @@ Build fixtures serão usados para validar:
 - [x] LSP API/Java LSP em nível inicial;
 - [x] arquitetura alvo;
 - [x] contrato inicial do Build System;
-- [x] `:build:api` registrado na árvore do projeto;
+- [x] `:build:api` e `:build:gradle-adapter` registrados na árvore do projeto;
+- [x] Gradle Adapter inicial criado sem alterar o caminho de execução atual;
+- [x] bridge de execução protegido por executor injetável;
 - [x] testes do `BuildGraph` para ordenação, dependência ausente e ciclo;
 - [x] checagem estática do `BuildGraph` simplificada para reduzir risco de inferência de referências Kotlin.
 
@@ -438,7 +442,7 @@ Build fixtures serão usados para validar:
 - [ ] plugin runtime;
 - [ ] IA provider layer.
 
-**Próxima ação:** criar o Gradle Adapter atrás do `BuildSystem`, mantendo o backend Gradle existente como caminho de execução.
+**Próxima ação:** criar a ponte GradleTaskExecutor -> GradleBuildService, adicionar testes de integração e só então conectar o novo SPI ao fluxo de build existente.
 
 ---
 

@@ -42,6 +42,13 @@ class NativeBuildCoordinator(
     module: AndroidModule,
     logger: (String) -> Unit = ::println
   ): BuildResult {
+    if (!module.isApplication) {
+      return BuildResult(
+        success = false,
+        message = "Native APK assembly currently requires an application module"
+      )
+    }
+
     val variant = module.getVariant("debug")
       ?: return BuildResult(
         success = false,

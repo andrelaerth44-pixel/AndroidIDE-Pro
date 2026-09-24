@@ -178,6 +178,7 @@ class CompileJavaTask(
       add(module.generatedRDir)
       add(module.generatedBuildConfigDir)
       add(module.sdk.androidJar())
+      addAll(module.compileClasspath)
     }
 
   override val outputs = listOf(module.classesDir)
@@ -278,7 +279,7 @@ class KotlinCompileTask(
       module.kotlinSourceDir,
       module.classesDir,
       module.sdk.androidJar()
-    )
+    ) + module.compileClasspath
 
   override val outputs = listOf(module.kotlinOutputJar)
 
@@ -343,7 +344,12 @@ class DexBuilderTask(
   private val module: AndroidModule
 ) : BuildTask {
   override val id = "dexBuilderDebug"
-  override val inputs = listOf(module.classesDir, module.kotlinOutputJar, module.sdk.d8, module.sdk.androidJar())
+  override val inputs = listOf(
+    module.classesDir,
+    module.kotlinOutputJar,
+    module.sdk.d8,
+    module.sdk.androidJar()
+  ) + module.compileClasspath
   override val outputs = listOf(module.dexDir.resolve("classes.dex"))
 
   override fun execute(context: BuildContext): TaskResult = runCatching {

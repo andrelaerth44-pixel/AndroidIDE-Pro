@@ -5,44 +5,11 @@ import com.itsaky.androidide.build.api.BuildTask
 import com.itsaky.androidide.build.api.TaskResult
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 import kotlin.io.path.createDirectories
-import kotlin.io.path.deleteRecursively
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.extension
-import kotlin.io.path.outputStream
 import kotlin.io.path.walk
-
-private data class AndroidLlvmToolchain(
-  val root: Path,
-  val clang: Path,
-  val clangxx: Path,
-  val sysroot: Path
-)
-
-private object AndroidLlvmToolchainLocator {
-
-  fun find(module: AndroidModule): AndroidLlvmToolchain? {
-    val root = module.sdk.nativeToolchainRoot ?: return null
-    val abiRoot = root.resolve("arm64-v8a")
-    val bin = abiRoot.resolve("bin")
-    val clang = bin.resolve("clang")
-    val clangxx = bin.resolve("clang++")
-    val sysroot = abiRoot.resolve("sysroot")
-
-    if (!Files.isExecutable(clang) ||
-      !Files.isExecutable(clangxx) ||
-      !Files.isDirectory(sysroot)
-    ) {
-      return null
-    }
-
-    return AndroidLlvmToolchain(
-      root = abiRoot,
-      clang = clang,
-      clangxx = clangxx,
-      sysroot = sysroot
-    )
-  }
-}
 
 class CompileNativeTask(
   private val module: AndroidModule
@@ -50,25 +17,192 @@ class CompileNativeTask(
 
   override val id = "compileNativeDebug"
 
+  private val output: Path
+    get() = module.nativeLibDir.resolve("arm64-v8a/libappnative.so")
+
   private val marker: Path
     get() = module.nativeLibDir.resolve(".native-stamp")
+
+  private val environment: Map<String, String>
+    get() {
+      val toolchain = module.sdk.nativeToolchain
+        ?: return emptyMap()
+      return mapOf(
+        "LD_LIBRARY_PATH" to toolchain.compiler.parent.toString()
+      )
+    }
 
   override val inputs: List<Path>
     get() = buildList {
       add(module.nativeSourceDir)
-      module.sdk.nativeToolchainRoot
-        ?.resolve("arm64-v8a/.androidide-toolchain")
-        ?.let(::add)
+      module.sdk.nativeToolchain?.let { toolchain ->
+        add(toolchain.compiler)
+        add(toolchain.linker)
+        add(toolchain.sysroot)
+        add(toolchain.resourceDir)
+        add(toolchain.runtimeLibraryDir)
+        toolchain.runtimeSharedLibrary?.let(::add)
+        toolchain.includeDirs.forEach(::add)
+        toolchain.nativeAppGlueDir?.let(::add)
+      }
     }
 
   override val outputs: List<Path>
-    get() = listOf(marker)
+    get() = buildList {
+      add(marker)
+      if (hasSources()) add(output)
+    }
 
   override fun execute(context: BuildContext): TaskResult = runCatching {
-    module.nativeLibDir.deleteRecursively()
     module.nativeLibDir.createDirectories()
 
-    val sources = if (Files.exists(module.nativeSourceDir)) {
+    val sources = sources()
+    if (sources.isEmpty()) {
+      output.deleteIfExists()
+      Files.writeString(
+        marker,
+        "abi=arm64-v8a\nstatus=no-native-sources\n"
+      )
+      return@runCatching TaskResult(true, "No C/C++ sources")
+    }
+
+    val toolchain = module.sdk.nativeToolchain
+      ?: return@runCatching TaskResult(
+        false,
+        "C/C++ sources require the built-in Android LLVM Core Toolchain Pack. " +
+          "Install the arm64-v8a LLVM pack and retry."
+      )
+
+    check(Files.isRegularFile(toolchain.compiler)) {
+      "Android LLVM compiler is missing: " + toolchain.compiler
+    }
+    check(Files.isRegularFile(toolchain.linker)) {
+      "Android LLVM linker is missing: " + toolchain.linker
+    }
+    check(Files.isDirectory(toolchain.sysroot)) {
+      "Android LLVM sysroot is missing: " + toolchain.sysroot
+    }
+    check(Files.isDirectory(toolchain.resourceDir)) {
+      "Android LLVM resource directory is missing: " + toolchain.resourceDir
+    }
+
+    val objectDir = module.nativeLibDir.resolve("obj")
+    objectDir.createDirectories()
+
+    val objects = sources.map { source ->
+      val object = objectDir.resolve(objectName(source))
+      val compilerArgs = buildList {
+        add("clang")
+        if (isCpp(source)) add("--driver-mode=g++")
+        add("--target=aarch64-linux-android" + module.minSdk)
+        add("--sysroot")
+        add(toolchain.sysroot.toString())
+        add("-resource-dir")
+        add(toolchain.resourceDir.toString())
+        add("-I")
+        add(module.nativeSourceDir.toString())
+        toolchain.includeDirs.forEach {
+          add("-I")
+          add(it.toString())
+        }
+        toolchain.nativeAppGlueDir?.let {
+          add("-I")
+          add(it.toString())
+        }
+        add("-fPIC")
+        add("-O2")
+        add("-fdata-sections")
+        add("-ffunction-sections")
+        add("-fstack-protector-strong")
+        add("-DANDROID")
+        add(
+          "-std=" + if (source.extension == "c") {
+            module.cLanguageStandard
+          } else {
+            module.cppLanguageStandard
+          }
+        )
+        add("-c")
+        add(source.toString())
+        add("-o")
+        add(object.toString())
+      }
+
+      ProcessTools.run(
+        executable = toolchain.compiler,
+        args = compilerArgs,
+        environment = environment,
+        logger = context::log
+      )
+
+      object
+    }
+
+    output.parent.createDirectories()
+
+    val hasCpp = sources.any(::isCpp)
+    val linkArgs = buildList {
+      add("clang")
+      if (hasCpp) add("--driver-mode=g++")
+      add("--target=aarch64-linux-android" + module.minSdk)
+      add("--sysroot")
+      add(toolchain.sysroot.toString())
+      add("-resource-dir")
+      add(toolchain.resourceDir.toString())
+      add("--ld-path=" + toolchain.linker)
+      if (hasCpp) {
+        add("-stdlib=libc++")
+        add("-L")
+        add(toolchain.runtimeLibraryDir.toString())
+        add("-lc++_shared")
+      }
+      add("-shared")
+      add("-Wl,-z,max-page-size=16384")
+      add("-Wl,-z,common-page-size=16384")
+      add("-Wl,--gc-sections")
+      add("-Wl,-soname,libappnative.so")
+      objects.forEach { add(it.toString()) }
+      add("-o")
+      add(output.toString())
+    }
+
+    ProcessTools.run(
+      executable = toolchain.compiler,
+      args = linkArgs,
+      environment = environment,
+      logger = context::log
+    )
+
+    if (hasCpp) {
+      val runtime = toolchain.runtimeSharedLibrary
+        ?: return@runCatching TaskResult(
+          false,
+          "C++ compilation requires libc++_shared.so in the Core LLVM Toolchain Pack."
+        )
+      check(Files.isRegularFile(runtime)) {
+        "C++ runtime library is missing: " + runtime
+      }
+    }
+
+    Files.writeString(
+      marker,
+      buildString {
+        appendLine("abi=arm64-v8a")
+        appendLine("toolchain=" + toolchain.version)
+        appendLine("cStandard=" + module.cLanguageStandard)
+        appendLine("cppStandard=" + module.cppLanguageStandard)
+        appendLine("sources=" + sources.size)
+        appendLine("output=" + output)
+      }
+    )
+
+    TaskResult(true, "Built " + sources.size + " C/C++ source file(s)")
+  }.getOrElse {
+    TaskResult(false, it.message ?: "C/C++ compilation failed")
+  }
+
+  private fun sources(): List<Path> =
+    if (Files.exists(module.nativeSourceDir)) {
       module.nativeSourceDir.walk()
         .filter { it.isRegularFile() }
         .filter { it.extension in setOf("c", "cc", "cpp", "cxx") }
@@ -78,80 +212,17 @@ class CompileNativeTask(
       emptyList()
     }
 
-    if (sources.isEmpty()) {
-      Files.writeString(marker, "no native sources\n")
-      return@runCatching TaskResult(true, "No C/C++ sources")
-    }
+  private fun hasSources(): Boolean = sources().isNotEmpty()
 
-    val toolchain = AndroidLlvmToolchainLocator.find(module)
-      ?: return@runCatching TaskResult(
-        false,
-        "C/C++ sources are built by the built-in LLVM pipeline, but the " +
-          "Android-hosted LLVM toolchain is not installed. Expected: " +
-          (module.sdk.nativeToolchainRoot?.resolve("arm64-v8a") ?: "<toolchains/llvm>/arm64-v8a")
-      )
+  private fun isCpp(source: Path): Boolean =
+    source.extension in setOf("cc", "cpp", "cxx")
 
-    val objectDir = module.nativeLibDir.resolve("obj")
-    objectDir.createDirectories()
-
-    val objects = sources.mapIndexed { index, source ->
-      val object = objectDir.resolve("obj$index.o")
-      val compiler = if (source.extension == "c") {
-        toolchain.clang
-      } else {
-        toolchain.clangxx
-      }
-
-      ProcessTools.run(
-        compiler,
-        listOf(
-          "--target=aarch64-linux-android" + module.minSdk,
-          "-B", toolchain.root.resolve("bin").toString(),
-          "--sysroot", toolchain.sysroot.toString(),
-          "-fPIC",
-          "-O2",
-          "-std=" + if (source.extension == "c") {
-            module.cLanguageStandard
-          } else {
-            module.cppLanguageStandard
-          },
-          "-c",
-          source.toString(),
-          "-o", object.toString()
-        ),
-        logger = context::log
-      )
-
-      object
-    }
-
-    val output = module.nativeLibDir.resolve("arm64-v8a/libappnative.so")
-    output.parent.createDirectories()
-
-    ProcessTools.run(
-      toolchain.clangxx,
-      listOf(
-        "--target=aarch64-linux-android" + module.minSdk,
-        "-B", toolchain.root.resolve("bin").toString(),
-        "--sysroot", toolchain.sysroot.toString(),
-        "-fuse-ld=lld",
-        "-shared",
-        "-Wl,-z,max-page-size=16384",
-        "-Wl,-z,common-page-size=16384",
-        "-Wl,-soname,libappnative.so"
-      ) + objects.map(Path::toString) + listOf(
-        "-o", output.toString()
-      ),
-      logger = context::log
-    )
-
-    Files.writeString(
-      marker,
-      "abi=arm64-v8a\noutput=" + output + "\n"
-    )
-
-    TaskResult(true)
-  }.getOrElse {
-    TaskResult(false, it.message ?: "C/C++ compilation failed")
+  private fun objectName(source: Path): String {
+    val relative = module.nativeSourceDir.relativize(source).toString()
+    val digest = MessageDigest.getInstance("SHA-256")
+      .digest(relative.toByteArray(Charsets.UTF_8))
+      .joinToString("") { "%02x".format(it) }
+      .take(24)
+    return digest + ".o"
   }
 }

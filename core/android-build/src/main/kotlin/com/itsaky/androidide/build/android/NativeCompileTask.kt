@@ -28,7 +28,7 @@ class CompileNativeTask(
       val toolchain = module.sdk.nativeToolchain
         ?: return emptyMap()
       return mapOf(
-        "LD_LIBRARY_PATH" to toolchain.compiler.parent.toString()
+        "LD_LIBRARY_PATH" to toolchain.runtimeLibraryDir.toString()
       )
     }
 
@@ -92,7 +92,6 @@ class CompileNativeTask(
     val objects = sources.map { source ->
       val object = objectDir.resolve(objectName(source))
       val compilerArgs = buildList {
-        add("clang")
         if (isCpp(source)) add("--driver-mode=g++")
         add("--target=aarch64-linux-android" + module.minSdk)
         add("--sysroot")
@@ -142,7 +141,6 @@ class CompileNativeTask(
 
     val hasCpp = sources.any(::isCpp)
     val linkArgs = buildList {
-      add("clang")
       if (hasCpp) add("--driver-mode=g++")
       add("--target=aarch64-linux-android" + module.minSdk)
       add("--sysroot")

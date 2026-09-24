@@ -33,7 +33,11 @@
 - [x] Gradle Adapter de planejamento adicionado sem substituir o backend atual
 - [x] correção do registro dos módulos no `settings.gradle.kts` aplicada e conferida
 - [x] referência do pipeline de APK do CodeAssist documentada
-- [x] 17 IDs de tarefas Android registrados no Build API
+- [x] 17 IDs de tarefas Android registrados
+- [x] engine nativo possui DAG parcial até APK assinado
+- [x] GradleBuildService tenta backend nativo antes do Tooling API para assemble
+- [x] Workspace/AndroidModule alimenta variant, fontes, recursos, classpath e android.jar
+- [x] toolchain nativo resolve AAPT2, D8/R8, zipalign, apksigner e debug keystore no Build API
 
 ## Constatações principais
 
@@ -112,12 +116,11 @@ Validação:
 - [x] ponto de criação `createBuildSystemAdapter()` adicionado;
 - [x] `clean` migrado para o engine leve;
 - [x] dependências do build engine corrigidas no `core:app`;
-- [ ] primeiro APK completo pelo engine nativo.
-- [ ] conectar as tasks nativas ao grafo Android e ao comando `assembleDebug`.
+- [ ] primeiro APK real completo validado no dispositivo/CI
+- [ ] validar assembleDebug com projeto Hello World real, sem dependências externas
+- [ ] integrar dependências AAR/JAR e módulos de projeto ao native build graph
 
 ## Próximo item
 
-Próximo item:
-
-Conectar as tasks nativas já implementadas ao Project/Workspace Model, formando o primeiro grafo de `assembleDebug`.
-A compilação Java usa JDT/ecj diretamente; o caminho ART-safe evita dependência de JRT. Depois entram D8, package e assinatura.
+Validar o primeiro assembleDebug nativo contra um projeto Hello World real no dispositivo, sem dependências externas, e então substituir o adapter convencional por resolução de dependências real.
+A compilação Java usa JDT/ecj diretamente; AAPT2, D8, zipalign e apksigner são ferramentas diretas; Gradle só entra quando a cobertura nativa recusa o projeto.

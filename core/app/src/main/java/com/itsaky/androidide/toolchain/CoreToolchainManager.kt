@@ -68,12 +68,14 @@ class CoreToolchainManager(
 
     val nativeLibraryDir = Path.of(appInfo.nativeLibraryDir)
     val compiler = nativeLibraryDir.resolve("libclang.so")
+    val cppCompiler = nativeLibraryDir.resolve("libclang++.so")
     val linker = nativeLibraryDir.resolve("libld.lld.so")
     val runtime = nativeLibraryDir.resolve("libc++_shared.so")
     val sysroot = root.resolve("sysroot")
     val resourceDir = root.resolve("lib-clang").resolve(llvmMajor)
 
     if (!compiler.isRegularFile() ||
+      !cppCompiler.isRegularFile() ||
       !linker.isRegularFile() ||
       !runtime.isRegularFile() ||
       !Files.isDirectory(sysroot) ||
@@ -85,6 +87,7 @@ class CoreToolchainManager(
     return AndroidNativeToolchain(
       version = version,
       compiler = compiler,
+      cppCompiler = cppCompiler,
       linker = linker,
       sysroot = sysroot,
       resourceDir = resourceDir,

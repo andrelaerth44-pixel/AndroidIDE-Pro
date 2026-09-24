@@ -110,11 +110,17 @@ patch_llvm_for_android() {
     fi
   done
 
-  # Android only needs the ELF linker. Removing the unused driver flavors
-  # also avoids pulling Apple/Windows/Wasm support into the shipped binary.
+  # Android only needs ELF. Disable the other LLD flavors and make the
+  # generated driver table agree with the libraries that remain.
   local lld_top="$LLVM_SRC/lld/CMakeLists.txt"
-  if [[ -f "$lld_top" ]] && grep -q '^add_subdirectory(MachO)' "$lld_top"; then
-    perl -pi -e 's/^add_subdirectory\((COFF|MachO|MinGW|wasm)\)/# removed for AndroidIDE Pro arm64 ELF build: $1/' "$lld_top"
+  local lld_tool="$LLVM_SRC/lld/tools/lld/CMakeLists.txt"
+  local lld_main="$LLVM_SRC/lld/tools/lld/lld.cpp"
+  if [[ -f "$lld_top" ]] && grep -q "^add_subdirectory(MachO)" "$lld_top"; then
+    perl -pi -e 's/^add_subdirectory\\((COFF|MachO|MinGW|wasm)\\)/# removed for AndroidIDE Pro arm64 ELF build: $1/' "$lld_top"
+
+    perl -0pi -e 's/lld_target_link_libraries\\(lld\\s+PRIVATE\\s+lldCommon\\s+lldCOFF\\s+lldELF\\s+lldMachO\\s+lldMinGW\\s+lldWasm\\s+\\)/lld_target_link_libraries(lld\\n  PRIVATE\\n  lldCommon\\n  lldELF\\n  )/s' "$lld_tool"
+
+    perl -0pi -e 's/LLD_HAS_DRIVER\\(coff\\)\\nLLD_HAS_DRIVER\\(elf\\)\\nLLD_HAS_DRIVER\\(mingw\\)\\nLLD_HAS_DRIVER\\(macho\\)\\nLLD_HAS_DRIVER\\(wasm\\)/LLD_HAS_DRIVER(elf)\\n#undef LLD_ALL_DRIVERS\\n#define LLD_ALL_DRIVERS {{lld::Gnu, \\&lld::elf::link}}/' "$lld_main"
   fi
 }
 

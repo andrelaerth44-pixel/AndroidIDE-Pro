@@ -95,7 +95,8 @@ class NativeBuildCoordinator(
     val kotlinSourceDir = module.projectDir.toPath().resolve("src/main/kotlin")
     val hasNativeSources = hasNativeSources(sourceDir)
     val hasKotlinSources = hasKotlinSources(kotlinSourceDir)
-    val llvmToolchain = coreToolchainManager.resolveLlvm()
+    val llvmToolchain =
+      if (hasNativeSources) coreToolchainManager.resolveLlvm() else null
     val kotlinCompilerClassLoader =
       if (hasKotlinSources) coreKotlinToolchainManager.resolveClassLoader() else null
     val kotlinCompilerPluginClasspaths =
@@ -107,7 +108,9 @@ class NativeBuildCoordinator(
         emptyList()
       }
 
-    logger(coreToolchainManager.describe())
+    if (hasNativeSources) {
+      logger(coreToolchainManager.describe())
+    }
 
     if (hasKotlinSources && kotlinCompilerClassLoader == null) {
       return BuildResult(

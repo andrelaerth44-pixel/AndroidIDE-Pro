@@ -5,17 +5,9 @@
 **Data:** 2026-09-24  
 **Status:** aceito
 
-### Decisão
-
 O AndroidIDE Pro será desenvolvido a partir do branch `dev`.
 
-### Motivo
-
-O branch `dev` é significativamente mais recente que `apk-v3-signing` e contém uma decomposição de módulos mais avançada.
-
-### Consequência
-
-Diferenças específicas de `apk-v3-signing` serão avaliadas e portadas seletivamente.
+O branch `apk-v3-signing` será tratado como fonte histórica de mudanças específicas de distribuição/assinatura que podem precisar de portabilidade.
 
 ---
 
@@ -23,7 +15,7 @@ Diferenças específicas de `apk-v3-signing` serão avaliadas e portadas seletiv
 
 **Status:** aceito
 
-O projeto preserva a base AndroidIDE em vez de começar uma nova IDE.
+A base AndroidIDE será preservada em vez de começar uma nova IDE.
 
 ---
 
@@ -31,7 +23,16 @@ O projeto preserva a base AndroidIDE em vez de começar uma nova IDE.
 
 **Status:** aceito
 
-CodeAssist será usado como fonte para padrões de arquitetura e componentes candidatos, principalmente build incremental, diagnósticos e Icon Manager.
+CodeAssist será usado como referência para:
+
+- Task Engine;
+- build graph;
+- incrementalidade;
+- diagnostics;
+- cache;
+- Android pipeline;
+- Icon Manager;
+- extensões.
 
 Nenhuma cópia integral será feita.
 
@@ -41,12 +42,55 @@ Nenhuma cópia integral será feita.
 
 **Status:** aceito
 
-Gradle pode continuar sendo usado para compilar o próprio AndroidIDE Pro, enquanto o build de projetos do usuário evolui para um Build Engine próprio com adapter de compatibilidade Gradle.
+Gradle continua permitido para compilar a própria IDE.
+
+Para os projetos do usuário, o build deverá ser escondido atrás de uma abstração comum, permitindo:
+
+- Gradle adapter;
+- Build Engine próprio;
+- native build.
 
 ---
 
-## ADR-0005 — UI progressiva
+## ADR-0005 — Preservar ProjectManager/Workspace
+
+**Data:** 2026-09-24  
+**Status:** aceito
+
+`ProjectManagerImpl`, `WorkspaceModelBuilder` e `WorkspaceImpl` já representam projetos Gradle/Android/Java dentro do IDE.
+
+Eles serão preservados e evoluídos em vez de criar um segundo Project Manager.
+
+---
+
+## ADR-0006 — Gradle como adapter
+
+**Data:** 2026-09-24  
+**Status:** aceito
+
+O Tooling API atual não será removido antes que exista cobertura suficiente no novo engine.
+
+A fronteira será:
+
+`Application -> BuildSystem -> Gradle Adapter / Native Engine`
+
+---
+
+## ADR-0007 — UI progressiva
 
 **Status:** aceito
 
-Jetpack Compose/Material 3 será introduzido progressivamente. Views/XML existentes só serão substituídos quando houver benefício claro.
+Compose/Material 3 será introduzido progressivamente.
+
+Views/XML existentes permanecem durante a migração quando forem a opção mais segura ou eficiente.
+
+---
+
+## ADR-0008 — Build Engine fora da UI
+
+**Data:** 2026-09-24  
+**Status:** aceito
+
+Tasks de build não poderão depender diretamente de Activity, Fragment ou View.
+
+O build será acionado por serviços e interfaces estáveis, permitindo trocar o backend sem reconstruir a UI.

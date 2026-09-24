@@ -80,6 +80,7 @@ class NativeAndroidBuildSystem(
       .dependsOn(javac.id, buildConfig.id)
       .dependsOn(kotlinc.id, javac.id)
       .dependsOn(native.id, link.id)
+      .dependsOn(native.id, javac.id)
       .dependsOn(dex.id, javac.id)
       .dependsOn(dex.id, kotlinc.id)
       .dependsOn(packageApk.id, link.id)

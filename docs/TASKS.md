@@ -49,6 +49,8 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [x] bridge Gradle Adapter -> GradleBuildService
 - [x] ponto de criação do BuildSystem no GradleBuildService
 - [ ] migrar uma operação de build controlada para o novo pipeline
+- [ ] implementar engine Android leve sem Gradle
+- [ ] tornar Gradle explicitamente fallback de compatibilidade
 - [ ] descoberta completa de tasks do projeto
 
 ## Fase 2 — Android pipeline

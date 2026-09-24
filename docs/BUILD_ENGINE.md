@@ -196,3 +196,19 @@ A ordem deve ser:
 8. variantes;
 9. Gradle compatibility completa.
 
+
+
+## Regra de peso do AndroidIDE Pro
+
+O aplicativo não deve carregar Gradle como biblioteca de execução dentro do processo principal.
+
+A cadeia Gradle existente continua em processo separado, e a política de compatibilidade reduz o impacto com:
+
+- heap limitado;
+- um worker;
+- sem paralelismo;
+- sem daemon persistente;
+- sem file-system watching;
+- sem build cache pelo backend de compatibilidade.
+
+A meta arquitetural é que builds Android comuns sejam executados pelo engine próprio, mantendo Gradle para casos de compatibilidade.

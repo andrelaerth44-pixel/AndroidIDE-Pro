@@ -101,15 +101,17 @@ Project Model
 Build System SPI
  +-------------------------+
  |                         |
-Gradle Adapter          Native/Native-like Engine
+Gradle Adapter          Lightweight Native/Local Engine
       |
 GradleTaskExecutor
       |
-GradleBuildService (compatibilidade)
-      |
-createBuildSystemAdapter()
-      |
-BuildSystem SPI
+GradleBuildService (compatibilidade, isolado)
+
+A prioridade arquitetural fica no caminho leve:
+
+BuildSystem SPI -> Lightweight Android Engine -> task graph -> toolchains
+
+Gradle só entra quando o projeto exigir compatibilidade com comportamento Gradle/AGP que ainda não possua implementação equivalente.
  |                         |
 Tooling API            Task Graph
                          |

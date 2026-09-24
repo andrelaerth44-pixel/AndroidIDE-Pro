@@ -222,7 +222,7 @@ Ainda faltam:
 - Android pipeline;
 - native pipeline.
 
-O Gradle atual será mantido como compatibilidade até haver cobertura equivalente. O Gradle Adapter inicial não substitui o GradleBuildService; ele traduz o modelo e planeja tasks, deixando a execução atrás de um executor injetável.
+O Gradle atual será mantido somente como backend de compatibilidade até haver cobertura equivalente. Ele não é o engine principal do AndroidIDE Pro. O caminho normal deverá ser leve, incremental e próprio. Quando Gradle for inevitável, será executado isoladamente e sob política rígida de recursos; o GradleResourcePolicy atual limita heap, workers, paralelismo e residência do daemon.
 
 ---
 
@@ -421,6 +421,7 @@ Build fixtures serão usados para validar:
 - [x] `:build:api` e `:build:gradle-adapter` registrados na árvore do projeto;
 - [x] Gradle Adapter inicial criado sem alterar o caminho de execução atual;
 - [x] bridge de execução protegido por executor injetável;
+- [x] política de recursos Gradle criada para compatibilidade móvel;
 - [x] testes do `BuildGraph` para ordenação, dependência ausente e ciclo;
 - [x] checagem estática do `BuildGraph` simplificada para reduzir risco de inferência de referências Kotlin.
 

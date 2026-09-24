@@ -114,3 +114,26 @@ A API permite estabelecer a fronteira arquitetural primeiro e migrar os backends
 ### Consequência
 
 O próximo backend será um Gradle Adapter compatível com o comportamento atual. O executor próprio e o pipeline Android serão implementados depois.
+
+
+## Decisão — Gradle não é o engine principal
+
+**Data:** 2026-09-24
+
+O AndroidIDE Pro não deve depender de um Gradle pesado no caminho normal de build do aplicativo.
+
+### Consequências
+
+- o engine próprio deve ser incremental e orientado a tarefas;
+- o processo Android principal não deve hospedar Gradle;
+- Gradle fica atrás de um adapter de compatibilidade;
+- builds Gradle são executados isoladamente;
+- o adapter aplica orçamento de RAM/CPU;
+- --no-daemon impede residência normal do daemon;
+- --max-workers=1 evita explosão de workers;
+- heap e metaspace são explicitamente limitados;
+- a migração de builds reais deve aumentar cobertura do engine próprio antes de retirar o fallback.
+
+### Motivo técnico
+
+Gradle pode iniciar processos JVM adicionais e usar um daemon persistente. Para um IDE on-device, isso cria pressão de RAM e pode aumentar trabalho de CPU. A política atual, portanto, privilegia isolamento e limites rígidos enquanto o engine próprio amadurece.

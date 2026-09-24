@@ -1,5 +1,14 @@
 # Changelog de Engenharia
 
+## 2026-09-24 — Mobile resource policy
+
+### Decisão
+
+- Gradle deixa de ser tratado como engine principal;
+- compatibilidade Gradle recebe GradleResourcePolicy;
+- execução padrão de compatibilidade usa --no-daemon, --max-workers=1, --no-parallel, sem file-system watching e com heap limitado a 384 MiB por padrão e 512 MiB como teto da política atual;
+- o objetivo do engine próprio é remover gradualmente a necessidade de iniciar Gradle em builds Android comuns.
+
 ## 2026-09-24 — Sequential executor and build execution bridge
 
 ### Adicionado

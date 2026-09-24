@@ -1,12 +1,13 @@
+
 # AndroidIDE Pro — Native Build Engine
 
-## Goal
+## Objetivo
 
-Build Android applications on-device without requiring a Gradle daemon for the native-compatible path.
+Compilar, empacotar, alinhar e assinar aplicações Android diretamente no dispositivo, sem depender de Gradle daemon e sem trocar de backend quando o projeto usa outra linguagem nativa.
 
-## Current pipeline
+## Pipeline atual
 
-```text
+~~~text
 mergeResourcesDebug
         ↓
 aapt2CompileDebug
@@ -17,6 +18,10 @@ generateBuildConfigDebug
         ↓
 compileJavaDebug
         ↓
+compileKotlinDebug
+        ↓
+compileNativeDebug
+        ↓
 dexBuilderDebug
         ↓
 packageApkDebug
@@ -24,92 +29,70 @@ packageApkDebug
 zipalignDebug
         ↓
 signDebug
-```
-
-## Components
-
-### build-api
-
-Defines:
-
-- BuildTask
-- BuildSystem
-- BuildRequest
-- BuildResult
-- BuildContext
-
-### build-engine
-
-Owns:
-
-- TaskGraph
-- dependencies
-- up-to-date checks
-- future cache/scheduling
-
-### android-build
-
-Owns Android-specific tasks and SDK tools.
-
-### app adapter
-
-`NativeBuildCoordinator` translates the existing Workspace/AndroidModule into the native build model.
-
-## Current V1 limits
-
-- debug application modules
-- Java source path
-- local resources
-- basic assets
-- no complete dependency resolver
-- no Kotlin compiler path
-- no R8
-- no NDK
-- no full flavors/product flavors
-
-## Next engineering priorities
-
-1. Make the Hello World path physically verifiable.
-2. Add structured task events.
-3. Replace timestamp-only checks with fingerprints.
-4. Add persistent cache.
-5. Add AAR/JAR dependency model.
-6. Add Kotlin.
-7. Add release/AAB.
-
-## Fingerprinting
-
-O TaskGraph agora possui fingerprints SHA-256 persistentes por tarefa.
-
-~~~text
-inputs
-  ↓
-SHA-256
-  ↓
-build/androidide/.cache/fingerprints/
-  ↓
-UP-TO-DATE / RUN
 ~~~
 
-O fingerprint cobre arquivos individuais e árvores de diretórios, além do ID/versionamento da tarefa.
+## Linguagens
 
-A V1 ainda não incorpora todos os valores virtuais derivados do ProjectModel no fingerprint. Isso será corrigido quando o modelo de configuração nativo estiver consolidado.
+Java usa o caminho javac do IDE.
+
+Kotlin usa K2JVMCompiler embutido em processo, produzindo classes.jar para D8.
+
+C/C++ usam a toolchain LLVM executável no Android, compilando objetos e ligando libappnative.so para arm64-v8a.
 
 ## Build Router
 
-O Build Center não chama o backend nativo diretamente. Ele passa pelo BuildRouter.
+O Build Router agora tem uma única rota:
 
 ~~~text
 Workspace + AndroidModule
         ↓
-NativeBuildCompatibility
-   ┌────┴────┐
-  Native   Gradle
-   ↓          ↓
-Native     BuildService
-Build
+BuildRouter
+        ↓
+NativeAndroidBuildSystem
+        ↓
+Built-in language pipeline
 ~~~
 
-Native é escolhido primeiro quando o módulo atende às capacidades da V1. Gradle é fallback de compatibilidade.
+Não existe mais GradleBackend no roteador. Quando uma capacidade nativa ainda está incompleta, o build falha com diagnóstico explícito.
 
-Isso mantém o motor nativo independente do Gradle e evita iniciar o backend pesado em projetos simples.
+## Grafo e cache
+
+Cada tarefa declara inputs, outputs e dependências. O TaskGraph usa fingerprints SHA-256 persistentes para UP-TO-DATE.
+
+## Estado atual
+
+Implementado no código:
+
+- Build API;
+- TaskGraph;
+- fingerprints persistentes;
+- AndroidModule;
+- Android SDK/tool resolution;
+- AAPT2;
+- BuildConfig;
+- Java build path;
+- Kotlin compiler embutido;
+- C/C++ native task;
+- D8;
+- APK packaging;
+- zipalign;
+- debug signing;
+- Workspace adapter;
+- Build Center;
+- instalação de APK;
+- rota única nativa.
+
+Ainda falta a validação física em dispositivo e a distribuição real da LLVM executável no Android.
+
+## Próximas etapas
+
+1. unificar o compilador Java de build com o javac embarcado usado pelo LSP;
+2. distribuir/gerenciar a LLVM toolchain Android;
+3. AAR/JAR classpath;
+4. desugaring;
+5. multidex;
+6. Compose compiler plugins;
+7. R8;
+8. release/AAB;
+9. múltiplas ABIs;
+10. CMake/JNI.

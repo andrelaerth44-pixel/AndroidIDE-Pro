@@ -130,7 +130,18 @@ class CoreToolchainManager(
     temp.createDirectories()
 
     packageContext.assets.open(ARCHIVE_FILE).use { input ->
-      ZipInputStream(BufferedInputStream(input)).use { zip ->
+      val digest = MessageDigest.getInstance("SHA-256")
+      val archive = input.readBytes()
+      digest.update(archive)
+      val actualStamp = digest.digest()
+        .joinToString("") { "%02x".format(it) }
+      check(expectedStamp.isBlank() || actualStamp == expectedStamp) {
+        "Core LLVM Toolchain checksum mismatch"
+      }
+
+      ZipInputStream(
+        BufferedInputStream(archive.inputStream())
+      ).use { zip ->
         var entry: ZipEntry? = zip.nextEntry
         while (entry != null) {
           val name = entry!!.name

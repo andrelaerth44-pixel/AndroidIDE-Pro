@@ -8,12 +8,27 @@ data class PluginId(
   }
 }
 
+/**
+ * Optional extension categories only.
+ *
+ * Language backends and build systems are deliberately absent because those
+ * capabilities belong to the AndroidIDE Pro core.
+ */
+enum class PluginCapability {
+  ACTION,
+  THEME,
+  ASSET_REPOSITORY,
+  TOOL,
+  INTEGRATION,
+  AI_PROVIDER
+}
+
 data class PluginDescriptor(
   val id: PluginId,
   val version: String,
   val apiVersion: Int,
   val displayName: String,
-  val capabilities: Set<String>,
+  val capabilities: Set<PluginCapability>,
   val permissions: Set<String>,
   val dependencies: Set<PluginId> = emptySet()
 )
@@ -28,11 +43,10 @@ interface IdePlugin {
 
 interface PluginContext {
   fun registerCapability(
-    capability: String,
+    capability: PluginCapability,
     provider: Any
   )
 }
-
 
 class PluginRegistry {
   private val plugins = linkedMapOf<String, IdePlugin>()

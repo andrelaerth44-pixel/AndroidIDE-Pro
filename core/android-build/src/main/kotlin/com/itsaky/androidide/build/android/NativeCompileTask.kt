@@ -110,6 +110,11 @@ class CompileNativeTask(
           "--sysroot", toolchain.sysroot.toString(),
           "-fPIC",
           "-O2",
+          "-std=" + if (source.extension == "c") {
+            module.cLanguageStandard
+          } else {
+            module.cppLanguageStandard
+          },
           "-c",
           source.toString(),
           "-o", object.toString()
@@ -131,6 +136,8 @@ class CompileNativeTask(
         "--sysroot", toolchain.sysroot.toString(),
         "-fuse-ld=lld",
         "-shared",
+        "-Wl,-z,max-page-size=16384",
+        "-Wl,-z,common-page-size=16384",
         "-Wl,-soname,libappnative.so"
       ) + objects.map(Path::toString) + listOf(
         "-o", output.toString()

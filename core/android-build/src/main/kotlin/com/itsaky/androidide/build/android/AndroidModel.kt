@@ -8,6 +8,7 @@ data class AndroidNativeToolchain(
   val compiler: Path,
   val cppCompiler: Path = compiler,
   val linker: Path,
+  val clangd: Path? = null,
   val sysroot: Path,
   val resourceDir: Path,
   val runtimeLibraryDir: Path,

@@ -69,3 +69,10 @@ Planned separation:
 NDK tools must be installed/downloaded independently and cached by version and ABI.
 
 Do not embed every NDK toolchain into the base APK.
+
+
+## Native C/C++ defaults
+
+The first native Android backend uses `arm64-v8a` and defaults to C17 and C++20.
+
+The linker is configured with 16 KiB maximum/common page-size flags for AArch64. This keeps the produced shared library aligned with current Android large-page requirements.

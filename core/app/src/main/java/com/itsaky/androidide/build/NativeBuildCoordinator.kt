@@ -108,7 +108,9 @@ class NativeBuildCoordinator(
       dependencyResourceDirs = module.libraryMap.values
         .filter { it.type == ANDROID_LIBRARY }
         .mapNotNull { it.androidLibraryData?.resFolder?.toPath() }
-        .filter { Files.exists(it) }
+        .filter { Files.exists(it) },
+      javaSourceLevel = module.compilerSettings.getJavaSourceVersion(),
+      javaBytecodeLevel = module.compilerSettings.getJavaBytecodeVersion()
     )
 
     val keystore = ensureDebugKeystore()

@@ -597,6 +597,32 @@ class PackageApkTask(
           }
         }
 
+        module.dependencyNativeLibDirs
+          .filter { Files.isDirectory(it) }
+          .sortedBy { it.toString() }
+          .forEach { dependencyJni ->
+            Files.walk(dependencyJni).use { stream ->
+              stream
+                .filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".so") }
+                .sorted { a, b -> a.toString().compareTo(b.toString()) }
+                .forEach { library ->
+                  val relative = dependencyJni.relativize(library)
+                    .toString()
+                    .replace('\\', '/')
+                  val name = if (relative.startsWith("lib/")) {
+                    relative
+                  } else {
+                    "lib/" + relative
+                  }
+                  if (!seen.add(name)) return@forEach
+
+                  output.putNextEntry(java.util.zip.ZipEntry(name))
+                  library.inputStream().use { it.copyTo(output) }
+                  output.closeEntry()
+                }
+            }
+          }
+
         val nativeDir = module.nativeLibDir.resolve("arm64-v8a")
         if (Files.isDirectory(nativeDir)) {
           Files.list(nativeDir).use { stream ->
@@ -622,6 +648,26 @@ class PackageApkTask(
             output.closeEntry()
           }
         }
+
+        module.dependencyAssetDirs
+          .filter { Files.isDirectory(it) }
+          .sortedBy { it.toString() }
+          .forEach { dependencyAssets ->
+            dependencyAssets.walk()
+              .filter { it.isRegularFile() }
+              .forEach { asset ->
+                val name = "assets/" + dependencyAssets
+                  .relativize(asset)
+                  .toString()
+                  .replace('\\', '/')
+
+                if (!seen.add(name)) return@forEach
+
+                output.putNextEntry(java.util.zip.ZipEntry(name))
+                asset.inputStream().use { it.copyTo(output) }
+                output.closeEntry()
+              }
+          }
 
         if (module.assetDir.exists()) {
           module.assetDir.walk()

@@ -81,7 +81,8 @@ class NativeBuildCoordinator(
     val sdk = AndroidSdk(
       root = sdkRoot,
       buildToolsVersion = buildToolsVersion,
-      compileSdk = compileSdk
+      compileSdk = compileSdk,
+      nativeToolchainRoot = appContext.filesDir.toPath().resolve("toolchains/llvm")
     )
 
     val nativeModule = com.itsaky.androidide.build.android.AndroidModule(

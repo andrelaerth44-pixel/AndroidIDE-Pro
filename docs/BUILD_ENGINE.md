@@ -26,6 +26,60 @@ A fronteira recomendada é:
 
 O app não deve precisar saber se uma tarefa foi executada por Gradle ou pelo engine próprio.
 
+## API inicial implementada
+
+O módulo `:build:api` agora contém a primeira fronteira independente do Gradle.
+
+### Modelos
+
+- `BuildProject`;
+- `BuildModule`;
+- `BuildRequest`;
+- `BuildContext`;
+- `TaskContext`.
+
+### Build System
+
+`BuildSystem` define:
+
+- `id`;
+- `supports(moduleType)`;
+- `createBuildGraph(...)`;
+- `tasks(project)`.
+
+### Tasks
+
+`BuildTask` declara:
+
+- `id`;
+- dependências;
+- inputs;
+- outputs;
+- execução.
+
+### Graph
+
+`BuildGraph` valida:
+
+- IDs vazios;
+- IDs duplicados;
+- dependências inexistentes;
+- ciclos;
+
+e fornece ordenação topológica determinística.
+
+### Diagnostics/Cancellation
+
+A API possui:
+
+- `BuildDiagnostic`;
+- `BuildDiagnosticSink`;
+- `CancellationToken`.
+
+### Executor
+
+`BuildExecutor` e `BuildResult` definem o contrato do executor, mas ainda não existe uma implementação concreta.
+
 ## Contratos iniciais
 
 ### BuildSystem

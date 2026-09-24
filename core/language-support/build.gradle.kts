@@ -8,3 +8,7 @@ kotlin {
 }
 
 description = "Built-in language support for AndroidIDE Pro"
+
+dependencies {
+  testImplementation(libs.tests.junit)
+}

@@ -3,6 +3,7 @@ package com.itsaky.androidide.toolchain
 import android.content.Context
 import com.itsaky.androidide.build.android.AndroidNativeToolchain
 import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Properties
@@ -129,18 +130,30 @@ class CoreToolchainManager(
     temp.deleteRecursively()
     temp.createDirectories()
 
-    packageContext.assets.open(ARCHIVE_FILE).use { input ->
-      val digest = MessageDigest.getInstance("SHA-256")
-      val archive = input.readBytes()
-      digest.update(archive)
-      val actualStamp = digest.digest()
-        .joinToString("") { "%02x".format(it) }
-      check(expectedStamp.isBlank() || actualStamp == expectedStamp) {
-        "Core LLVM Toolchain checksum mismatch"
+    val archiveFile = parent.resolve("." + root.fileName + ".zip")
+    try {
+      packageContext.assets.open(ARCHIVE_FILE).use { input ->
+        val digest = MessageDigest.getInstance("SHA-256")
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+
+        BufferedOutputStream(Files.newOutputStream(archiveFile)).use { output ->
+          while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            digest.update(buffer, 0, count)
+            output.write(buffer, 0, count)
+          }
+        }
+
+        val actualStamp = digest.digest()
+          .joinToString("") { "%02x".format(it) }
+        check(expectedStamp.isBlank() || actualStamp == expectedStamp) {
+          "Core LLVM Toolchain checksum mismatch"
+        }
       }
 
       ZipInputStream(
-        BufferedInputStream(archive.inputStream())
+        BufferedInputStream(Files.newInputStream(archiveFile))
       ).use { zip ->
         var entry: ZipEntry? = zip.nextEntry
         while (entry != null) {
@@ -162,8 +175,11 @@ class CoreToolchainManager(
       }
     }
 
-    root.deleteRecursively()
-    Files.move(temp, root)
+      root.deleteRecursively()
+      Files.move(temp, root)
+    } finally {
+      Files.deleteIfExists(archiveFile)
+    }
 
     root.resolve(".installed").also {
       it.parent?.createDirectories()

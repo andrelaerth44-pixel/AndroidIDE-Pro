@@ -33,11 +33,45 @@ class TaskFingerprintTest {
     assertFalse(TaskFingerprints.isUpToDate(task, cache))
   }
 
+  @Test
+  fun directoryOutputMissingChildInvalidates() {
+    val root = Files.createTempDirectory("androidide-output-inventory-test")
+    val input = root.resolve("input.txt")
+    val outputDir = root.resolve("out")
+    val cache = root.resolve("cache")
+
+    Files.writeString(input, "one")
+    Files.createDirectories(outputDir)
+    Files.writeString(outputDir.resolve("classes.dex"), "dex")
+
+    val task = DirectoryOutputTask(input, outputDir)
+
+    TaskFingerprints.write(task, cache)
+    assertTrue(TaskFingerprints.isUpToDate(task, cache))
+
+    Files.delete(outputDir.resolve("classes.dex"))
+
+    assertFalse(TaskFingerprints.isUpToDate(task, cache))
+  }
+
   private class TestTask(
     private val input: java.nio.file.Path,
     private val output: java.nio.file.Path
   ) : BuildTask {
     override val id: String = "testFingerprint"
+    override val inputs = listOf(input)
+    override val outputs = listOf(output)
+
+    override fun execute(context: BuildContext): TaskResult =
+      TaskResult(true)
+  }
+
+  private class DirectoryOutputTask(
+    private val input: java.nio.file.Path,
+    private val output: java.nio.file.Path
+  ) : BuildTask {
+    override val id: String = "directoryFingerprint"
+
     override val inputs = listOf(input)
     override val outputs = listOf(output)
 

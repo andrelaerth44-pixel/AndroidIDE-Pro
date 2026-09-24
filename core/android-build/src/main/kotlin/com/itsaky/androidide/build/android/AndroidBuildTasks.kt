@@ -52,7 +52,7 @@ class MergeResourcesTask(
   private val module: AndroidModule
 ) : BuildTask {
   override val id = "mergeResourcesDebug"
-  override val inputs = listOf(module.resourceDir)
+  override val inputs = listOf(module.resourceDir) + module.dependencyResourceDirs
   override val outputs = listOf(module.mergedResourcesDir)
 
   override fun execute(context: BuildContext): TaskResult = runCatching {

@@ -125,6 +125,7 @@ include(
   ":annotation:processors-ksp",
   ":core:actions",
   ":core:android-build",
+  ":core:asset-api",
   ":core:build-api",
   ":core:build-engine",
   ":core:app",

@@ -9,7 +9,8 @@ set -euo pipefail
 #
 # The resulting layout is consumed by :core:toolchain-llvm:
 #   out/
-#     jniLibs/arm64-v8a/{libclang.so,libld.lld.so,libLLVM.so,libclang-cpp.so,libc++_shared.so}
+#     assets/toolchain/bin/{clang,clang++,ld.lld}
+#     assets/toolchain/lib/{libLLVM.so,libclang-cpp.so,libc++_shared.so}
 #     assets/toolchain/{sysroot,lib-clang,native_app_glue}/...
 #
 # Expected build host: Linux x86_64.
@@ -222,81 +223,127 @@ copy_first() {
 
 package_toolchain() {
   rm -rf "$OUT"
-  mkdir -p "$OUT/jniLibs/arm64-v8a" "$OUT/assets/toolchain"
+  mkdir -p "$OUT/assets/toolchain/bin" "$OUT/assets/toolchain/lib"
 
   local clang="$ANDROID_BUILD/bin/clang"
   local lld="$ANDROID_BUILD/bin/lld"
   [[ -x "$clang" ]] || die "clang output is missing: $clang"
   [[ -x "$lld" ]] || die "lld output is missing: $lld"
 
-  cp "$clang" "$OUT/jniLibs/arm64-v8a/libclang.so"
-  cp "$clang" "$OUT/jniLibs/arm64-v8a/libclang++.so"
-  cp "$lld" "$OUT/jniLibs/arm64-v8a/libld.lld.so"
+  cp "$clang" "$OUT/assets/toolchain/bin/clang"
+  cp "$clang" "$OUT/assets/toolchain/bin/clang++"
+  cp "$lld" "$OUT/assets/toolchain/bin/ld.lld"
 
   local ndk_prebuilt
   ndk_prebuilt="$NDK_ROOT/toolchains/llvm/prebuilt/$(ls "$NDK_ROOT/toolchains/llvm/prebuilt" | head -1)"
 
   log "Collecting LLVM shared libraries"
-  copy_first "$OUT/jniLibs/arm64-v8a/libLLVM.so"     "$ANDROID_BUILD/lib/libLLVM.so"     "$ANDROID_BUILD/lib/libLLVM.so.*"
+  copy_first "$OUT/assets/toolchain/lib/libLLVM.so" \
+    "$ANDROID_BUILD/lib/libLLVM.so" \
+    "$ANDROID_BUILD/lib/libLLVM.so.*"
 
-  copy_first "$OUT/jniLibs/arm64-v8a/libclang-cpp.so"     "$ANDROID_BUILD/lib/libclang-cpp.so"     "$ANDROID_BUILD/lib/libclang-cpp.so.*"
+  copy_first "$OUT/assets/toolchain/lib/libclang-cpp.so" \
+    "$ANDROID_BUILD/lib/libclang-cpp.so" \
+    "$ANDROID_BUILD/lib/libclang-cpp.so.*"
 
-  copy_first "$OUT/jniLibs/arm64-v8a/libc++_shared.so"     "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -path '*/aarch64-v8a/*' -print -quit)"     "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -print -quit)"
+  copy_first "$OUT/assets/toolchain/lib/libc++_shared.so" \
+    "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -path '*/aarch64-v8a/*' -print -quit)" \
+    "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -print -quit)"
 
   log "Collecting clang resource directory"
   cp -R "$ANDROID_BUILD/lib/clang" "$OUT/assets/toolchain/lib-clang"
 
   local clang_version="18"
+
   log "Collecting compiler runtime"
   local builtins
-  builtins="$(find "$ndk_prebuilt/lib/clang" -name 'libclang_rt.builtins-aarch64-android.a' -print -quit)"
+  builtins="$(find "$ndk_prebuilt/lib/clang" \
+    -name 'libclang_rt.builtins-aarch64-android.a' \
+    -print -quit)"
   [[ -f "$builtins" ]] || die "AArch64 clang runtime builtins were not found"
-  mkdir -p "$OUT/assets/toolchain/lib-clang/$clang_version/lib/linux/aarch64"
-  cp "$builtins" "$OUT/assets/toolchain/lib-clang/$clang_version/lib/linux/aarch64/"
+
+  mkdir -p \
+    "$OUT/assets/toolchain/lib-clang/$clang_version/lib/linux/aarch64"
+
+  cp "$builtins" \
+    "$OUT/assets/toolchain/lib-clang/$clang_version/lib/linux/aarch64/"
 
   local unwind
-  unwind="$(find "$ndk_prebuilt/lib/clang" -name 'libunwind.a' -path '*/aarch64/*' -print -quit)"
+  unwind="$(find "$ndk_prebuilt/lib/clang" \
+    -name 'libunwind.a' \
+    -path '*/aarch64/*' \
+    -print -quit)"
+
   if [[ -n "$unwind" && -f "$unwind" ]]; then
-    cp "$unwind" "$OUT/assets/toolchain/lib-clang/$clang_version/lib/linux/aarch64/"
+    cp "$unwind" \
+      "$OUT/assets/toolchain/lib-clang/$clang_version/lib/linux/aarch64/"
   fi
 
   log "Collecting arm64 sysroot"
   local ndk_sysroot="$ndk_prebuilt/sysroot"
+
   mkdir -p "$OUT/assets/toolchain/sysroot/usr"
-  cp -R "$ndk_sysroot/usr/include" "$OUT/assets/toolchain/sysroot/usr/include"
+  cp -R \
+    "$ndk_sysroot/usr/include" \
+    "$OUT/assets/toolchain/sysroot/usr/include"
 
   local target_lib_dir="$OUT/assets/toolchain/sysroot/usr/lib/aarch64-linux-android"
+
   mkdir -p "$target_lib_dir/$ANDROID_API"
+
   if [[ -d "$ndk_sysroot/usr/lib/aarch64-linux-android/$ANDROID_API" ]]; then
-    cp -R "$ndk_sysroot/usr/lib/aarch64-linux-android/$ANDROID_API/." "$target_lib_dir/$ANDROID_API/"
+    cp -R \
+      "$ndk_sysroot/usr/lib/aarch64-linux-android/$ANDROID_API/." \
+      "$target_lib_dir/$ANDROID_API/"
   fi
 
   if [[ -d "$ndk_sysroot/usr/lib/aarch64-linux-android" ]]; then
-    find "$ndk_sysroot/usr/lib/aarch64-linux-android" -maxdepth 1 -type f       \( -name '*.a' -o -name '*.so' \)       -exec cp {} "$target_lib_dir/" \;
+    find "$ndk_sysroot/usr/lib/aarch64-linux-android" \
+      -maxdepth 1 \
+      -type f \
+      \( -name '*.a' -o -name '*.so' \) \
+      -exec cp {} "$target_lib_dir/" \;
   fi
 
   local glue="$NDK_ROOT/sources/android/native_app_glue"
+
   if [[ -d "$glue" ]]; then
     mkdir -p "$OUT/assets/toolchain/native_app_glue"
-    cp "$glue/android_native_app_glue.c"        "$glue/android_native_app_glue.h"        "$OUT/assets/toolchain/native_app_glue/"
+    cp \
+      "$glue/android_native_app_glue.c" \
+      "$glue/android_native_app_glue.h" \
+      "$OUT/assets/toolchain/native_app_glue/"
   fi
 
-  log "Stripping native toolchain binaries"
+  log "Stripping LLVM shared libraries"
+
   local strip="$ndk_prebuilt/bin/llvm-strip"
+
   if [[ -x "$strip" ]]; then
-    for lib in "$OUT"/jniLibs/arm64-v8a/*.so; do
+    for lib in "$OUT"/assets/toolchain/lib/*.so; do
       "$strip" --strip-unneeded "$lib" || true
     done
   fi
 
-  chmod 0755 "$OUT/jniLibs/arm64-v8a/libclang.so"
-  chmod 0755 "$OUT/jniLibs/arm64-v8a/libclang++.so"
-  chmod 0755 "$OUT/jniLibs/arm64-v8a/libld.lld.so"
+  chmod 0755 \
+    "$OUT/assets/toolchain/bin/clang" \
+    "$OUT/assets/toolchain/bin/clang++" \
+    "$OUT/assets/toolchain/bin/ld.lld"
 
   log "LLVM toolchain pack created"
-  du -sh "$OUT/jniLibs" "$OUT/assets"
-  find "$OUT/jniLibs/arm64-v8a" -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
+  du -sh "$OUT/assets"
+
+  find "$OUT/assets/toolchain/bin" \
+    -maxdepth 1 \
+    -type f \
+    -printf '%f %s bytes\n' | sort
+
+  find "$OUT/assets/toolchain/lib" \
+    -maxdepth 1 \
+    -type f \
+    -printf '%f %s bytes\n' | sort
 }
+
 
 case "${1:-all}" in
   deps)

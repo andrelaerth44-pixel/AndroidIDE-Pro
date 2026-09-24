@@ -39,7 +39,7 @@ Kotlin usa K2JVMCompiler embutido em processo, produzindo classes.jar para D8.
 
 C/C++ usam a toolchain LLVM executável no Android, compilando C17/C++20 e ligando libappnative.so para arm64-v8a. O link usa flags compatíveis com páginas de 16 KiB.
 
-Dependências JAR entram no classpath do javac/kotlinc e no input do D8. Recursos de Android libraries são incorporados antes da compilação AAPT2. Os diretórios de recursos também fazem parte dos fingerprints.
+Dependências JAR entram no classpath do javac/kotlinc e no input do D8. Recursos de Android libraries são compilados separadamente por AAPT2 e entram no mesmo link final; isso evita sobrescrever arquivos `values/*.xml` inteiros durante o merge. Os diretórios de recursos também fazem parte dos fingerprints.
 
 ## Build Router
 

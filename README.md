@@ -2,7 +2,7 @@
 
 > Continuação e evolução do AndroidIDE original para uma IDE de desenvolvimento Android on-device moderna, modular, extensível e tecnicamente rastreável.
 
-**Status atual:** auditoria estrutural inicial concluída; primeira fundação funcional do Build System e o Gradle Adapter de planejamento adicionados.  
+**Status atual:** auditoria estrutural concluída; Build System funcional inicial e primeiro pipeline nativo de APK integrados estruturalmente.  
 **Branch de desenvolvimento:** `work/androidide-pro-dev-foundation`  
 **Base:** `dev` / `77ee1a315f34b9ed74a9da94f94a0dc276f72ff6`  
 **Data:** 2026-09-24
@@ -73,7 +73,9 @@ Templates, UI Designer, tree view, preferences e recursos compartilhados.
 ### Build
 `build:api` — contratos independentes do futuro Build Engine.
 
-`build:gradle-adapter` — ponte de planejamento entre o modelo Tooling API existente e o BuildSystem SPI.
+`build:gradle-adapter` — ponte de compatibilidade entre o modelo Tooling API existente e o BuildSystem SPI.
+
+`build:local` — engine nativo incremental em construção; já cobre o primeiro DAG controlado até APK assinado.
 
 ### Testing
 Unit, Android, LSP, Gradle Tooling e benchmarks.
@@ -191,14 +193,13 @@ A fronteira será:
 ```
 Application Services
         |
-   BuildSystem SPI
-     /          \
-Gradle       Native/Local
-Adapter       Engine
-                  |
-              Task Graph
-                  |
-       Toolchain / Cache
+   BuildSystem Router
+     /           \
+Native/Local   Gradle Adapter
+     |
+  Task Graph
+     |
+ Toolchains / Cache
 ```
 
 A primeira camada implementada em `build:api` fornece:
@@ -213,14 +214,23 @@ A primeira camada implementada em `build:api` fornece:
 - `CancellationToken`;
 - `BuildDiagnosticSink`.
 
+Já existem:
+
+- bridge `GradleBuildService` -> Gradle Adapter;
+- seleção native-first por capability;
+- engine local com DAG Android controlado até APK assinado;
+- JDT/ecj para Java;
+- AAPT2, D8, packaging e assinatura como tasks independentes.
+
 Ainda faltam:
 
-- bridge de execução real para GradleBuildService;
 - fingerprints;
-- cache;
-- dependency resolver;
-- Android pipeline;
-- native pipeline.
+- cache persistente;
+- dependency resolver AAR/JAR;
+- Kotlin/KSP/Compose;
+- manifest/resource merger completo;
+- NDK;
+- validação de APK real no dispositivo/CI.
 
 O Gradle atual será mantido somente como backend de compatibilidade até haver cobertura equivalente. Ele não é o engine principal do AndroidIDE Pro. O caminho normal deverá ser leve, incremental e próprio. Quando Gradle for inevitável, será executado isoladamente e sob política rígida de recursos; o GradleResourcePolicy atual limita heap, workers, paralelismo e residência do daemon.
 
@@ -423,7 +433,11 @@ Build fixtures serão usados para validar:
 - [x] bridge de execução protegido por executor injetável;
 - [x] política de recursos Gradle criada para compatibilidade móvel;
 - [x] testes do `BuildGraph` para ordenação, dependência ausente e ciclo;
-- [x] checagem estática do `BuildGraph` simplificada para reduzir risco de inferência de referências Kotlin.
+- [x] checagem estática do `BuildGraph` simplificada para reduzir risco de inferência de referências Kotlin;
+- [x] `clean` executado pelo engine local sem Gradle;
+- [x] DAG nativo controlado `mergeResources -> AAPT2 -> Java -> D8 -> package -> sign -> assemble`;
+- [x] `assemble*` tenta o backend nativo antes do Tooling API quando o Workspace está dentro da cobertura atual;
+- [x] Workspace/AndroidModule usado como fonte de variant, fontes, recursos, classpath e android.jar.
 
 ### Em andamento
 
@@ -436,7 +450,7 @@ Build fixtures serão usados para validar:
 
 ### Ainda não iniciado
 
-- [ ] Build Engine funcional;
+- [ ] Build Engine completo/incremental;
 - [ ] NDK;
 - [ ] Icon Center;
 - [ ] Compose migration;
@@ -445,7 +459,7 @@ Build fixtures serão usados para validar:
 
 **Correção registrada:** o `settings.gradle.kts` do branch agora registra explicitamente `:build:api` e `:build:gradle-adapter`, e os arquivos novos do adapter carregam cabeçalho GPLv3.
 
-**Próxima ação:** adicionar integração coberta por testes para o `createBuildSystemAdapter()` e somente então migrar chamadas de build selecionadas para o novo pipeline.
+**Próxima ação:** validar `assembleDebug` real em um Hello World sem dependências externas e depois implementar fingerprints/cache e resolução AAR/JAR.
 
 ---
 

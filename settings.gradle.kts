@@ -122,6 +122,7 @@ rootProject.name = "AndroidIDE"
 include(
   ":build:api",
   ":build:gradle-adapter",
+  ":build:local",
   ":annotation:annotations",
   ":annotation:processors",
   ":annotation:processors-ksp",

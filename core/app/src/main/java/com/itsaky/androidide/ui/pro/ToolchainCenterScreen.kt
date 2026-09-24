@@ -33,7 +33,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.itsaky.androidide.R
 import com.itsaky.androidide.toolchain.CoreKotlinToolchainManager
+import com.itsaky.androidide.toolchain.CoreNativeToolchainSelfTest
 import com.itsaky.androidide.toolchain.CoreToolchainManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -48,6 +52,8 @@ fun ToolchainCenterScreen(
   var llvmReady by remember { mutableStateOf(llvmManager.isInstalled()) }
   var kotlinReady by remember { mutableStateOf(kotlinManager.isInstalled()) }
   var importing by remember { mutableStateOf(false) }
+  var selfTestRunning by remember { mutableStateOf(false) }
+  var selfTestMessage by remember { mutableStateOf<String?>(null) }
 
   fun installApk(uri: android.net.Uri, fileName: String) {
     importing = true
@@ -160,6 +166,49 @@ fun ToolchainCenterScreen(
 
         if (importing) {
           LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+
+        Button(
+          onClick = {
+            if (!llvmReady) {
+              selfTestMessage = "Instale o Core LLVM antes do self-test."
+              return@Button
+            }
+
+            selfTestRunning = true
+            selfTestMessage = null
+
+            kotlinx.coroutines.GlobalScope.launch {
+              val result = withContext(Dispatchers.IO) {
+                val toolchain = llvmManager.resolveLlvm()
+                if (toolchain == null) {
+                  com.itsaky.androidide.toolchain.NativeToolchainSelfTestResult(
+                    false,
+                    "Core LLVM não pôde ser resolvido."
+                  )
+                } else {
+                  CoreNativeToolchainSelfTest().run(toolchain)
+                }
+              }
+
+              withContext(Dispatchers.Main) {
+                selfTestRunning = false
+                selfTestMessage = result.message
+              }
+            }
+          },
+          enabled = llvmReady && !selfTestRunning,
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Text(if (selfTestRunning) "Testando C + C++…" else "Testar C/C++")
+        }
+
+        selfTestMessage?.let { message ->
+          Text(
+            text = message,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+          )
         }
 
         Row(

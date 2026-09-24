@@ -243,8 +243,8 @@ class CompileJavaTask(
         fileManager,
         diagnostics,
         listOf(
-          "-source", "17",
-          "-target", "17",
+          "-source", "11",
+          "-target", "11",
           "-proc:none",
           "-g"
         ),
@@ -307,7 +307,7 @@ class KotlinCompileTask(
       ).joinToString(File.pathSeparator)
       includeRuntime = true
       noReflect = true
-      jvmTarget = "17"
+      jvmTarget = "11"
       moduleName = module.name.replace(Regex("[^A-Za-z0-9_]"), "_")
       skipRuntimeVersionCheck = true
     }

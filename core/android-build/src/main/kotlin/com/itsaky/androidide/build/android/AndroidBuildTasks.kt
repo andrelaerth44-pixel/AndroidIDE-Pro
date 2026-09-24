@@ -58,6 +58,11 @@ class MergeResourcesTask(
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.mergedResourcesDir.deleteRecursively()
     module.mergedResourcesDir.createDirectories()
+
+    module.dependencyResourceDirs.forEach { directory ->
+      copyTree(directory, module.mergedResourcesDir)
+    }
+
     copyTree(module.resourceDir, module.mergedResourcesDir)
     TaskResult(true)
   }.getOrElse { TaskResult(false, it.message ?: "mergeResources failed") }

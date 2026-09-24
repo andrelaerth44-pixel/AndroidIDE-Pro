@@ -39,6 +39,12 @@ class CoreToolchainManager(
     val llvmMajor = properties.getProperty("llvmMajor")?.trim().orEmpty()
     if (version.isBlank() || llvmMajor.isBlank()) return null
 
+    val appInfo = runCatching {
+      context.packageManager.getApplicationInfo(LLVM_PACKAGE, 0)
+    }.getOrNull() ?: return null
+
+    val nativeLibraryDir = Path.of(appInfo.nativeLibraryDir)
+
     val root = context.filesDir.toPath()
       .resolve("toolchains")
       .resolve("llvm")
@@ -63,22 +69,35 @@ class CoreToolchainManager(
       if (!installed) return null
     }
 
-    val appInfo = runCatching {
-      context.packageManager.getApplicationInfo(LLVM_PACKAGE, 0)
-    }.getOrNull() ?: return null
-
-    val nativeLibraryDir = Path.of(appInfo.nativeLibraryDir)
-    val compiler = nativeLibraryDir.resolve("libclang.so")
-    val cppCompiler = nativeLibraryDir.resolve("libclang++.so")
-    val linker = nativeLibraryDir.resolve("libld.lld.so")
+    val compilerNative = nativeLibraryDir.resolve("libclang.so")
+    val cppCompilerNative = nativeLibraryDir.resolve("libclang++.so")
+    val linkerNative = nativeLibraryDir.resolve("libld.lld.so")
     val runtime = nativeLibraryDir.resolve("libc++_shared.so")
+
+    if (!compilerNative.isRegularFile() ||
+      !cppCompilerNative.isRegularFile() ||
+      !linkerNative.isRegularFile() ||
+      !runtime.isRegularFile()
+    ) {
+      return null
+    }
+
+    ensureDriverLinks(
+      root = root,
+      compiler = compilerNative,
+      cppCompiler = cppCompilerNative,
+      linker = linkerNative
+    )
+
+    val compiler = root.resolve("bin/clang")
+    val cppCompiler = root.resolve("bin/clang++")
+    val linker = root.resolve("bin/ld.lld")
     val sysroot = root.resolve("sysroot")
     val resourceDir = root.resolve("lib-clang").resolve(llvmMajor)
 
     if (!compiler.isRegularFile() ||
       !cppCompiler.isRegularFile() ||
       !linker.isRegularFile() ||
-      !runtime.isRegularFile() ||
       !Files.isDirectory(sysroot) ||
       !Files.isDirectory(resourceDir)
     ) {
@@ -192,6 +211,45 @@ class CoreToolchainManager(
 
     cleanupOldVersions(root.parent, root.fileName.toString())
   }
+
+  private fun ensureDriverLinks(
+    root: Path,
+    compiler: Path,
+    cppCompiler: Path,
+    linker: Path
+  ) {
+    val bin = root.resolve("bin")
+    bin.createDirectories()
+
+    fun link(name: String, target: Path) {
+      val link = bin.resolve(name)
+      val currentTarget = runCatching { Files.readSymbolicLink(link) }.getOrNull()
+
+      if (currentTarget != null && linkTargetMatches(currentTarget, target)) {
+        return
+      }
+
+      Files.deleteIfExists(link)
+      runCatching {
+        Files.createSymbolicLink(
+          link,
+          target
+        )
+      }.getOrElse {
+        throw IllegalStateException(
+          "Unable to create LLVM driver link " + link + " -> " + target,
+          it
+        )
+      }
+    }
+
+    link("clang", compiler)
+    link("clang++", cppCompiler)
+    link("ld.lld", linker)
+  }
+
+  private fun linkTargetMatches(current: Path, expected: Path): Boolean =
+    current.toAbsolutePath().normalize() == expected.toAbsolutePath().normalize()
 
   private fun cleanupOldVersions(parent: Path, keepVersion: String) {
     if (!Files.isDirectory(parent)) return

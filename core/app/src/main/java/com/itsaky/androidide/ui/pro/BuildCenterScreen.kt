@@ -2,6 +2,8 @@ package com.itsaky.androidide.ui.pro
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,8 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,6 +73,12 @@ fun BuildCenterScreen(
   val installLauncher = rememberLauncherForActivityResult(
     ActivityResultContracts.StartActivityForResult()
   ) {
+    val appId = result?.applicationId
+    installed = appId != null &&
+      context.packageManager.getLaunchIntentForPackage(appId) != null
+  }
+
+  LaunchedEffect(result?.applicationId) {
     val appId = result?.applicationId
     installed = appId != null &&
       context.packageManager.getLaunchIntentForPackage(appId) != null
@@ -180,9 +186,7 @@ fun BuildCenterScreen(
         val current = result
 
         if (current == null) {
-          LinearProgressIndicator(
-            modifier = Modifier.fillMaxWidth()
-          )
+          LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
 
           Text(
             text = stringResource(R.string.build_center_running),
@@ -222,8 +226,7 @@ fun BuildCenterScreen(
 
               current.outputApk?.let {
                 Text(
-                  text = stringResource(R.string.build_center_output) +
-                    ": " + it,
+                  text = stringResource(R.string.build_center_output) + ": " + it,
                   style = MaterialTheme.typography.bodySmall,
                   fontFamily = FontFamily.Monospace
                 )
@@ -236,35 +239,6 @@ fun BuildCenterScreen(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-              Button(
-                onClick = {
-                  val uri = FileProvider.getUriForFile(
-                    context,
-                    context.packageName + ".providers.fileprovider",
-                    apk.toFile()
-                  )
-
-                  context.startActivity(
-                    Intent(Intent.ACTION_VIEW).apply {
-                      setDataAndType(
-                        uri,
-                        "application/vnd.android.package-archive"
-                      )
-                      addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                  )
-                },
-                modifier = Modifier.weight(1f)
-              ) {
-                Text(stringResource(R.string.build_center_install))
-              }
-
-              Button(
-                onClick = onClose,
-                modifier = Modifier.weight(1f)
-              ) {
-                Text(stringResource(R.string.build_center_close))
-              }
               Button(
                 onClick = {
                   val uri = FileProvider.getUriForFile(
@@ -306,18 +280,18 @@ fun BuildCenterScreen(
                     context.startActivity(launchIntent)
                   }
                 },
-                modifier = Modifier.weight(1f),
-                enabled = installed
+                enabled = installed,
+                modifier = Modifier.weight(1f)
               ) {
                 Text("Run")
               }
+            }
 
-              Button(
-                onClick = onClose,
-                modifier = Modifier.weight(1f)
-              ) {
-                Text(stringResource(R.string.build_center_close))
-              }
+            Button(
+              onClick = onClose,
+              modifier = Modifier.fillMaxWidth()
+            ) {
+              Text(stringResource(R.string.build_center_close))
             }
           } ?: run {
             Button(

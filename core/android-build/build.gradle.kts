@@ -15,4 +15,15 @@ dependencies {
   implementation(libs.composite.javac)
 }
 
+val kotlinToolchain by configurations.creating
+
+dependencies {
+  kotlinToolchain(libs.kotlin.compiler.embeddable)
+}
+
+tasks.register<Sync>("packageKotlinToolchain") {
+  from(kotlinToolchain)
+  into(layout.buildDirectory.dir("toolchains/kotlin"))
+}
+
 description = "Native Android APK build pipeline"

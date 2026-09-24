@@ -138,10 +138,29 @@ class Aapt2LinkTask(
     module.generatedRDir.deleteRecursively()
     module.generatedRDir.createDirectories()
 
-    val compiledFiles = module.compiledResourcesDir
-      .walk()
-      .filter { it.isRegularFile() && it.extension == "flat" }
-      .toList()
+    val compiledFiles = buildList {
+      val dependencyDirs = Files.list(module.compiledResourcesDir).use { stream ->
+        stream
+          .filter { Files.isDirectory(it) }
+          .filter { it.fileName.toString().startsWith("dependency-") }
+          .sorted { a, b -> a.fileName.toString().compareTo(b.fileName.toString()) }
+          .toList()
+      }
+
+      dependencyDirs.forEach { directory ->
+        directory.walk()
+          .filter { it.isRegularFile() && it.extension == "flat" }
+          .sortedBy { it.toString() }
+          .forEach(::add)
+      }
+
+      module.compiledResourcesDir
+        .walk()
+        .filter { it.parent == module.compiledResourcesDir }
+        .filter { it.isRegularFile() && it.extension == "flat" }
+        .sortedBy { it.toString() }
+        .forEach(::add)
+    }
 
     ProcessTools.run(
       module.sdk.aapt2,

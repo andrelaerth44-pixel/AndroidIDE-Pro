@@ -37,7 +37,7 @@
     android:name=".app.IDEApplication"
     android:preserveLegacyExternalStorage="true"
     android:requestLegacyExternalStorage="true"
-    android:resizeableActivity="false"
+    android:resizeableActivity="true"
     android:supportsRtl="true"
     android:theme="@style/Theme.AndroidIDE"
     tools:ignore="DiscouragedApi,MediaCapabilities,UnusedAttribute">
@@ -77,6 +77,13 @@
     <activity
       android:name=".activities.TerminalActivity"
       android:windowSoftInputMode="adjustResize" />
+
+    <activity
+      android:exported="false"
+      android:name=".activities.build.BuildCenterActivity" />
+    <activity
+      android:exported="false"
+      android:name=".activities.toolchain.ToolchainCenterActivity" />
 
     <provider
       android:authorities="com.itsaky.androidide.documents"

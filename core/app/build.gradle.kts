@@ -54,6 +54,14 @@ android {
     generateLocaleConfig = true
   }
 
+  buildFeatures {
+    compose = true
+  }
+
+  composeOptions {
+    kotlinCompilerExtensionVersion = "1.5.14"
+  }
+
   buildTypes {
     release {
       isShrinkResources = true
@@ -91,6 +99,14 @@ dependencies {
   kapt(projects.annotation.processors)
 
   implementation(libs.common.editor)
+
+  // Compose Pro UI
+  implementation(libs.compose.runtime)
+  implementation(libs.compose.ui)
+  implementation(libs.compose.ui.tooling.preview)
+  implementation(libs.compose.foundation)
+  implementation(libs.compose.material3)
+  implementation(libs.compose.material.icons)
   implementation(libs.common.utilcode)
   implementation(libs.common.glide)
   implementation(libs.common.jsoup)
@@ -140,6 +156,8 @@ dependencies {
 
   // Local projects here
   implementation(projects.core.actions)
+  implementation(projects.core.androidBuild)
+  implementation(projects.core.toolchainApi)
   implementation(projects.core.common)
   implementation(projects.core.indexingApi)
   implementation(projects.core.indexingCore)

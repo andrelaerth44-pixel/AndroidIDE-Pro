@@ -1,0 +1,115 @@
+name: Build Core LLVM Toolchain
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/native-build-engine-v1
+    tags:
+      - "llvm-*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: llvm-toolchain-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_JAVA_VERSION: "17"
+  BUILD_JAVA_DIST: "temurin"
+  LLVM_VERSION: "18.1.8"
+  NDK_VERSION: "r27c"
+  ANDROID_API: "26"
+
+jobs:
+  build_android_arm64:
+    name: Android arm64 LLVM core pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.BUILD_JAVA_VERSION }}
+          distribution: ${{ env.BUILD_JAVA_DIST }}
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake unzip curl perl
+
+      - name: Restore LLVM build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            tools/llvm-toolchain/build/downloads
+            tools/llvm-toolchain/build/host-tools
+            tools/llvm-toolchain/build/android-tools
+          key: ${{ runner.os }}-llvm-18.1.8-r27c-${{ hashFiles('tools/llvm-toolchain/build-android-llvm.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-llvm-18.1.8-r27c-
+
+      - name: Build Android-hosted LLVM
+        env:
+          JOBS: "4"
+          LLVM_VERSION: ${{ env.LLVM_VERSION }}
+          NDK_VERSION: ${{ env.NDK_VERSION }}
+          ANDROID_API: ${{ env.ANDROID_API }}
+          WORK: ${{ github.workspace }}/tools/llvm-toolchain/build
+          OUT: ${{ github.workspace }}/tools/llvm-toolchain/build/out
+        run: |
+          chmod +x tools/llvm-toolchain/build-android-llvm.sh
+          tools/llvm-toolchain/build-android-llvm.sh all
+
+      - name: Assemble first-party core toolchain APK
+        env:
+          LLVM_VERSION: ${{ env.LLVM_VERSION }}
+          NDK_VERSION: ${{ env.NDK_VERSION }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :core:toolchain-llvm:assembleRelease             -Pllvm.toolchain.dir="$GITHUB_WORKSPACE/tools/llvm-toolchain/build/out"             -Pllvm.toolchain.version="${LLVM_VERSION}-${NDK_VERSION}"             -Pllvm.major="${LLVM_VERSION%%.*}"             --stacktrace
+
+      - name: Validate toolchain package layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          apks=(core/toolchain-llvm/build/outputs/apk/release/*.apk)
+          test "${#apks[@]}" -eq 1
+
+          apk="${apks[0]}"
+          unzip -l "$apk" | grep -E 'assets/toolchain.zip|assets/toolchain.properties'
+
+          mkdir -p build
+          unzip -p "$apk" assets/toolchain.zip > build/toolchain.zip
+
+          unzip -l build/toolchain.zip |
+            grep -E 'toolchain/bin/(clang|clang\+\+|ld\.lld|clangd)$'
+
+          mkdir -p build/llvm-toolchain-size
+          stat -c '%n %s bytes (%h)' "$apk" |
+            tee build/llvm-toolchain-size/apk.txt
+          sha256sum "$apk" |
+            tee build/llvm-toolchain-size/apk.sha256
+
+      - name: Upload Core LLVM Toolchain APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidide-pro-core-llvm-toolchain-arm64
+          path: core/toolchain-llvm/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Upload Core LLVM Toolchain size report
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidide-pro-core-llvm-toolchain-arm64-size
+          path: build/llvm-toolchain-size/
+          if-no-files-found: error

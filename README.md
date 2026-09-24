@@ -4,7 +4,7 @@
 
 <h2 align="center"><b>AndroidIDE</b></h2>
 <p align="center">
-  An IDE to develop real, Gradle-based Android applications on Android devices.
+  An IDE to develop real Android applications directly on Android devices.
 <p><br>
 
 <p align="center">
@@ -33,9 +33,369 @@
 > 
 > THIS PROJECT IS NOT MAINTAINED ANYMORE.
 
+---
+
+# AndroidIDE Pro
+
+> Transformar o AndroidIDE em um IDE Android completo, moderno e on-device: criar, editar, compilar, assinar, instalar e executar aplicativos diretamente no celular ou tablet.
+
+O AndroidIDE Pro não é apenas uma atualização visual. A evolução acontece em conjunto: IDE, editor, workspace, sistema de projetos, build system, toolchain, UX e suporte a linguagens.
+
+## Visão
+
+~~~text
+AndroidIDE Pro
+├── UI / UX
+│   └── Kotlin + Jetpack Compose + Material 3
+├── IDE Services
+│   ├── Workspace
+│   ├── Indexing
+│   ├── LSP
+│   ├── Diagnostics
+│   ├── Search
+│   └── Refactoring
+├── Build Router
+│   └── Native Build (única rota)
+└── Native Build Engine
+    ├── Resources
+    ├── AAPT2
+    ├── Java / Kotlin
+    ├── C / C++
+    ├── JNI / NativeActivity
+    ├── Core Toolchain Manager
+    ├── D8
+    ├── APK
+    ├── Align
+    └── Sign
+~~~
+
+## Princípios
+
+### On-device first
+
+O Android é a plataforma de desenvolvimento. O fluxo desejado é:
+
+~~~text
+criar projeto → editar → compilar no aparelho → gerar APK → assinar → instalar → executar
+~~~
+
+### Native build only
+
+Todo build do produto passa pelo build engine nativo. Linguagens suportadas pertencem ao núcleo; quando uma capacidade nativa ainda não está implementada, o build retorna diagnóstico explícito em vez de trocar para Gradle.
+
+~~~text
+NativeBuildRouter
+└── NativeAndroidBuildSystem  ← rota única
+~~~
+
+### Leveza acima de espetáculo
+
+Preferir hierarquia visual, espaçamento consistente, Material 3, dynamic color, transparência moderada, animações funcionais e excelente densidade de informação.
+
+Evitar blur pesado permanente, animações excessivas, sombras exageradas, gradientes decorativos, excesso de cards e efeitos que desperdicem RAM, CPU ou bateria.
+
+### Kotlin-first
+
+Todo código novo do AndroidIDE Pro deve priorizar Kotlin. Java continua sendo linguagem de projeto e pode permanecer em áreas onde a compatibilidade ou integração justificar.
+
+### Compose para a nova UI
+
+A nova superfície visual será construída progressivamente com Kotlin, Jetpack Compose e Material 3. A migração será incremental; não é necessário reescrever o IDE inteiro de uma vez.
+
+## UI Pro
+
+A primeira superfície Compose já existe em:
+
+~~~text
+core/app/src/main/java/com/itsaky/androidide/ui/pro/
+├── AndroidIDEProTheme.kt
+└── ProHomeScreen.kt
+~~~
+
+Ela já usa Material 3, tema claro/escuro, dynamic color em Android compatível, superfícies translúcidas moderadas e os fluxos existentes de projeto, terminal, Git e preferências.
+
+A próxima evolução visual será Workspace, Project Explorer, Editor, Build panel, Problems, Terminal, Settings, SDK Manager e Git.
+
+## Native Build Engine
+
+A fundação nativa está em:
+
+~~~text
+core/build-api/
+core/build-engine/
+core/android-build/
+core/language-support/
+core/toolchain-api/
+~~~
+
+O primeiro grafo de compilação é:
+
+~~~text
+mergeResourcesDebug
+        ↓
+aapt2CompileDebug
+        ↓
+aapt2LinkDebug
+        ↓
+generateBuildConfigDebug
+        ↓
+compileJavaDebug
+        ↓
+compileKotlinDebug
+        ↓
+compileNativeDebug
+        ↓
+dexBuilderDebug
+        ↓
+packageApkDebug
+        ↓
+zipalignDebug
+        ↓
+signDebug
+~~~
+
+O caminho atual já gera APK nativo sem Gradle para o usuário final. O trabalho restante é ampliar compatibilidade Android e validar em aparelho físico.
+
+## Task Graph
+
+Build não será um método monolítico. Cada operação deve declarar entradas, saídas e dependências explícitas, permitindo up-to-date checks, cache incremental, cancelamento, logs por tarefa e paralelismo futuro.
+
+## Workspace e Project Model
+
+O projeto externo será convertido para um modelo interno:
+
+~~~text
+Arquivos de projeto
+      ↓
+Parser / importador
+      ↓
+ProjectModel
+      ↓
+AndroidModule
+      ↓
+Native Build Graph
+~~~
+
+A meta não é copiar o Gradle. A meta é interpretar as partes relevantes do projeto e construir um modelo declarativo que o IDE controla.
+
+## Editor Pro
+
+O editor deve continuar leve e poderoso no telefone e no tablet. A evolução inclui tabs eficientes, code folding, autocomplete, diagnostics inline, quick fixes, goto definition, symbol search, multi-cursor, busca avançada, command palette, restauração de sessão e otimização para toque e teclado.
+
+## Linguagens
+
+Prioridade inicial:
+
+~~~text
+Java
+Kotlin
+C
+C++
+XML
+JSON
+Markdown
+~~~
+
+Expansão prevista:
+
+~~~text
+C
+C++
+JavaScript / TypeScript
+Python
+Rust
+Shell
+YAML
+~~~
+
+Suporte completo significa editor + language services + build/run, e não apenas syntax highlighting.
+
+## Android moderno
+
+Evoluir gradualmente para Android SDK moderno, Java moderno, Kotlin, AndroidX, Jetpack, Compose, Material 3, AAR/JAR, resource processing, desugaring, multidex, R8/ProGuard, NDK, CMake e JNI.
+
+## Diagnósticos
+
+Saídas do javac, kotlinc, AAPT2, D8, R8 e toolchains nativos devem virar diagnósticos estruturados com arquivo, linha, coluna, severidade, mensagem, origem e quick fix quando possível.
+
+## Install / Run
+
+O build deve terminar com uma ação clara:
+
+~~~text
+Build → Verify → Install → Launch
+~~~
+
+## Core Toolchains
+
+Linguagens são parte do núcleo. Compiladores pesados são distribuídos como Core Toolchain Packs oficiais e administrados pelo próprio IDE.
+
+~~~text
+core/toolchain-kotlin/
+core/toolchain-llvm/
+       ↓
+Core Toolchain Manager
+       ↓
+filesDir/toolchains/
+~~~
+
+O Core Kotlin Toolchain fornece K2JVMCompiler sem colocar o compilador no APK-base.
+O Core LLVM Toolchain fornece clang/clang++/lld executáveis para Android arm64 e o runtime necessário para C17/C++20.
+Esses packs não são plugins de linguagem e não criam toggles.
+
+## Performance
+
+Toda feature nova deve considerar RAM, CPU, I/O, bateria, tempo de inicialização, tamanho do APK, cache e processos externos. O objetivo é executar somente o trabalho necessário.
+
+## Tablet
+
+O tablet será tratado como uma experiência própria, aproveitando espaço para Explorer, Editor e Problems/Build simultaneamente, enquanto o telefone usa painéis e bottom sheets quando necessário.
+
+## Current implementation snapshot
+
+~~~text
+Editor toolbar
+    ↓
+NativeBuildAction
+    ↓
+NativeBuildCoordinator
+    ↓
+Existing IWorkspace / AndroidModule
+    ↓
+NativeAndroidBuildSystem
+    ↓
+AAPT2 → JavacTool → Core Kotlin Toolchain → Core LLVM Toolchain → D8 → package → zipalign → apksigner
+~~~
+
+Esta ponte foi projetada para reutilizar o modelo de projeto existente do AndroidIDE em vez de criar um segundo Workspace paralelo.
+
+## Roadmap
+
+### Fase 1 — Fundação
+
+- [x] Build API inicial
+- [x] TaskGraph inicial
+- [x] AndroidModule inicial
+- [x] AAPT2 compile/link
+- [x] BuildConfig generation
+- [x] Java compilation path
+- [x] D8 invocation path
+- [x] APK packaging
+- [x] zipalign
+- [x] debug signing
+- [x] primeira superfície Compose
+- [x] adapter Workspace → Native Build Engine
+- [x] Native-only BuildRouter
+- [x] ação Build nativa no editor
+- [x] Build Center com progresso e logs estruturados
+- [ ] gerar, instalar e executar Hello World no dispositivo
+- [x] Install action no Build Center
+- [x] Run action no Build Center
+- [x] Core Toolchain Center
+- [x] standalone native project descriptor
+- [x] standalone native project Build Router path
+- [x] native project scaffolder for C/C++ and Java/Kotlin hybrids
+
+### Fase 2 — Workspace Pro
+
+- [ ] Project Explorer moderno
+- [ ] recent projects
+- [ ] module model
+- [ ] build status
+- [ ] build output
+- [ ] install/run actions
+- [ ] diagnostics estruturados
+- [ ] build cancellation
+
+### Fase 3 — Editor Pro
+
+- [ ] tabs
+- [ ] command palette
+- [ ] symbol search
+- [ ] quick actions
+- [ ] inline diagnostics
+- [ ] multi-cursor
+- [ ] touch/keyboard optimization
+- [ ] tablet layout
+
+### Fase 4 — Kotlin e Android moderno
+
+- [ ] Kotlin language services
+- [x] Kotlin compilation
+- [ ] Compose project support
+- [ ] modern AndroidX
+- [ ] desugaring
+- [ ] AAR/JAR handling
+- [ ] multidex
+
+### Fase 5 — Build Pro
+
+- [ ] persistent build cache
+- [ ] parallel task execution
+- [ ] dependency graph
+- [ ] static Gradle parser
+- [ ] flavors
+- [ ] release signing
+- [ ] R8
+- [ ] APK/AAB pipeline
+
+### Fase 6 — Native
+
+- [x] Android-hosted LLVM toolchain
+- [x] C17
+- [x] C++20
+- [x] pure C projects
+- [x] pure C++ projects
+- [x] mixed C/C++ projects
+- [x] Java/Kotlin + JNI hybrid projects
+- [x] NativeActivity
+- [x] native configuration
+- [x] static .a inputs
+- [x] prebuilt .so in jniLibs
+- [x] compile_commands.json
+- [x] clangd packaged in Core LLVM
+- [~] clangd editor/LSP integration
+- [ ] CMake
+- [ ] multiple ABIs
+- [ ] native diagnostics
+- [ ] native debugging
+
+### Fase 7 — Multi-language IDE
+
+- [ ] JavaScript / TypeScript
+- [ ] Python
+- [ ] Rust
+- [ ] Shell
+- [ ] YAML
+- [ ] additional LSP integrations
+
+## Regras de arquitetura
+
+1. O núcleo não depende da UI.
+2. A UI não conhece detalhes internos do toolchain.
+3. O build nativo não depende do Gradle para executar.
+4. Gradle não é backend de linguagem nem fallback do Native Build Engine.
+5. Cada tarefa tem entradas e saídas claras.
+6. Recursos pesados são lazy e incrementais.
+7. O editor permanece utilizável em aparelhos modestos.
+8. Nova UI prioriza clareza sobre efeitos.
+9. Recursos opcionais de integração podem ser desativados; linguagens do núcleo não são feature flags.
+10. Mudanças arquiteturais importantes são documentadas neste README e em /docs.
+
+## Regra de ouro
+
+> O AndroidIDE Pro deve responder: “Consigo desenvolver este aplicativo diretamente neste Android?”
+
+Quando a resposta for não, a próxima tarefa deve identificar qual camada está faltando — editor, language service, project model, dependências, compilador, AAPT2, D8, R8, NDK, packaging, signing, install, run ou debug — e construir essa capacidade de forma on-device.
+
+---
 ## Features
 
-- [x] Gradle support.
+- [x] Native Build Engine.
+- [x] Java compilation.
+- [x] Kotlin compilation through Core Kotlin Toolchain.
+- [x] C/C++ compilation through Core LLVM Toolchain.
+- [x] AAPT2 / D8 / APK packaging.
 - [x] `JDK 11` and `JDK 17` available for use.
 - [x] Terminal with necessary packages.
 - [x] Custom environment variables (for Build & Terminal).
@@ -45,7 +405,8 @@
 - [ ] Language servers
     - [x] Java
     - [x] XML
-    - [ ] Kotlin
+    - [x] Kotlin core build path
+    - [x] C/C++ core build path
 - [ ] UI Designer
     - [x] Layout inflater
     - [x] Resolve resource references

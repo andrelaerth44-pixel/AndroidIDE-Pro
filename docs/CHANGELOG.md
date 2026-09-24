@@ -4,40 +4,59 @@
 
 ### Added
 
-- Native Build Engine modules:
-  - `core/build-api`
-  - `core/build-engine`
-  - `core/android-build`
-- Initial Android TaskGraph.
-- AAPT2 compile/link pipeline.
-- Java compilation path.
-- D8 path.
-- APK package, zipalign and debug signing.
-- Workspace → native build adapter.
-- Native Build action in the editor toolbar.
-- Compose Material 3 Pro Home.
-- Compose Build Center.
-- APK install action from Build Center.
-- Resizable application workspace for phone/tablet.
-- Engineering documentation under `docs/`.
-- Built-in language core for Java, Kotlin, C, C++, XML, JSON and Markdown.
-- Immutable built-in language backend contract with no language register/unregister API.
-- Native-only Build Router with no Gradle language fallback.
-- Embedded `JavacTool`/nb-javac Java compilation.
-- Embedded Kotlin compiler invocation through `K2JVMCompiler`.
-- Native C/C++ compilation task with Android-hosted LLVM toolchain contract.
-- Native library packaging for `arm64-v8a`.
+- Core Toolchain Center.
+- Core Kotlin Toolchain APK.
+- Kotlin compiler package classloader.
+- Core LLVM Toolchain APK module.
+- Android-hosted LLVM/Clang/LLD builder para arm64.
+- LLVM sysroot/resource/runtime packaging.
+- C/C++ build task com C17/C++20.
+- native-only APK packaging quando não há Java/Kotlin.
+- output-aware TaskGraph fingerprints.
+- deterministic debug signing key seed.
+- checksum metadata para o LLVM toolchain.
+- workflow dedicado para construir o Core LLVM Toolchain.
 
 ### Changed
 
-- Root settings now include the native build modules.
-- `core:app` can compile the new Compose UI layer.
+- core/android-build não carrega mais kotlin-compiler-embeddable.
+- Kotlin usa Core Kotlin Toolchain.
+- C/C++ usa Core LLVM Toolchain.
+- Build Center mostra o estado do LLVM.
+- Build Router continua com uma única rota nativa.
+- D8 é pulado quando não existe bytecode Java/Kotlin.
+- debug keystore não depende de java.home/bin/keytool.
+- documentação de toolchains, linguagens, NDK e decisões foi sincronizada.
 
-### Not yet verified
+### Still to validate
 
-- End-to-end physical-device Hello World build/install.
-- Physical validation of embedded Kotlin and Java compiler paths.
-- Distribution of the Android-hosted LLVM binaries.
-- Full dependency resolution.
-- R8.
-- NDK build.
+- build/install/launch físico de Hello World;
+- C físico;
+- C++ físico;
+- Kotlin físico;
+- Java físico;
+- execução do workflow LLVM;
+- tamanho real dos APKs;
+- AAR/JAR edge cases;
+- desugaring;
+- Compose compiler;
+- R8;
+- AAB;
+- múltiplas ABIs;
+- CMake/JNI/clangd;
+- Run/Debug integrado.
+
+## Foundation
+
+- Build API.
+- TaskGraph.
+- persistent fingerprints.
+- AAPT2.
+- JavacTool/nb-javac.
+- D8.
+- APK package/zipalign/sign.
+- Workspace adapter.
+- Compose Material 3 surfaces.
+- built-in language core.
+- immutable language registry.
+- plugin capability model without language/build capabilities.

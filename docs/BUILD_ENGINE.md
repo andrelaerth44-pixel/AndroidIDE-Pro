@@ -94,3 +94,22 @@ UP-TO-DATE / RUN
 O fingerprint cobre arquivos individuais e árvores de diretórios, além do ID/versionamento da tarefa.
 
 A V1 ainda não incorpora todos os valores virtuais derivados do ProjectModel no fingerprint. Isso será corrigido quando o modelo de configuração nativo estiver consolidado.
+
+## Build Router
+
+O Build Center não chama o backend nativo diretamente. Ele passa pelo BuildRouter.
+
+~~~text
+Workspace + AndroidModule
+        ↓
+NativeBuildCompatibility
+   ┌────┴────┐
+  Native   Gradle
+   ↓          ↓
+Native     BuildService
+Build
+~~~
+
+Native é escolhido primeiro quando o módulo atende às capacidades da V1. Gradle é fallback de compatibilidade.
+
+Isso mantém o motor nativo independente do Gradle e evita iniciar o backend pesado em projetos simples.

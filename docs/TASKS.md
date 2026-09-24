@@ -25,6 +25,9 @@ Legenda: [ ] não iniciado · [~] em andamento · [x] concluído
 [x] APK package/zipalign/sign
 [x] Build Center
 [x] Install/Run actions
+[x] standalone native project descriptor
+[x] standalone native Build Router path
+[x] native project scaffolder
 [~] AAR/JAR edge cases
 [ ] physical Java Hello World
 [ ] physical Kotlin Hello World
@@ -60,6 +63,7 @@ Legenda: [ ] não iniciado · [~] em andamento · [x] concluído
 [x] pure C++ project path
 [x] mixed C/C++ path
 [x] Java/Kotlin + C/C++ hybrid path
+[x] Gradle-free project creation path
 [x] configurable include/library paths
 [x] .a static libraries
 [x] prebuilt .so in jniLibs

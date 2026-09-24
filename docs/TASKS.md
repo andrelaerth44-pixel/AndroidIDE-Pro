@@ -9,26 +9,32 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [x] Criar sistema de documentação
 - [x] Identificar modules em `settings.gradle.kts`
 - [x] Registrar stack inicial
-- [x] Identificar entry points da aplicação
-- [x] Identificar manifest e serviços principais
-- [ ] Mapear dependências de todos os módulos
-- [ ] Mapear todas as Activities
-- [ ] Mapear todos os Services
-- [ ] Mapear receivers/providers relevantes
-- [ ] Mapear Project Manager
-- [ ] Mapear Indexing
-- [ ] Mapear LSP Java/XML
-- [ ] Mapear Editor/Sora/Tree-sitter
+- [x] Identificar entry points
+- [x] Identificar manifest
+- [x] Identificar GradleBuildService
+- [x] Identificar ToolingServerRunner
+- [x] Identificar ToolingApiServerImpl
+- [x] Identificar ProjectManagerImpl
+- [x] Identificar WorkspaceModelBuilder
+- [x] Identificar WorkspaceImpl
+- [x] Identificar LSP registry/API
+- [x] Identificar Java LSP
+- [~] Mapear Indexing
+- [~] Mapear Editor/Sora/Tree-sitter
+- [~] Mapear Termux/Environment
+- [~] Mapear UI
 - [ ] Mapear UI Designer
-- [ ] Mapear Termux
-- [ ] Mapear GradleBuildService
+- [ ] Mapear recursos/XML pipeline
 - [ ] Mapear build fixtures/testes
+- [ ] Matriz de riscos
+- [ ] Validar build local
 
 ## Fase 1 — Build Core
 
 - [ ] BuildRequest
 - [ ] BuildResult
 - [ ] BuildDiagnostic
+- [ ] BuildSystem SPI
 - [ ] Task
 - [ ] TaskContext
 - [ ] TaskGraph

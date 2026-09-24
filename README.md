@@ -444,7 +444,7 @@ Build fixtures serão usados para validar:
 
 **Correção registrada:** o `settings.gradle.kts` do branch agora registra explicitamente `:build:api` e `:build:gradle-adapter`, e os arquivos novos do adapter carregam cabeçalho GPLv3.
 
-**Próxima ação:** criar a ponte GradleTaskExecutor -> GradleBuildService, adicionar testes de integração e só então conectar o novo SPI ao fluxo de build existente.
+**Próxima ação:** adicionar integração coberta por testes para o `createBuildSystemAdapter()` e somente então migrar chamadas de build selecionadas para o novo pipeline.
 
 ---
 

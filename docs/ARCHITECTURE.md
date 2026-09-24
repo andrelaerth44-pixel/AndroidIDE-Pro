@@ -106,6 +106,10 @@ Gradle Adapter          Native/Native-like Engine
 GradleTaskExecutor
       |
 GradleBuildService (compatibilidade)
+      |
+createBuildSystemAdapter()
+      |
+BuildSystem SPI
  |                         |
 Tooling API            Task Graph
                          |

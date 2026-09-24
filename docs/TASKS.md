@@ -46,7 +46,9 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [ ] persistent cache
 - [ ] dependency model
 - [x] Gradle adapter de planejamento
-- [ ] bridge Gradle Adapter -> GradleBuildService
+- [x] bridge Gradle Adapter -> GradleBuildService
+- [x] ponto de criação do BuildSystem no GradleBuildService
+- [ ] migrar uma operação de build controlada para o novo pipeline
 - [ ] descoberta completa de tasks do projeto
 
 ## Fase 2 — Android pipeline

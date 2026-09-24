@@ -174,7 +174,11 @@ Ainda faltam:
 8. converter logs/diagnósticos do Tooling API em `BuildDiagnostic`;
 9. mapear de forma autoritativa Android application vs library.
 
-O executor default é deliberadamente não-operacional para impedir que o novo SPI passe a executar builds antes da integração segura.
+O executor default do adapter é deliberadamente não-operacional para impedir execução acidental.
+
+Para o caminho real, `core:app` fornece `GradleBuildServiceTaskExecutor`, que chama o `BuildService` existente, traduz resultados para `TaskResult` e encaminha cancelamento. `GradleBuildService.createBuildSystemAdapter()` cria essa combinação.
+
+A migração do fluxo principal ainda não foi feita: o novo pipeline existe como caminho reversível de integração.
 
 ## Migração
 

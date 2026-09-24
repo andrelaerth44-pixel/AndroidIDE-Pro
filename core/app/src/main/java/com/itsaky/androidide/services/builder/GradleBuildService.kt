@@ -380,6 +380,11 @@ class GradleBuildService : Service(), BuildService, IToolingApiClient,
     return performBuildTasks(server!!.executeTasks(message))
   }
 
+  /** Creates the new BuildSystem view while keeping this service as the Gradle runtime owner. */
+  fun createBuildSystemAdapter(): GradleBuildSystem {
+    return GradleBuildSystem(GradleBuildServiceTaskExecutor(this))
+  }
+
   override fun cancelCurrentBuild(): CompletableFuture<BuildCancellationRequestResult> {
     checkServerStarted()
     return server!!.cancelCurrentBuild()

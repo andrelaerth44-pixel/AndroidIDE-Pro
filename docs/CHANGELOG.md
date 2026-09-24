@@ -1,5 +1,18 @@
 # Changelog de Engenharia
 
+## 2026-09-24 — Build execution bridge
+
+### Adicionado
+
+- `GradleBuildServiceTaskExecutor`, que converte o `BuildService` atual em `GradleTaskExecutor`;
+- cancelamento cooperativo e conversão de falhas para `BuildDiagnostic`;
+- `SequentialBuildExecutor` como primeiro executor concreto do grafo;
+- `GradleBuildService.createBuildSystemAdapter()` como ponto de integração reversível.
+
+### Preservado
+
+O fluxo de build existente continua sendo o caminho padrão.
+
 ## 2026-09-24 — Gradle Adapter registration correction
 
 ### Corrigido

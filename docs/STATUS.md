@@ -102,13 +102,15 @@ Validação:
 - [x] compilação independente e smoke test executados localmente;
 - [x] cabeçalhos GPLv3 dos arquivos novos conferidos;
 - [ ] compilação/testes completos via Gradle/CI;
-- [ ] bridge com `GradleBuildService`.
+- [x] bridge `GradleTaskExecutor` -> `GradleBuildService` implementado;
+- [x] ponto de criação `createBuildSystemAdapter()` adicionado sem alterar o caminho antigo;
+- [ ] integração do fluxo principal com o novo pipeline.
 
 Ainda não implementado:
 
-- bridge de execução real;
 - descoberta completa do catálogo de tasks;
-- executor incremental;
+- executor paralelo/incremental;
+- integração do fluxo principal com o novo pipeline;
 - cache/fingerprints;
 - integração com `core:projects`/`GradleBuildService`.
 

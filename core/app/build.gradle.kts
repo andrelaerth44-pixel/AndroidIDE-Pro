@@ -54,6 +54,14 @@ android {
     generateLocaleConfig = true
   }
 
+  buildFeatures {
+    compose = true
+  }
+
+  composeOptions {
+    kotlinCompilerExtensionVersion = "1.5.14"
+  }
+
   buildTypes {
     release {
       isShrinkResources = true

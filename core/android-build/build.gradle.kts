@@ -12,6 +12,7 @@ dependencies {
   implementation(projects.core.buildEngine)
   implementation(projects.core.languageSupport)
   implementation(libs.kotlin.compiler.embeddable)
+  implementation(libs.composite.javac)
 }
 
 description = "Native Android APK build pipeline"

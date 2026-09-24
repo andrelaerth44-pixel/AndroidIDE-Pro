@@ -59,10 +59,6 @@ class MergeResourcesTask(
     module.mergedResourcesDir.deleteRecursively()
     module.mergedResourcesDir.createDirectories()
 
-    module.dependencyResourceDirs.forEach { directory ->
-      copyTree(directory, module.mergedResourcesDir)
-    }
-
     copyTree(module.resourceDir, module.mergedResourcesDir)
     TaskResult(true)
   }.getOrElse { TaskResult(false, it.message ?: "mergeResources failed") }
@@ -72,22 +68,39 @@ class Aapt2CompileTask(
   private val module: AndroidModule
 ) : BuildTask {
   override val id = "aapt2CompileDebug"
-  override val inputs = listOf(module.mergedResourcesDir, module.sdk.aapt2)
+  override val inputs = listOf(module.mergedResourcesDir, module.sdk.aapt2) + module.dependencyResourceDirs
   override val outputs = listOf(module.compiledResourcesDir)
 
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.compiledResourcesDir.deleteRecursively()
     module.compiledResourcesDir.createDirectories()
 
-    ProcessTools.run(
-      module.sdk.aapt2,
-      listOf(
-        "compile",
-        "--dir", module.mergedResourcesDir.toString(),
-        "-o", module.compiledResourcesDir.toString()
-      ),
-      logger = context::log
-    )
+    val resourceRoots = buildList {
+      add(module.mergedResourcesDir)
+      addAll(module.dependencyResourceDirs)
+    }
+
+    resourceRoots.forEachIndexed { index, root ->
+      if (!root.exists()) return@forEachIndexed
+
+      val outputDir = if (index == 0) {
+        module.compiledResourcesDir
+      } else {
+        module.compiledResourcesDir.resolve("dependency-$index")
+      }
+
+      outputDir.createDirectories()
+
+      ProcessTools.run(
+        module.sdk.aapt2,
+        listOf(
+          "compile",
+          "--dir", root.toString(),
+          "-o", outputDir.toString()
+        ),
+        logger = context::log
+      )
+    }
 
     TaskResult(true)
   }.getOrElse { TaskResult(false, it.message ?: "aapt2 compile failed") }

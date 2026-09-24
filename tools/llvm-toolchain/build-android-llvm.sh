@@ -138,7 +138,7 @@ configure_android_tools() {
     -DCMAKE_ANDROID_STL_TYPE=c++_shared \
     -DCMAKE_BUILD_TYPE=MinSizeRel \
     -DCMAKE_INSTALL_PREFIX=/toolchain \
-    -DLLVM_ENABLE_PROJECTS="clang;lld" \
+    -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld" \
     -DLLVM_TARGETS_TO_BUILD="$LLVM_TARGETS" \
     -DLLVM_NATIVE_TOOL_DIR="$HOST_BUILD/bin" \
     -DLLVM_TABLEGEN="$HOST_BUILD/bin/llvm-tblgen" \

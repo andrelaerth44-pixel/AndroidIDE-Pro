@@ -442,6 +442,8 @@ Build fixtures serão usados para validar:
 - [ ] plugin runtime;
 - [ ] IA provider layer.
 
+**Correção registrada:** o `settings.gradle.kts` do branch agora registra explicitamente `:build:api` e `:build:gradle-adapter`, e os arquivos novos do adapter carregam cabeçalho GPLv3.
+
 **Próxima ação:** criar a ponte GradleTaskExecutor -> GradleBuildService, adicionar testes de integração e só então conectar o novo SPI ao fluxo de build existente.
 
 ---

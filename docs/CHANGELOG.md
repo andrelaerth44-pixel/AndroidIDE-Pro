@@ -1,5 +1,12 @@
 # Changelog de Engenharia
 
+## 2026-09-24 — Gradle Adapter registration correction
+
+### Corrigido
+
+- `settings.gradle.kts` passou a registrar efetivamente `:build:api` e `:build:gradle-adapter`;
+- arquivos novos do Gradle Adapter receberam cabeçalhos GPLv3 consistentes com a base do projeto.
+
 ## 2026-09-24 — Gradle Adapter foundation
 
 ### Adicionado

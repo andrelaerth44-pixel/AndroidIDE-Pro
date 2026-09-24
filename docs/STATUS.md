@@ -31,6 +31,7 @@
 - [ ] build Gradle completo do repositório validado
 - [x] Primeiro código funcional do AndroidIDE Pro iniciado
 - [x] Gradle Adapter de planejamento adicionado sem substituir o backend atual
+- [x] correção do registro dos módulos no `settings.gradle.kts` aplicada e conferida
 
 ## Constatações principais
 
@@ -99,6 +100,7 @@ Validação:
 - [x] inclusão de `:build:api` e `:build:gradle-adapter` no `settings.gradle.kts` corrigida;
 - [x] implementação do `BuildGraph` revisada estaticamente;
 - [x] compilação independente e smoke test executados localmente;
+- [x] cabeçalhos GPLv3 dos arquivos novos conferidos;
 - [ ] compilação/testes completos via Gradle/CI;
 - [ ] bridge com `GradleBuildService`.
 

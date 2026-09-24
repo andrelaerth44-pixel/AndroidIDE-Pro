@@ -2,134 +2,99 @@
 
 ## Fase 0 — Fundação
 
-[x] visão on-device  
-[x] regras de UI  
-[x] Native Build Engine  
-[x] Build API + TaskGraph  
-[x] documentação de engenharia  
+[x] Native Build Engine
+[x] Build API + TaskGraph
+[x] built-in language core
+[x] documentação
 
-## Fase 1 — Vertical slice nativo
+## Fase 1 — Native vertical slice
 
-[x] AndroidModule  
-[x] SDK/tool resolution  
-[x] mergeResources  
-[x] AAPT2 compile/link  
-[x] BuildConfig  
-[x] Java  
-[x] Kotlin  
-[x] C/C++  
-[x] D8  
-[x] APK packaging  
-[x] zipalign  
-[x] debug signing  
-[x] Workspace adapter  
-[x] Build action  
-[x] Build Center  
-[x] Core Toolchain Center  
-[x] Native-only BuildRouter  
-[ ] Hello World físico  
-[ ] Run integrado  
-[ ] cancelamento real  
+[x] Java build
+[x] Kotlin build
+[x] C build
+[x] C++ build
+[x] pure native projects
+[x] hybrid JNI projects
+[x] NativeActivity
+[x] AAPT2
+[x] D8
+[x] APK packaging
+[x] zipalign
+[x] signing
+[x] Build / Install / Run surfaces
+[ ] physical device validation
 
 ## Fase 2 — Core Toolchains
 
-[x] Core Toolchain API  
-[x] Kotlin Toolchain APK  
-[x] Kotlin classloader  
-[x] Android arm64 LLVM builder  
-[x] LLVM Toolchain APK module  
-[x] LLVM runtime integration  
-[x] checksum metadata  
-[ ] distribuição automática online  
-[ ] update/resume  
-[ ] outras ABIs  
+[x] Core Kotlin Toolchain
+[x] Compose compiler hosted pack
+[x] Android-hosted LLVM
+[x] clang / clang++ / lld
+[x] clangd packaging
+[x] sysroot/runtime
+[x] checksums
+[ ] authenticated update service
+[ ] update/resume
+[ ] multiple device ABIs
 
-## Fase 3 — Workspace Pro
+## Fase 3 — Native IDE integration
 
-[ ] Project Explorer Compose  
-[ ] Recent projects  
-[ ] module/dependency view  
-[ ] build status persistente  
-[ ] structured diagnostics  
-[ ] Install / Run center  
-[ ] build cancellation  
+[x] compile_commands.json
+[~] clangd LSP integration
+[ ] native diagnostics
+[ ] native completion
+[ ] native navigation
+[ ] native refactoring
+[ ] native test runner
+[ ] LLDB
 
-## Fase 4 — Editor Pro
+## Fase 4 — Android dependencies
 
-[ ] tabs modernas  
-[ ] split view  
-[ ] minimap  
-[ ] breadcrumbs  
-[ ] command palette  
-[ ] symbol search  
-[ ] inline diagnostics  
-[ ] quick fix UI  
-[ ] multi-cursor  
-[ ] tablet layout  
+[~] AAR/JAR handling
+[ ] Maven resolver independent from Gradle
+[ ] dependency cache
+[ ] version conflict solver
+[ ] desugaring
+[ ] Compose runtime/compiler end-to-end
+[ ] multidex
+[ ] R8
+[ ] AAB
 
-## Fase 5 — Android moderno
+## Fase 5 — Native project tooling
 
-[~] AAR/JAR handling  
-[ ] Maven repository resolver  
-[ ] dependency cache  
-[ ] desugaring  
-[ ] Compose compiler integration  
-[ ] multidex  
-[ ] R8  
-[ ] AAB  
-[ ] flavors  
-[ ] release signing  
-[ ] release APK/AAB pipeline  
+[ ] CMake importer/generator
+[ ] ndk-build importer
+[ ] JNI project wizard
+[ ] NativeActivity project wizard
+[ ] ABI manager
+[ ] static-library project graph
 
-## Fase 6 — Native Pro
+## Fase 6 — Workspace Pro
 
-[x] C/C++ build backend  
-[x] Android-hosted LLVM  
-[x] native packaging  
-[ ] clangd  
-[ ] CMake  
-[ ] JNI Wizard  
-[ ] multiple ABIs  
-[ ] static libraries  
-[ ] native tests  
-[ ] LLDB  
-[ ] profiling  
+[ ] Project Explorer Compose
+[ ] recent projects
+[ ] module/dependency view
+[ ] structured build diagnostics
+[ ] command palette
+[ ] Problems panel
+[ ] tablet workspace
+[ ] theme manager
 
-## Fase 7 — Asset Center
+## Fase 7 — Native performance/debug
 
-[ ] Icon repository abstraction  
-[ ] Material Symbols  
-[ ] Material Design Icons  
-[ ] Lucide  
-[ ] Tabler  
-[ ] Phosphor  
-[ ] Fluent  
-[ ] Heroicons  
-[ ] Carbon  
-[ ] SVG import  
-[ ] VectorDrawable generation  
-[ ] Lottie  
-[ ] preview/favorites/search  
+[ ] native profiler
+[ ] LLDB
+[ ] breakpoints
+[ ] memory inspection
+[ ] GPU/native diagnostics
 
-## Fase 8 — Extension Platform
+## Fase 8 — Multi-language workspace
 
-[~] Plugin API  
-[x] language/build capabilities excluded from plugins  
-[ ] permission model  
-[ ] sandbox boundaries  
-[ ] theme providers  
-[ ] asset providers  
-[ ] tool integrations  
-
-## Fase 9 — Multi-language workspace
-
-[ ] JavaScript / TypeScript  
-[ ] Python  
-[ ] Rust  
-[ ] Go  
-[ ] Bash  
-[ ] YAML  
-[ ] SQL  
-[ ] HTML/CSS/SCSS  
-[ ] Flutter/Dart exploration  
-[ ] KMP exploration
+[ ] JavaScript / TypeScript
+[ ] Python
+[ ] Rust
+[ ] Go
+[ ] Bash
+[ ] YAML
+[ ] SQL
+[ ] HTML/CSS

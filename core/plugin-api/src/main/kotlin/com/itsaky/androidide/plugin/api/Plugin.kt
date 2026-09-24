@@ -11,6 +11,7 @@ data class PluginId(
 data class PluginDescriptor(
   val id: PluginId,
   val version: String,
+  val apiVersion: Int,
   val displayName: String,
   val capabilities: Set<String>,
   val permissions: Set<String>,

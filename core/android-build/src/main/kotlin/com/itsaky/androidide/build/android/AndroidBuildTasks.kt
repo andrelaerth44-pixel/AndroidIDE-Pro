@@ -91,6 +91,15 @@ class Aapt2LinkTask(
     module.generatedRDir.deleteRecursively()
     module.generatedRDir.createDirectories()
 
+    val compiledFiles = module.compiledResourcesDir
+      .walk()
+      .filter { it.isRegularFile() && it.extension == "flat" }
+      .toList()
+
+    require(compiledFiles.isNotEmpty()) {
+      "AAPT2 produced no compiled resources"
+    }
+
     ProcessTools.run(
       module.sdk.aapt2,
       listOf(
@@ -101,9 +110,8 @@ class Aapt2LinkTask(
         "--min-sdk-version", module.minSdk.toString(),
         "--target-sdk-version", module.targetSdk.toString(),
         "-I", module.sdk.androidJar().toString(),
-        "--auto-add-overlay",
-        module.compiledResourcesDir.toString()
-      ),
+        "--auto-add-overlay"
+      ) + compiledFiles.map(Path::toString),
       logger = context::log
     )
 

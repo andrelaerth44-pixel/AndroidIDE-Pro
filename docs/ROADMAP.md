@@ -25,7 +25,7 @@
 [x] Build action
 [x] Build Center
 [x] Install APK action
-[x] Native-first BuildRouter with Gradle fallback
+[x] Native-only BuildRouter
 [ ] Validar Hello World em dispositivo físico
 [ ] Run APK a partir do IDE
 [ ] Build cancellation real
@@ -55,7 +55,7 @@
 
 ## Fase 4 — Kotlin e Android moderno
 
-[ ] Kotlin compiler path
+[x] Kotlin compiler path
 [ ] Kotlin diagnostics
 [ ] AAR/JAR resolution
 [ ] Dependency cache
@@ -85,9 +85,9 @@
 
 ## Fase 6 — NDK Suite
 
-[ ] NDK Manager
-[ ] C/C++ toolchain
-[ ] Clang/LLVM
+[~] Native toolchain manager
+[~] Android-hosted LLVM toolchain
+[~] Clang/LLVM
 [ ] clangd
 [ ] CMake
 [ ] JNI Wizard
@@ -102,8 +102,8 @@
 [ ] Capability model
 [ ] Sandboxing boundaries
 [ ] Dynamic registration
-[ ] Language plugins
-[ ] Build plugins
+[x] Language plugins — não existem
+[~] Build extension model, sem substituir o núcleo
 [ ] Theme plugins
 [ ] Asset plugins
 [ ] Tool plugins

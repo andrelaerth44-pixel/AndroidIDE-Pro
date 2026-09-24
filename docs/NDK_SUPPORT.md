@@ -1,19 +1,15 @@
 # AndroidIDE Pro — Native C/C++ Support
 
-## Escopo atual
+## Escopo
 
-C e C++ são capacidades nativas do AndroidIDE Pro.
+C e C++ são linguagens de primeira classe do AndroidIDE Pro e funcionam em:
 
-Primeiro alvo:
+1. aplicativos somente C;
+2. aplicativos somente C++;
+3. C + C++ no mesmo projeto;
+4. Java/Kotlin + C/C++ com JNI.
 
-- C17;
-- C++20;
-- Android arm64;
-- ABI arm64-v8a;
-- geração de .so;
-- empacotamento automático no APK.
-
-O caminho de build não usa Gradle.
+O build do projeto não usa Gradle.
 
 ## Arquitetura
 
@@ -23,136 +19,177 @@ src/main/cpp
 NativeLanguageScanner
     ↓
 CompileNativeTask
+    ├── C17 / clang
+    ├── C++20 / clang++
+    ├── JNI headers
+    ├── NativeActivity glue
+    └── native configuration
     ↓
-Core LLVM Toolchain
-    ├── clang
-    ├── clang++
-    └── lld
+LLD
     ↓
-libappnative.so
-    ↓
-lib/arm64-v8a/
+lib/<ABI>/lib<name>.so
     ↓
 APK
 ~~~
 
-## Android-hosted LLVM
+## Core LLVM
 
-O compilador precisa executar no próprio Android. Por isso o Pro não tenta executar o clang Linux/macOS/Windows de um NDK desktop.
+O compilador que executa no dispositivo é um LLVM/Clang/LLD construído para Android arm64.
 
-O Core LLVM Toolchain é construído para Android arm64 e distribuído em core/toolchain-llvm e tools/llvm-toolchain.
+O Core LLVM Toolchain contém clang, clang++, clangd, LLD, LLVM shared libraries, libc++, clang resource directory, AArch64 sysroot, runtime builtins/unwind e android_native_app_glue.
 
 ## C
 
-Extensões:
+Fontes:
 
 ~~~text
 .c
-.h
 ~~~
 
-Default:
+Headers reconhecidos pelo IDE:
 
 ~~~text
--std=c17
--fPIC
--O2
--fdata-sections
--ffunction-sections
--fstack-protector-strong
--DANDROID
+.h
+.inc
+.def
 ~~~
+
+Padrão: C17.
 
 ## C++
 
-Extensões:
+Fontes:
 
 ~~~text
 .cc
 .cpp
 .cxx
+.cppm
+.ixx
+~~~
+
+Headers:
+
+~~~text
 .hh
 .hpp
 .hxx
+.ipp
+.inl
+.tpp
 ~~~
 
-Default:
+Padrão: C++20 com libc++.
+
+## Projeto somente nativo
+
+Quando não existem fontes Java/Kotlin:
+
+- javac é pulado;
+- Kotlin é pulado;
+- D8 é pulado;
+- AAPT2 continua processando o manifesto/resources;
+- a biblioteca nativa é empacotada;
+- APK é alinhado e assinado.
+
+Para NativeActivity, o Pro pode compilar automaticamente o android_native_app_glue.c e gerar libmain.so.
+
+## Projeto híbrido
 
 ~~~text
--std=c++20
--fPIC
--O2
--fdata-sections
--ffunction-sections
--fstack-protector-strong
--DANDROID
--stdlib=libc++
+Java/Kotlin
+  ↓
+javac -h
+  ↓
+generated/jni/
+  ↓
+clang / clang++
+  ↓
+libappnative.so
+  ↓
+System.loadLibrary()
+  ↓
+JNI
 ~~~
 
-O runtime libc++_shared.so é incluído no APK em lib/arm64-v8a quando C++ está presente.
+Os headers JNI entram automaticamente no include path do compilador nativo.
 
-## Páginas de 16 KiB
+## Configuração nativa
 
-O linker recebe:
+Arquivo:
 
 ~~~text
--Wl,-z,max-page-size=16384
--Wl,-z,common-page-size=16384
+src/main/cpp/androidide-native.properties
 ~~~
 
-## Source discovery
+Exemplo:
 
-O Build Engine varre src/main/cpp e reconhece as extensões nativas suportadas.
+~~~properties
+libraryName=brushengine
+includeDirs=include,third_party/foo/include
+libraryDirs=third_party/foo/lib
+linkLibraries=log,android,EGL,GLESv3
+staticLibraries=libs/libbrush.a
+cFlags=-Wall -Wextra
+cppFlags=-Wall -Wextra -fno-rtti
+linkerFlags=-Wl,--gc-sections
+~~~
 
-Arquivos desconhecidos com extensão são reportados pelo scanner.
+As paths relativas começam em src/main/cpp.
 
-## Integrado
+## Bibliotecas nativas
 
-- descoberta C/C++;
-- C17;
-- C++20;
-- compile + link;
-- objetos determinísticos;
-- arm64-v8a;
-- .so;
-- libc++_shared.so;
-- packaging;
-- TaskGraph;
-- fingerprints;
-- diagnóstico de ausência do Core LLVM.
-
-## Próximas capacidades
-
-Ainda separadas do primeiro vertical slice:
-
-- CMake;
-- múltiplas ABIs;
-- clangd;
-- JNI Wizard;
-- debugging nativo;
-- static libraries;
-- native unit-test runner;
-- LLDB;
-- profiling.
-
-## Validação final
-
-A implementação só será marcada como fisicamente validada depois de:
+Suporte atual:
 
 ~~~text
-Hello C project
-  → Build
-  → signed APK
+src/main/jniLibs/arm64-v8a/*.so
+src/main/cpp/**/*.a
+~~~
+
+Dependências AAR já resolvidas pelo Workspace também podem fornecer JNI, assets e runtime JARs.
+
+## Compile database
+
+Cada build nativo gera:
+
+~~~text
+build/androidide/intermediates/native/debug/compile_commands.json
+~~~
+
+O arquivo usa as mesmas flags do build real.
+
+## clangd
+
+O Core LLVM Pack já contém clangd Android-hosted.
+
+A integração do processo clangd com o LSP/Editor Pro ainda é uma etapa de IDE. O compilador e o compile_commands já estão prontos.
+
+## ABI atual
+
+O primeiro target é arm64-v8a / aarch64-linux-android.
+
+Outras ABIs serão adicionadas depois.
+
+## Validação física pendente
+
+~~~text
+Hello C
+  → build
   → install
   → launch
-  → native code executed
+  → native code
 
-Hello C++ project
-  → Build
-  → signed APK
+Hello C++
+  → build
   → install
   → launch
-  → native code executed
+  → native code
+
+Kotlin + C++
+  → javac/JNI
+  → C++
+  → signed APK
+  → install
+  → JNI call
 ~~~
 
-Essa etapa depende de execução em Android arm64 real ou ambiente Android equivalente.

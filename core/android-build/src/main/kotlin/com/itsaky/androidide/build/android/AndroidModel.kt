@@ -2,11 +2,23 @@ package com.itsaky.androidide.build.android
 
 import java.nio.file.Path
 
+data class AndroidNativeToolchain(
+  val version: String,
+  val compiler: Path,
+  val linker: Path,
+  val sysroot: Path,
+  val resourceDir: Path,
+  val runtimeLibraryDir: Path,
+  val runtimeSharedLibrary: Path? = null,
+  val includeDirs: List<Path> = emptyList(),
+  val nativeAppGlueDir: Path? = null
+)
+
 data class AndroidSdk(
   val root: Path,
   val buildToolsVersion: String,
   val compileSdk: Int,
-  val nativeToolchainRoot: Path? = null
+  val nativeToolchain: AndroidNativeToolchain? = null
 ) {
   val buildTools: Path
     get() = root.resolve("build-tools").resolve(buildToolsVersion)

@@ -82,7 +82,7 @@ jobs:
           apks=(core/toolchain-llvm/build/outputs/apk/release/*.apk)
           test "${#apks[@]}" -eq 1
           apk="${apks[0]}"
-          unzip -l "$apk" | grep -E 'lib/arm64-v8a/libclang.so|lib/arm64-v8a/libld.lld.so|lib/arm64-v8a/libLLVM.so|lib/arm64-v8a/libclang-cpp.so|lib/arm64-v8a/libc\+\+_shared.so|assets/toolchain.zip|assets/toolchain.properties'
+          unzip -l "$apk" | grep -E 'lib/arm64-v8a/libclang.so|lib/arm64-v8a/libclang++.so|lib/arm64-v8a/libld.lld.so|lib/arm64-v8a/libLLVM.so|lib/arm64-v8a/libclang-cpp.so|lib/arm64-v8a/libc\+\+_shared.so|assets/toolchain.zip|assets/toolchain.properties'
           mkdir -p build/llvm-toolchain-size
           stat -c '%n %s bytes (%h)' "$apk" | tee build/llvm-toolchain-size/apk.txt
           sha256sum "$apk" | tee build/llvm-toolchain-size/apk.sha256

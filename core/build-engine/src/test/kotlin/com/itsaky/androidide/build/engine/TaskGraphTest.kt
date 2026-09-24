@@ -26,6 +26,35 @@ class TaskGraphTest {
     assertEquals(listOf("a", "b"), order)
   }
 
+  @Test
+  fun failedTaskCanRunAgain() {
+    val temp = Files.createTempDirectory("androidide-build-failure-test")
+    var fail = true
+    var executions = 0
+
+    val task = object : BuildTask {
+      override val id = "flaky"
+      override val inputs: List<Path> = emptyList()
+      override val outputs: List<Path> = listOf(temp.resolve("flaky.out"))
+
+      override fun execute(context: BuildContext): TaskResult {
+        executions++
+        if (fail) {
+          return TaskResult(false, "expected failure")
+        }
+        Files.writeString(outputs.single(), "ok")
+        return TaskResult(true)
+      }
+    }
+
+    val graph = TaskGraph().add(task)
+
+    assertEquals(false, graph.execute(DefaultBuildContext()).success)
+    fail = false
+    assertEquals(true, graph.execute(DefaultBuildContext()).success)
+    assertEquals(2, executions)
+  }
+
   private class RecordingTask(
     override val id: String,
     private val output: Path,

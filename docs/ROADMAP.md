@@ -22,6 +22,8 @@
 [x] zipalign
 [x] signing
 [x] Build / Install / Run surfaces
+[x] standalone native project descriptor
+[x] pure/hybrid native project scaffolder
 [ ] physical device validation
 
 ## Fase 2 — Core Toolchains

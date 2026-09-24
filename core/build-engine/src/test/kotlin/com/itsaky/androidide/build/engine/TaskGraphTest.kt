@@ -5,7 +5,7 @@ import com.itsaky.androidide.build.api.BuildTask
 import com.itsaky.androidide.build.api.TaskResult
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.test.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class TaskGraphTest {
@@ -23,7 +23,7 @@ class TaskGraphTest {
       .dependsOn("b", "a")
       .execute(DefaultBuildContext())
 
-    assertTrue(order == listOf("a", "b"))
+    assertEquals(listOf("a", "b"), order)
   }
 
   private class RecordingTask(

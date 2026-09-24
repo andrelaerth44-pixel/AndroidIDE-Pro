@@ -3,9 +3,11 @@ package com.itsaky.androidide.build.engine
 import com.itsaky.androidide.build.api.BuildContext
 import com.itsaky.androidide.build.api.BuildTask
 import com.itsaky.androidide.build.api.TaskResult
+import java.nio.file.Files
+import java.nio.file.Path
 
 class DefaultBuildContext(
-  override val cacheRoot: java.nio.file.Path? = null,
+  override val cacheRoot: Path? = null,
   private val logger: (String) -> Unit = ::println
 ) : BuildContext {
   override fun log(message: String) {
@@ -101,25 +103,28 @@ class TaskGraph {
 }
 
 object TaskFingerprints {
-  private const val VERSION = "v1"
+  private const val VERSION = "v2-output-aware"
 
   fun isUpToDate(
     task: BuildTask,
-    cacheRoot: java.nio.file.Path?
+    cacheRoot: Path?
   ): Boolean {
     if (task.outputs.isEmpty()) return false
-    if (task.outputs.any { !java.nio.file.Files.exists(it) }) return false
 
     val root = cacheRoot ?: return false
     val fingerprintFile = root
       .resolve("fingerprints")
       .resolve(task.id.replace(Regex("[^A-Za-z0-9._-]"), "_") + ".sha256")
 
-    if (!java.nio.file.Files.exists(fingerprintFile)) return false
+    if (!Files.exists(fingerprintFile)) return false
+
+    if (task.outputs.any { !outputExists(it) }) {
+      return false
+    }
 
     val current = fingerprint(task)
     val stored = runCatching {
-      java.nio.file.Files.readString(fingerprintFile).trim()
+      Files.readString(fingerprintFile).trim()
     }.getOrNull()
 
     return stored == current
@@ -127,18 +132,26 @@ object TaskFingerprints {
 
   fun write(
     task: BuildTask,
-    cacheRoot: java.nio.file.Path?
+    cacheRoot: Path?
   ) {
     val root = cacheRoot ?: return
     val dir = root.resolve("fingerprints")
-    java.nio.file.Files.createDirectories(dir)
+    Files.createDirectories(dir)
 
     val file = dir.resolve(
       task.id.replace(Regex("[^A-Za-z0-9._-]"), "_") + ".sha256"
     )
 
-    java.nio.file.Files.writeString(file, fingerprint(task))
+    Files.writeString(file, fingerprint(task))
   }
+
+  private fun outputExists(path: Path): Boolean =
+    Files.exists(path) && (
+      !Files.isDirectory(path) ||
+        runCatching {
+          Files.walk(path).use { stream -> stream.anyMatch(Files::isRegularFile) }
+        }.getOrDefault(false)
+    )
 
   private fun fingerprint(task: BuildTask): String {
     val digest = java.security.MessageDigest.getInstance("SHA-256")
@@ -148,9 +161,20 @@ object TaskFingerprints {
 
     task.inputs
       .map { it.toAbsolutePath().normalize() }
+      .distinct()
       .sortedBy { it.toString() }
       .forEach { path ->
+        update(digest, "input")
         updatePath(digest, path)
+      }
+
+    task.outputs
+      .map { it.toAbsolutePath().normalize() }
+      .distinct()
+      .sortedBy { it.toString() }
+      .forEach { path ->
+        update(digest, "output")
+        updateOutputInventory(digest, path)
       }
 
     return digest.digest().joinToString("") { "%02x".format(it) }
@@ -158,31 +182,71 @@ object TaskFingerprints {
 
   private fun updatePath(
     digest: java.security.MessageDigest,
-    path: java.nio.file.Path
+    path: Path
   ) {
     update(digest, path.toString())
 
-    if (!java.nio.file.Files.exists(path)) {
+    if (!Files.exists(path)) {
       update(digest, "<missing>")
       return
     }
 
-    if (java.nio.file.Files.isDirectory(path)) {
-      java.nio.file.Files.walk(path).use { stream ->
+    if (Files.isDirectory(path)) {
+      Files.walk(path).use { stream ->
         stream
-          .filter { java.nio.file.Files.isRegularFile(it) }
+          .filter { Files.isRegularFile(it) }
           .map { it.toAbsolutePath().normalize() }
           .sorted { a, b -> a.toString().compareTo(b.toString()) }
           .forEach { file ->
             update(digest, file.toString())
-            val bytes = java.nio.file.Files.readAllBytes(file)
-            digest.update(bytes)
+            update(digest, "size=" + Files.size(file))
+            digest.update(Files.readAllBytes(file))
           }
       }
       return
     }
 
-    digest.update(java.nio.file.Files.readAllBytes(path))
+    update(digest, "size=" + Files.size(path))
+    digest.update(Files.readAllBytes(path))
+  }
+
+  private fun updateOutputInventory(
+    digest: java.security.MessageDigest,
+    path: Path
+  ) {
+    update(digest, path.toString())
+
+    if (!Files.exists(path)) {
+      update(digest, "<missing>")
+      return
+    }
+
+    if (!Files.isDirectory(path)) {
+      update(digest, "file")
+      update(digest, "size=" + Files.size(path))
+      update(digest, "mtime=" + Files.getLastModifiedTime(path).toMillis())
+      return
+    }
+
+    update(digest, "directory")
+    Files.walk(path).use { stream ->
+      stream
+        .sorted { a, b -> a.toString().compareTo(b.toString()) }
+        .forEach { entry ->
+          val relative = path.relativize(entry).toString()
+          update(digest, relative)
+
+          when {
+            Files.isDirectory(entry) -> update(digest, "dir")
+            Files.isRegularFile(entry) -> {
+              update(digest, "file")
+              update(digest, "size=" + Files.size(entry))
+              update(digest, "mtime=" + Files.getLastModifiedTime(entry).toMillis())
+            }
+            else -> update(digest, "other")
+          }
+        }
+    }
   }
 
   private fun update(

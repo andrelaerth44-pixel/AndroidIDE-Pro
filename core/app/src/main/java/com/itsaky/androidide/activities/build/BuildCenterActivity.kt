@@ -12,12 +12,14 @@ class BuildCenterActivity : ComponentActivity() {
 
   companion object {
     const val EXTRA_MODULE_PATH = "androidide.pro.build.module.path"
+    const val EXTRA_PROJECT_ROOT = "androidide.pro.build.project.root"
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     val modulePath = intent.getStringExtra(EXTRA_MODULE_PATH)
+    val projectRoot = intent.getStringExtra(EXTRA_PROJECT_ROOT)
 
     val view = ComposeView(this).apply {
       setViewCompositionStrategy(
@@ -26,6 +28,7 @@ class BuildCenterActivity : ComponentActivity() {
       setContent {
         BuildCenterScreen(
           modulePath = modulePath,
+          projectRoot = projectRoot,
           onClose = ::finish
         )
       }

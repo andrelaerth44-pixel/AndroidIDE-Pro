@@ -316,7 +316,8 @@ class CompileNativeTask(
     )
 
     Files.writeString(
-      marker,      buildString {
+      marker,
+      buildString {
         appendLine("abi=arm64-v8a")
         appendLine("toolchain=" + toolchain.version)
         appendLine("library=" + module.nativeLibraryName)

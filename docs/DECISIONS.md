@@ -67,3 +67,19 @@ Bibliotecas de ícones são providers atrás de um contrato IconRepository, e n�
 Compiler plugins Kotlin, como Compose, devem ser selecionados por capacidades do módulo e fornecidos por um contrato genérico de compiler plugins.
 
 **Reason:** extensões do compilador não devem ficar codificadas diretamente na implementação da tarefa Kotlin.
+
+## ADR-009 — Languages are built-in
+
+**Status:** Accepted
+
+Java, Kotlin, C e C++ são capacidades do núcleo AndroidIDE Pro. Não existe mecanismo de ativação, desativação ou instalação dessas linguagens como plugins.
+
+**Reason:** o IDE deve trazer consigo os compiladores e language services das linguagens que declara suportadas.
+
+## ADR-010 — No Gradle fallback for languages
+
+**Status:** Accepted
+
+Quando uma linguagem ou capacidade ainda não possui implementação nativa completa, o build retorna diagnóstico explícito.
+
+Não há fallback silencioso para Gradle.

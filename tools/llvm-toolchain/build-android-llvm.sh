@@ -198,12 +198,18 @@ configure_android_tools() {
 copy_first() {
   local destination="$1"
   shift
-  local candidate
-  for candidate in "$@"; do
-    if [[ -f "$candidate" ]]; then
-      cp "$candidate" "$destination"
+  local pattern candidate
+  for pattern in "$@"; do
+    if [[ -f "$pattern" ]]; then
+      cp "$pattern" "$destination"
       return
     fi
+    while IFS= read -r candidate; do
+      if [[ -f "$candidate" ]]; then
+        cp "$candidate" "$destination"
+        return
+      fi
+    done < <(compgen -G "$pattern" || true)
   done
   die "Required file was not found: $destination"
 }

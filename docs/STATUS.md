@@ -20,13 +20,14 @@
 - [x] Tooling API server/client auditados
 - [x] Java LSP e registro de language servers auditados parcialmente
 - [x] Shell de UI principal auditado parcialmente
-- [ ] Auditoria de todos os módulos concluída
-- [ ] Auditoria detalhada de Indexing concluída
-- [ ] Auditoria detalhada de Termux/toolchain concluída
-- [ ] Auditoria detalhada de UI/Editor concluída
-- [ ] Matriz de riscos concluída
-- [ ] Build local validado
-- [ ] Primeiro código funcional do AndroidIDE Pro iniciado
+- [x] Auditoria estrutural inicial dos módulos concluída
+- [x] Auditoria inicial de Indexing concluída
+- [x] Auditoria inicial de Termux/toolchain concluída
+- [x] Auditoria inicial de UI/Editor concluída
+- [x] UI Designer/templates/resources/XML/CI mapeados em nível arquitetural
+- [~] Matriz de riscos
+- [ ] Build/test do novo módulo validado
+- [x] Primeiro código funcional do AndroidIDE Pro iniciado
 
 ## Constatações principais
 
@@ -71,6 +72,28 @@ O shell principal ainda usa Views/XML, FragmentContainerView, AppBarLayout e Mat
 
 O manifest atual inclui permissões amplas de armazenamento, instalação/remoção de pacotes e foreground service, além de `largeHeap`. Essas escolhas deverão ser reavaliadas para as versões Android atuais durante a etapa de modernização.
 
+## Primeiro código funcional
+
+O módulo `:build:api` foi adicionado sem alterar o backend Gradle existente.
+
+Implementado:
+
+- modelo leve de projeto/módulo;
+- `BuildSystem` SPI;
+- `BuildTask` e `TaskResult`;
+- `BuildGraph` com validação de dependências/ciclos e ordenação topológica determinística;
+- diagnósticos estruturados;
+- cancelamento cooperativo;
+- contrato de `BuildExecutor`;
+- testes unitários do grafo.
+
+Ainda não implementado:
+
+- executor real;
+- Gradle adapter;
+- cache/fingerprints;
+- integração com `core:projects`/`GradleBuildService`.
+
 ## Próximo item
 
-Completar o mapa de Indexing, Editor/Sora, Termux/Environment e Toolchain e então validar o build da própria IDE.
+Validar o módulo em ambiente de build/teste disponível e então implementar o Gradle Adapter sem alterar o comportamento atual do backend Gradle.

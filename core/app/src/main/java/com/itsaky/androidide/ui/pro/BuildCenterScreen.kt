@@ -49,6 +49,7 @@ import com.itsaky.androidide.build.BuildRouter
 import com.itsaky.androidide.build.api.BuildResult
 import com.itsaky.androidide.projects.IProjectManager
 import com.itsaky.androidide.toolchain.CoreToolchainManager
+import java.nio.file.Path
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -57,6 +58,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun BuildCenterScreen(
   modulePath: String?,
+  projectRoot: String? = null,
   onClose: () -> Unit
 ) {
   val context = LocalContext.current
@@ -90,19 +92,33 @@ fun BuildCenterScreen(
 
     result = withContext(Dispatchers.IO) {
       val workspace = IProjectManager.getInstance().getWorkspace()
-      if (workspace == null) {
-        BuildResult(false, message = context.getString(R.string.build_center_no_project))
-      } else {
-        val path = modulePath ?: workspace.androidProjects().firstOrNull()?.path
-        if (path == null) {
-          BuildResult(false, message = context.getString(R.string.build_center_no_project))
-        } else {
+
+      when {
+        projectRoot != null -> {
           BuildRouter(context.applicationContext)
-            .assembleDebug(workspace, path) { line ->
+            .assembleDebug(Path.of(projectRoot)) { line ->
               scope.launch {
                 logs.add(line)
               }
             }
+        }
+
+        workspace == null -> {
+          BuildResult(false, message = context.getString(R.string.build_center_no_project))
+        }
+
+        else -> {
+          val path = modulePath ?: workspace.androidProjects().firstOrNull()?.path
+          if (path == null) {
+            BuildResult(false, message = context.getString(R.string.build_center_no_project))
+          } else {
+            BuildRouter(context.applicationContext)
+              .assembleDebug(workspace, path) { line ->
+                scope.launch {
+                  logs.add(line)
+                }
+              }
+          }
         }
       }
     }

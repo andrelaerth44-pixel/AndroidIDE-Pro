@@ -182,6 +182,7 @@ class CompileNativeTask(
         add("-DANDROID")
 
         if (isCpp(source)) {
+          add("-stdlib=libc++")
           addAll(module.nativeBuildConfiguration.cppFlags)
         } else {
           addAll(module.nativeBuildConfiguration.cFlags)

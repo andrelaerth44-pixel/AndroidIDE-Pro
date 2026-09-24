@@ -25,6 +25,12 @@ O `GradleBuildService`, `ToolingServerRunner` e backend Gradle continuam sem alt
 - verificação de dependências do `BuildGraph` foi tornada explícita para reduzir ambiguidade de inferência Kotlin;
 - compilação/testes do fork continuam pendentes porque o ambiente de execução desta sessão não possui acesso de rede ao repositório para montar o checkout local.
 
+### Validação
+
+- compilação independente dos arquivos de produção da API concluída com `kotlinc`;
+- smoke test confirmou ordenação topológica, rejeição de ciclo e rejeição de dependência inexistente;
+- build Gradle completo do repositório ainda não foi executado.
+
 ### Não concluído
 
 - executor real;

@@ -85,10 +85,12 @@ data class AndroidModule(
 
   val nativeLibraryName: String
     get() = nativeBuildConfiguration.libraryName
+      ?: manifestMetadata("android.app.lib_name")
       ?: if (manifestContainsNativeActivity()) "main" else "appnative"
 
   val nativeActivityFunctionName: String
-    get() = manifestMetadata("android.app.func_name") ?: "ANativeActivity_onCreate"
+    get() = manifestMetadata("android.app.func_name")
+      ?: "ANativeActivity_onCreate"
 
   fun manifestContainsNativeActivity(): Boolean =
     runCatching {
@@ -98,8 +100,13 @@ data class AndroidModule(
   private fun manifestMetadata(name: String): String? =
     runCatching {
       val text = Files.readString(manifest)
-      Regex(
+
+      val nameThenValue = Regex(
         """android:name\s*=\s*["']$name["'][^>]*android:value\s*=\s*["']([^"']+)["']"""
+      ).find(text)?.groupValues?.getOrNull(1)
+
+      nameThenValue ?: Regex(
+        """android:value\s*=\s*["']([^"']+)["'][^>]*android:name\s*=\s*["']$name["']"""
       ).find(text)?.groupValues?.getOrNull(1)
     }.getOrNull()
 }

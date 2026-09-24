@@ -42,7 +42,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.itsaky.androidide.R
-import com.itsaky.androidide.build.NativeBuildCoordinator
+import com.itsaky.androidide.build.BuildRouter
 import com.itsaky.androidide.build.api.BuildResult
 import com.itsaky.androidide.projects.IProjectManager
 import kotlinx.coroutines.Dispatchers
@@ -75,7 +75,7 @@ fun BuildCenterScreen(
         if (path == null) {
           BuildResult(false, message = context.getString(R.string.build_center_no_project))
         } else {
-          NativeBuildCoordinator(context.applicationContext)
+          BuildRouter(context.applicationContext)
             .assembleDebug(workspace, path) { line ->
               scope.launch {
                 logs.add(line)

@@ -1,3 +1,24 @@
+## 2026-09-24 — Native-first APK pipeline
+
+### Adicionado
+
+- assemble tenta o backend nativo antes de iniciar o Tooling API;
+- ponte Workspace -> BuildProject baseada no AndroidModule existente;
+- resolução nativa de AAPT2, android.jar, zipalign, apksigner e debug keystore;
+- DAG inicial completo: mergeResources -> aapt2Compile -> aapt2Link -> compileJava -> dexBuilder -> mergeProjectDex -> packageApk -> sign -> assemble;
+- compilador Java JDT/ecj com caminho ART-safe;
+- D8 in-process com concorrência limitada;
+- packaging APK e assinatura debug sem Gradle;
+- fallback automático para Gradle quando o projeto/request não está dentro da cobertura nativa.
+
+### Limitações
+
+- primeiro backend nativo aceita somente um módulo Android application sem dependências externas ou módulos de projeto;
+- Kotlin/KSP/Compose, AAR/JAR resolver, manifest merger completo e NDK ainda não estão cobertos;
+- build/CI completo e APK real ainda não foram validados nesta sessão.
+
+Gradle permanece como camada de compatibilidade, não como engine principal.
+
 # Changelog de Engenharia
 
 ## 2026-09-24 — First runtime operation without Gradle

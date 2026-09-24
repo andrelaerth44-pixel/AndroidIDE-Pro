@@ -51,6 +51,7 @@ fun ToolchainCenterScreen(
 
   var llvmReady by remember { mutableStateOf(llvmManager.isInstalled()) }
   var kotlinReady by remember { mutableStateOf(kotlinManager.isInstalled()) }
+  val scope = rememberCoroutineScope()
   var importing by remember { mutableStateOf(false) }
   var selfTestRunning by remember { mutableStateOf(false) }
   var selfTestMessage by remember { mutableStateOf<String?>(null) }
@@ -178,7 +179,7 @@ fun ToolchainCenterScreen(
             selfTestRunning = true
             selfTestMessage = null
 
-            kotlinx.coroutines.GlobalScope.launch {
+            scope.launch {
               val result = withContext(Dispatchers.IO) {
                 val toolchain = llvmManager.resolveLlvm()
                 if (toolchain == null) {
@@ -191,10 +192,8 @@ fun ToolchainCenterScreen(
                 }
               }
 
-              withContext(Dispatchers.Main) {
-                selfTestRunning = false
-                selfTestMessage = result.message
-              }
+              selfTestRunning = false
+              selfTestMessage = result.message
             }
           },
           enabled = llvmReady && !selfTestRunning,

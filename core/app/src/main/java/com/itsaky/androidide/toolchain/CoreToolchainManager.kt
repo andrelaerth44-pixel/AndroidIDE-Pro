@@ -1,6 +1,7 @@
 package com.itsaky.androidide.toolchain
 
 import android.content.Context
+import android.system.Os
 import com.itsaky.androidide.build.android.AndroidNativeToolchain
 import java.io.BufferedInputStream
 import java.nio.file.Files
@@ -33,12 +34,6 @@ class CoreToolchainManager(
       )
     }.getOrNull() ?: return null
 
-    val appInfo = runCatching {
-      context.packageManager.getApplicationInfo(LLVM_PACKAGE, 0)
-    }.getOrNull() ?: return null
-
-    val nativeLibraryDir = Path.of(appInfo.nativeLibraryDir)
-
     val properties = readProperties(packageContext) ?: return null
     val version = properties.getProperty("version")?.trim().orEmpty()
     val llvmMajor = properties.getProperty("llvmMajor")?.trim().orEmpty()
@@ -68,9 +63,10 @@ class CoreToolchainManager(
       if (!installed) return null
     }
 
-    val compiler = nativeLibraryDir.resolve(COMPILER_LIBRARY)
-    val linker = nativeLibraryDir.resolve(LINKER_LIBRARY)
-    val runtime = nativeLibraryDir.resolve(LIBCXX_LIBRARY)
+    val compiler = root.resolve("bin/clang")
+    val linker = root.resolve("bin/ld.lld")
+    val runtime = root.resolve("lib/libc++_shared.so")
+    val runtimeLibraryDir = root.resolve("lib")
     val sysroot = root.resolve("sysroot")
     val resourceDir = root.resolve("lib-clang").resolve(llvmMajor)
 
@@ -89,7 +85,7 @@ class CoreToolchainManager(
       linker = linker,
       sysroot = sysroot,
       resourceDir = resourceDir,
-      runtimeLibraryDir = nativeLibraryDir,
+      runtimeLibraryDir = runtimeLibraryDir,
       runtimeSharedLibrary = runtime,
       includeDirs = buildList {
         add(root.resolve("sysroot/usr/include"))
@@ -152,12 +148,23 @@ class CoreToolchainManager(
     root.deleteRecursively()
     Files.move(temp, root)
 
+    makeExecutables(root.resolve("bin"))
+
     root.resolve(".installed").also {
       it.parent?.createDirectories()
       Files.writeString(it, expectedStamp)
     }
 
     cleanupOldVersions(root.parent, root.fileName.toString())
+  }
+
+  private fun makeExecutables(binDir: Path) {
+    if (!Files.isDirectory(binDir)) return
+    Files.list(binDir).use { stream ->
+      stream
+        .filter { Files.isRegularFile(it) }
+        .forEach { Os.chmod(it.toString(), 0x1ED) }
+    }
   }
 
   private fun cleanupOldVersions(parent: Path, keepVersion: String) {
@@ -183,8 +190,5 @@ class CoreToolchainManager(
     const val PROPERTIES_FILE = "toolchain.properties"
     const val ARCHIVE_FILE = "toolchain.zip"
 
-    private const val COMPILER_LIBRARY = "libllvmtools.so"
-    private const val LINKER_LIBRARY = "libld-gnu-lld.so"
-    private const val LIBCXX_LIBRARY = "libc++_shared.so"
   }
 }

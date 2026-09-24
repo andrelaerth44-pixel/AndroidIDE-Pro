@@ -25,7 +25,7 @@ Legend:
 [ ] fingerprint cache  
 [ ] persistent cache  
 [ ] AAR/JAR resolver  
-[ ] Kotlin build  
+[x] Kotlin build — compiler embutido  
 [ ] R8  
 [ ] AAB  
 
@@ -36,7 +36,7 @@ Legend:
 [x] Pro Home  
 [x] Build Center  
 [x] resizable workspace  
-[x] Language Backend API
+[x] Built-in language core
 [ ] Project Explorer Pro  
 [ ] Editor shell refresh  
 [ ] tablet split layout  
@@ -58,20 +58,20 @@ Legend:
 
 ## Native
 
-[ ] NDK Manager  
-[ ] C/C++ project model  
+[~] Android-hosted LLVM toolchain manager  
+[~] C/C++ source discovery  
 [ ] clangd integration  
 [ ] CMake build  
 [ ] JNI Wizard  
 [ ] ABI manager  
-[ ] native packaging  
+[x] native packaging path  
 
 ## Platform
 
 [x] Plugin API  
 [ ] permission model  
 [ ] plugin loader  
-[ ] language plugins  
+[x] language plugins — não existem  
 [ ] build plugins  
 [ ] asset plugins  
 

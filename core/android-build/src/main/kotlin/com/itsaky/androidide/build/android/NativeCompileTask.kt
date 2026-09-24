@@ -37,6 +37,7 @@ class CompileNativeTask(
       add(module.nativeSourceDir)
       module.sdk.nativeToolchain?.let { toolchain ->
         add(toolchain.compiler)
+        add(toolchain.cppCompiler)
         add(toolchain.linker)
         add(toolchain.sysroot)
         add(toolchain.resourceDir)

@@ -4,3 +4,7 @@ plugins {
 }
 
 description = "AndroidIDE Pro core toolchain contracts"
+
+dependencies {
+  testImplementation(libs.tests.junit)
+}

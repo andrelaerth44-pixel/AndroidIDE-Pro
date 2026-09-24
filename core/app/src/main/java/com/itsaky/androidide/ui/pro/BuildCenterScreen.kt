@@ -2,6 +2,8 @@ package com.itsaky.androidide.ui.pro
 
 import android.content.Intent
 import androidx.core.content.FileProvider
+import com.itsaky.androidide.activities.toolchain.ToolchainCenterActivity
+import com.itsaky.androidide.toolchain.CoreToolchainManager
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -58,6 +60,9 @@ fun BuildCenterScreen(
   val context = LocalContext.current
   val logs = remember { mutableStateListOf<String>() }
   val scope = rememberCoroutineScope()
+  val llvmReady = remember {
+    CoreToolchainManager(context.applicationContext).isInstalled()
+  }
 
   var result by remember { mutableStateOf<BuildResult?>(null) }
   var started by remember { mutableStateOf(false) }
@@ -125,8 +130,56 @@ fun BuildCenterScreen(
             text = stringResource(R.string.build_center_running),
             style = MaterialTheme.typography.titleMedium
           )
-        } else {
-          val success = current.success
+        }
+
+        Card(
+          modifier = Modifier.fillMaxWidth(),
+          shape = RoundedCornerShape(18.dp),
+          colors = CardDefaults.cardColors(
+            containerColor = if (llvmReady) {
+              MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+            } else {
+              MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.72f)
+            }
+          )
+        ) {
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Column(modifier = Modifier.weight(1f)) {
+              Text(
+                text = "Core LLVM • C/C++",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+              )
+              Text(
+                text = if (llvmReady) {
+                  "Android arm64 toolchain pronta"
+                } else {
+                  "Instale o Core LLVM para projetos C/C++"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
+            }
+            Button(
+              onClick = {
+                context.startActivity(
+                  Intent(context, ToolchainCenterActivity::class.java)
+                )
+              }
+            ) {
+              Text(if (llvmReady) "Gerenciar" else "Instalar")
+            }
+          }
+        }
+
+        val current = result
+        if (current == null) {
 
           Card(
             modifier = Modifier.fillMaxWidth(),

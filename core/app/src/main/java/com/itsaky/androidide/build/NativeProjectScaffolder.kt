@@ -257,7 +257,7 @@ object NativeProjectScaffolder {
 
         extern "C"
         JNIEXPORT jint JNICALL
-        Java_${jniMangledPackage(request.packageName)}_MainActivity_nativeValue(
+        Java_${jniMangledPackage(request.packageName)}_${nativeJniClass(request)}_nativeValue(
             JNIEnv* env,
             jobject thiz) {
           (void) env;

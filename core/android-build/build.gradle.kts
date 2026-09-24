@@ -12,6 +12,7 @@ dependencies {
   implementation(projects.core.buildEngine)
   implementation(projects.core.languageSupport)
   implementation(libs.composite.javac)
+  testImplementation(libs.tests.junit)
 }
 
 description = "Native Android APK build pipeline"

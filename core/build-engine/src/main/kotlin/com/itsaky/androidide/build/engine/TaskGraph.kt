@@ -51,7 +51,10 @@ class TaskGraph {
 
       for (dependency in dependencies[id].orEmpty()) {
         val result = visit(dependency)
-        if (!result.success) return result
+        if (!result.success) {
+          state.remove(id)
+          return result
+        }
       }
 
       if (TaskFingerprints.isUpToDate(task, context.cacheRoot)) {
@@ -66,9 +69,12 @@ class TaskGraph {
         if (result.success) {
           TaskFingerprints.write(task, context.cacheRoot)
           state[id] = VisitState.DONE
+        } else {
+          state.remove(id)
         }
         result
       } catch (t: Throwable) {
+        state.remove(id)
         TaskResult(
           false,
           task.id + ": " + (t.message ?: t.javaClass.simpleName)

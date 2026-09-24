@@ -5,7 +5,8 @@ import java.nio.file.Path
 data class AndroidSdk(
   val root: Path,
   val buildToolsVersion: String,
-  val compileSdk: Int
+  val compileSdk: Int,
+  val nativeToolchainRoot: Path? = null
 ) {
   val buildTools: Path
     get() = root.resolve("build-tools").resolve(buildToolsVersion)
@@ -33,6 +34,8 @@ data class AndroidModule(
 ) {
   val manifest: Path get() = rootDir.resolve("src/main/AndroidManifest.xml")
   val sourceDir: Path get() = rootDir.resolve("src/main/java")
+  val kotlinSourceDir: Path get() = rootDir.resolve("src/main/kotlin")
+  val nativeSourceDir: Path get() = rootDir.resolve("src/main/cpp")
   val resourceDir: Path get() = rootDir.resolve("src/main/res")
   val assetDir: Path get() = rootDir.resolve("src/main/assets")
 
@@ -43,6 +46,8 @@ data class AndroidModule(
   val generatedRDir: Path get() = generatedDir.resolve("r")
   val generatedBuildConfigDir: Path = generatedDir.resolve("buildConfig")
   val classesDir: Path get() = buildDir.resolve("intermediates/classes/debug")
+  val kotlinOutputJar: Path get() = buildDir.resolve("intermediates/kotlin/debug/classes.jar")
+  val nativeLibDir: Path get() = buildDir.resolve("intermediates/native-libs/debug")
   val dexDir: Path get() = buildDir.resolve("intermediates/dex/debug")
   val resourcesApk: Path get() = buildDir.resolve("outputs/resources.ap_")
   val unsignedApk: Path get() = buildDir.resolve("outputs/app-debug-unsigned.apk")

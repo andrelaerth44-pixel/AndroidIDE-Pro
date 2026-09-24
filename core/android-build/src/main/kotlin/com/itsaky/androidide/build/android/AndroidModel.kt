@@ -5,6 +5,7 @@ import java.nio.file.Path
 data class AndroidNativeToolchain(
   val version: String,
   val compiler: Path,
+  val cppCompiler: Path = compiler,
   val linker: Path,
   val sysroot: Path,
   val resourceDir: Path,

@@ -292,6 +292,9 @@ Esta ponte foi projetada para reutilizar o modelo de projeto existente do Androi
 - [x] Install action no Build Center
 - [x] Run action no Build Center
 - [x] Core Toolchain Center
+- [x] standalone native project descriptor
+- [x] standalone native project Build Router path
+- [x] native project scaffolder for C/C++ and Java/Kotlin hybrids
 
 ### Fase 2 — Workspace Pro
 

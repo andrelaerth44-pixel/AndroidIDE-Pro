@@ -25,4 +25,12 @@
   <string name="action_build_running">Building…</string>
   <string name="action_build_success">Build completed</string>
   <string name="action_build_failed">Build failed</string>
+  <string name="build_center_title">Build Center</string>
+  <string name="build_center_running">Building debug APK…</string>
+  <string name="build_center_success">Build successful</string>
+  <string name="build_center_failed">Build failed</string>
+  <string name="build_center_output">Output APK</string>
+  <string name="build_center_close">Close</string>
+  <string name="build_center_no_project">No open Android project</string>
+  <string name="build_center_copy_path">Copy APK path</string>
 </resources>

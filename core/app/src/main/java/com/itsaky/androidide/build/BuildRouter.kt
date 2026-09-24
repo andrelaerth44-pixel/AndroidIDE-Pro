@@ -34,10 +34,6 @@ class NativeBuildCompatibility {
       return BuildRoute(BuildBackend.GRADLE, "external/project dependencies are not yet supported by native V1")
     }
 
-    if (module.viewBindingOptions.isEnabled) {
-      return BuildRoute(BuildBackend.GRADLE, "view binding is not yet supported by native V1")
-    }
-
     val hasKotlin = runCatching {
       module.getCompileSourceDirectories()
         .flatMap { root ->

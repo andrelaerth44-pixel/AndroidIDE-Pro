@@ -39,6 +39,8 @@ Kotlin usa K2JVMCompiler embutido em processo, produzindo classes.jar para D8.
 
 C/C++ usam a toolchain LLVM executável no Android, compilando objetos e ligando libappnative.so para arm64-v8a.
 
+Dependências JAR entram no classpath do javac/kotlinc e no input do D8. Recursos de Android libraries são incorporados antes da compilação AAPT2.
+
 ## Build Router
 
 O Build Router agora tem uma única rota:
@@ -83,6 +85,10 @@ Implementado no código:
 - rota única nativa.
 
 Ainda falta a validação física em dispositivo e a distribuição real da LLVM executável no Android.
+
+## Core Toolchains
+
+Toolchains pesados pertencem ao produto, mas devem ser armazenados em `filesDir/toolchains/` e administrados pelo Core Toolchain Manager. O CI já gera um pack Kotlin separado para permitir essa evolução sem transformar linguagem em plugin.
 
 ## Próximas etapas
 

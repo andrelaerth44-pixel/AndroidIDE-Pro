@@ -10,6 +10,7 @@ import com.itsaky.androidide.build.android.NativeAndroidBuildSystem
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.math.max
 
 /**
  * AndroidIDE Pro bridge between the existing Workspace model and the Gradle-free

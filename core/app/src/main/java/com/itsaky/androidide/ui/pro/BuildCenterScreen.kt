@@ -1,6 +1,7 @@
 package com.itsaky.androidide.ui.pro
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,6 +68,15 @@ fun BuildCenterScreen(
 
   var result by remember { mutableStateOf<BuildResult?>(null) }
   var started by remember { mutableStateOf(false) }
+  var installed by remember { mutableStateOf(false) }
+
+  val installLauncher = rememberLauncherForActivityResult(
+    ActivityResultContracts.StartActivityForResult()
+  ) {
+    val appId = result?.applicationId
+    installed = appId != null &&
+      context.packageManager.getLaunchIntentForPackage(appId) != null
+  }
 
   LaunchedEffect(modulePath) {
     if (started) return@LaunchedEffect
@@ -245,6 +257,59 @@ fun BuildCenterScreen(
                 modifier = Modifier.weight(1f)
               ) {
                 Text(stringResource(R.string.build_center_install))
+              }
+
+              Button(
+                onClick = onClose,
+                modifier = Modifier.weight(1f)
+              ) {
+                Text(stringResource(R.string.build_center_close))
+              }
+              Button(
+                onClick = {
+                  val uri = FileProvider.getUriForFile(
+                    context,
+                    context.packageName + ".providers.fileprovider",
+                    apk.toFile()
+                  )
+
+                  installLauncher.launch(
+                    Intent(Intent.ACTION_VIEW).apply {
+                      setDataAndType(
+                        uri,
+                        "application/vnd.android.package-archive"
+                      )
+                      addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                  )
+                },
+                modifier = Modifier.weight(1f)
+              ) {
+                Text(stringResource(R.string.build_center_install))
+              }
+
+              Button(
+                onClick = {
+                  val appId = current.applicationId
+                  val launchIntent = appId?.let {
+                    context.packageManager.getLaunchIntentForPackage(it)
+                  }
+
+                  if (launchIntent == null) {
+                    Toast.makeText(
+                      context,
+                      "Instale o APK primeiro para executar.",
+                      Toast.LENGTH_SHORT
+                    ).show()
+                  } else {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(launchIntent)
+                  }
+                },
+                modifier = Modifier.weight(1f),
+                enabled = installed
+              ) {
+                Text("Run")
               }
 
               Button(

@@ -24,7 +24,8 @@ class NativeBuildCoordinator(
 
   fun assembleDebug(
     workspace: IWorkspace,
-    modulePath: String
+    modulePath: String,
+    logger: (String) -> Unit = ::println
   ): BuildResult {
     val module = workspace.androidProjects()
       .firstOrNull { it.path == modulePath }
@@ -33,11 +34,12 @@ class NativeBuildCoordinator(
         message = "Android module not found: " + modulePath
       )
 
-    return assembleDebug(module)
+    return assembleDebug(module, logger)
   }
 
   fun assembleDebug(
-    module: AndroidModule
+    module: AndroidModule,
+    logger: (String) -> Unit = ::println
   ): BuildResult {
     val variant = module.getVariant("debug")
       ?: return BuildResult(
@@ -93,7 +95,8 @@ class NativeBuildCoordinator(
 
     return NativeAndroidBuildSystem(
       module = nativeModule,
-      debugKeystore = keystore
+      debugKeystore = keystore,
+      logger = logger
     ).assemble(
       BuildRequest(
         moduleName = nativeModule.name,

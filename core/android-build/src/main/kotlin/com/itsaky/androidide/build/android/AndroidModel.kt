@@ -31,7 +31,8 @@ data class AndroidModule(
   val minSdk: Int,
   val targetSdk: Int,
   val sdk: AndroidSdk,
-  val compileClasspath: List<Path> = emptyList()
+  val compileClasspath: List<Path> = emptyList(),
+  val dependencyResourceDirs: List<Path> = emptyList()
 ) {
   val manifest: Path get() = rootDir.resolve("src/main/AndroidManifest.xml")
   val sourceDir: Path get() = rootDir.resolve("src/main/java")

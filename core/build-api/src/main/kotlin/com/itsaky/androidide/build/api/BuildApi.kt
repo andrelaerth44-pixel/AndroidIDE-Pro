@@ -40,3 +40,17 @@ class BuildFailureException(
 interface BuildSystem {
   fun assemble(request: BuildRequest): BuildResult
 }
+
+
+data class KotlinCompilerPluginOptions(
+  val classpath: List<Path> = emptyList(),
+  val options: Map<String, String> = emptyMap()
+)
+
+interface KotlinCompilerPlugin {
+  val id: String
+
+  fun appliesTo(module: Any): Boolean
+
+  fun options(module: Any): KotlinCompilerPluginOptions
+}

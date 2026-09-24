@@ -48,6 +48,8 @@ data class AndroidModule(
   val dependencyResourceDirs: List<Path> = emptyList(),
   val dependencyNativeLibDirs: List<Path> = emptyList(),
   val dependencyAssetDirs: List<Path> = emptyList(),
+  val localNativeLibDir: Path? = null,
+  val localNativeIncludeDir: Path? = null,
   val javaSourceLevel: String = "11",
   val javaBytecodeLevel: String = "11",
   val cLanguageStandard: String = "c17",

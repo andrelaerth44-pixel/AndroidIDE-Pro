@@ -32,7 +32,11 @@ data class AndroidModule(
   val targetSdk: Int,
   val sdk: AndroidSdk,
   val compileClasspath: List<Path> = emptyList(),
-  val dependencyResourceDirs: List<Path> = emptyList()
+  val dependencyResourceDirs: List<Path> = emptyList(),
+  val javaSourceLevel: String = "11",
+  val javaBytecodeLevel: String = "11",
+  val cLanguageStandard: String = "c17",
+  val cppLanguageStandard: String = "c++20"
 ) {
   val manifest: Path get() = rootDir.resolve("src/main/AndroidManifest.xml")
   val sourceDir: Path get() = rootDir.resolve("src/main/java")

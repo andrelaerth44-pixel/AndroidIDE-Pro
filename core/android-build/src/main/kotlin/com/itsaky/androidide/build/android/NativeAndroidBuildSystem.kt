@@ -99,7 +99,8 @@ class NativeAndroidBuildSystem(
       BuildResult(
         success = true,
         outputApk = module.signedApk,
-        message = "assembleDebug completed with built-in language pipeline"
+        message = "assembleDebug completed with built-in language pipeline",
+        applicationId = module.applicationId
       )
     } else {
       BuildResult(

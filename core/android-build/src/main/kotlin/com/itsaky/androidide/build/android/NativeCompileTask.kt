@@ -102,7 +102,7 @@ class CompileNativeTask(
         add(output)
         add(module.compileCommandsFile)
       }
-    
+    }
 
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.nativeLibDir.createDirectories()

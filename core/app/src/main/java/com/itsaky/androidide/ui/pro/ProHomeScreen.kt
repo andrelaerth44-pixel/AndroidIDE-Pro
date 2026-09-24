@@ -27,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -78,7 +77,7 @@ fun ProHomeScreen(
         }
 
         Text(
-          text = "Workspace",
+          text = stringResource(com.itsaky.androidide.resources.R.string.androidide_pro_workspace),
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
           color = MaterialTheme.colorScheme.onBackground,
@@ -119,7 +118,7 @@ private fun Header() {
     )
 
     Text(
-      text = "Code. Build. Ship.",
+      text = stringResource(com.itsaky.androidide.resources.R.string.androidide_pro_tagline),
       style = MaterialTheme.typography.bodyLarge,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
       modifier = Modifier.padding(top = 4.dp)
@@ -188,7 +187,7 @@ private fun PrimaryActionCard(
 
         if (featured) {
           Text(
-            text = "Start a new Android project",
+            text = stringResource(com.itsaky.androidide.resources.R.string.androidide_pro_create_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 3.dp)

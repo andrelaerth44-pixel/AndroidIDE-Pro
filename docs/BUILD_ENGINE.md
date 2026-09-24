@@ -210,7 +210,7 @@ O aplicativo não deve carregar Gradle como biblioteca de execução no processo
 O fallback Gradle continua isolado e limitado. A própria documentação do Gradle observa que
 `--no-daemon` pode resultar em uma JVM de uso único dependendo dos argumentos da JVM, portanto a
 política não deve ser interpretada como "zero processos Gradle". A solução estrutural continua
-sendo remover Gradle do caminho normal. citeturn521816search2
+sendo remover Gradle do caminho normal. [Gradle Daemon](https://docs.gradle.org/current/userguide/gradle_daemon.html)
 
 A política existente mantém:
 
@@ -221,7 +221,7 @@ A política existente mantém:
 - file-system watching desabilitado;
 - build cache desabilitado pelo fallback.
 
-As opções são suportadas pelas interfaces de linha de comando/configuração do Gradle. citeturn521816search0turn521816search1
+As opções são suportadas pelas interfaces de linha de comando/configuração do Gradle. [Gradle CLI](https://docs.gradle.org/current/userguide/command_line_interface.html) e [Gradle Build Environment](https://docs.gradle.org/current/userguide/build_environment.html)
 
 ## Primeira operação migrada
 

@@ -422,6 +422,16 @@ class KotlinCompileTask(
     )
     setCompilerArgument(arguments, "setSkipRuntimeVersionCheck", true)
 
+    if (module.kotlinCompilerPluginClasspaths.isNotEmpty()) {
+      setCompilerArgument(
+        arguments,
+        "setPluginClasspaths",
+        module.kotlinCompilerPluginClasspaths
+          .map(Path::toString)
+          .toTypedArray()
+      )
+    }
+
     val messageCollectorClass = Class.forName(
       "org.jetbrains.kotlin.cli.common.messages.MessageCollector",
       true,

@@ -58,7 +58,10 @@ object NativeProjectScaffolder {
 
     when (request.kind.uiLanguage) {
       UiLanguageKind.JAVA -> writeJavaActivity(request)
-      UiLanguageKind.KOTLIN -> writeKotlinActivity(request)
+      UiLanguageKind.KOTLIN -> {
+        writeKotlinNativeBridge(request)
+        writeKotlinActivity(request)
+      }
       null -> Unit
     }
 
@@ -212,7 +215,7 @@ object NativeProjectScaffolder {
         #include <jni.h>
 
         JNIEXPORT jint JNICALL
-        Java_${jniMangledPackage(request.packageName)}_MainActivity_nativeValue(
+        Java_${jniMangledPackage(request.packageName)}_${nativeJniClass(request)}_nativeValue(
             JNIEnv* env,
             jobject thiz) {
           (void) env;
@@ -304,6 +307,29 @@ object NativeProjectScaffolder {
     )
   }
 
+  private fun writeKotlinNativeBridge(request: NativeProjectScaffoldRequest) {
+    val file = request.rootDir
+      .resolve("src/main/java")
+      .resolve(request.packageName.replace('.', '/'))
+      .resolve("NativeBridge.java")
+
+    file.parent.createDirectories()
+
+    Files.writeString(
+      file,
+      """
+      package ${request.packageName};
+
+      public final class NativeBridge {
+
+        private NativeBridge() {}
+
+        public static native int nativeValue();
+      }
+      """.trimIndent()
+    )
+  }
+
   private fun writeKotlinActivity(request: NativeProjectScaffoldRequest) {
     val file = request.rootDir
       .resolve("src/main/kotlin")
@@ -327,16 +353,13 @@ object NativeProjectScaffolder {
           init {
             System.loadLibrary("appnative")
           }
-
-          @JvmStatic
-          external fun nativeValue(): Int
         }
 
         override fun onCreate(state: Bundle?) {
           super.onCreate(state)
 
           TextView(this).apply {
-            text = "Native value: " + nativeValue()
+            text = "Native value: " + NativeBridge.nativeValue()
             textSize = 22f
             setContentView(this)
           }
@@ -367,6 +390,15 @@ object NativeProjectScaffolder {
       "Android SDK root does not exist: " + request.sdkRoot
     }
   }
+
+  private fun nativeJniClass(
+    request: NativeProjectScaffoldRequest
+  ): String =
+    if (request.kind.uiLanguage == UiLanguageKind.KOTLIN) {
+      "NativeBridge"
+    } else {
+      "MainActivity"
+    }
 
   private fun escapeXml(value: String): String =
     value

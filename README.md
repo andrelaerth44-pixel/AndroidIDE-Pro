@@ -4,7 +4,7 @@
 
 <h2 align="center"><b>AndroidIDE</b></h2>
 <p align="center">
-  An IDE to develop real, Gradle-based Android applications on Android devices.
+  An IDE to develop real Android applications directly on Android devices.
 <p><br>
 
 <p align="center">
@@ -60,6 +60,7 @@ AndroidIDE Pro
     ├── Resources
     ├── AAPT2
     ├── Java / Kotlin
+    ├── C / C++
     ├── D8 / R8
     ├── APK / AAB
     ├── Align
@@ -243,7 +244,7 @@ Existing IWorkspace / AndroidModule
     ↓
 NativeAndroidBuildSystem
     ↓
-AAPT2 → javac → D8 → package → zipalign → apksigner
+AAPT2 → embedded javac → embedded kotlinc → embedded LLVM → D8 → package → zipalign → apksigner
 ~~~
 
 Esta ponte foi projetada para reutilizar o modelo de projeto existente do AndroidIDE em vez de criar um segundo Workspace paralelo.

@@ -33,4 +33,5 @@
   <string name="build_center_close">Close</string>
   <string name="build_center_no_project">No open Android project</string>
   <string name="build_center_copy_path">Copy APK path</string>
+  <string name="build_center_install">Install APK</string>
 </resources>

@@ -94,3 +94,23 @@ Views/XML existentes permanecem durante a migração quando forem a opção mais
 Tasks de build não poderão depender diretamente de Activity, Fragment ou View.
 
 O build será acionado por serviços e interfaces estáveis, permitindo trocar o backend sem reconstruir a UI.
+
+    
+---
+
+## ADR-0009 — Build System API independente
+
+**Data:** 2026-09-24  
+**Status:** aceito
+
+A primeira implementação funcional do Build Engine será um módulo `:build:api` independente do Gradle e da UI.
+
+### Motivo
+
+A IDE já possui um backend Gradle funcional. Substituí-lo diretamente aumentaria o risco.
+
+A API permite estabelecer a fronteira arquitetural primeiro e migrar os backends em etapas.
+
+### Consequência
+
+O próximo backend será um Gradle Adapter compatível com o comportamento atual. O executor próprio e o pipeline Android serão implementados depois.

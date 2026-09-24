@@ -31,14 +31,20 @@ Native Build Engine
 
 core/language-support é uma camada interna do produto; não é um mecanismo de plugins.
 
+## Estados de suporte
+
+- `NATIVE_BUILD_READY`: editor + análise + compilação nativa disponíveis no núcleo.
+- `NATIVE_BUILD_REQUIRES_CORE_TOOLCHAIN`: backend nativo integrado, mas o pack executável ainda precisa ser instalado/fornecido pelo Core Toolchain Manager.
+- `EDITOR_AND_ANALYSIS_ONLY`: linguagem/documento incorporado para edição e análise, sem compilação Android.
+
 ## Linguagens incorporadas
 
 | Linguagem | Editor | Build nativo |
 |---|---:|---:|
 | Java | sim | sim |
 | Kotlin | sim | sim, compiler em processo |
-| C | em evolução | sim, LLVM on-device |
-| C++ | em evolução | sim, LLVM on-device |
+| C | em evolução | backend nativo + pack LLVM pendente |
+| C++ | em evolução | backend nativo + pack LLVM pendente |
 | XML | sim | sim, AAPT2 |
 | JSON | sim | infraestrutura |
 | Markdown | sim | infraestrutura |

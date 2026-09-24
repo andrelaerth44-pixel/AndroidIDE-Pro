@@ -20,7 +20,12 @@ object NativeLanguageScanner {
             val language = BuiltInLanguageRegistry.find(file)
             if (language == null) {
               val extension = file.fileName.toString().substringAfterLast('.', "")
-              if (extension.isNotEmpty() && !extension.matches(Regex("^(iml|gitkeep)$"))) {
+              if (
+                extension.isNotEmpty() &&
+                !extension.matches(
+                  Regex("^(iml|gitkeep|properties|a|so)$")
+                )
+              ) {
                 unknown += file
               }
             } else {

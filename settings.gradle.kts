@@ -140,6 +140,7 @@ include(
   ":core:projects",
   ":core:resources",
   ":core:toolchain-api",
+  ":core:toolchain-kotlin",
   ":core:toolchain-llvm",
   ":editor:api",
   ":editor:impl",

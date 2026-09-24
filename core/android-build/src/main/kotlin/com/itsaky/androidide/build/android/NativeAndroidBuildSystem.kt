@@ -44,14 +44,22 @@ class NativeAndroidBuildSystem(
 
     validateToolchain()
 
+    val hasJavaSources =
+      sourceReport.filesByLanguage[com.itsaky.androidide.language.BuiltInLanguage.JAVA]
+        .orEmpty()
+        .isNotEmpty()
+
+    val hasKotlinSources =
+      sourceReport.filesByLanguage[com.itsaky.androidide.language.BuiltInLanguage.KOTLIN]
+        .orEmpty()
+        .isNotEmpty()
+
+    val hasJvmSources = hasJavaSources || hasKotlinSources
+
     val merge = MergeResourcesTask(module)
     val compileRes = Aapt2CompileTask(module)
     val link = Aapt2LinkTask(module)
-    val buildConfig = GenerateBuildConfigTask(module)
-    val javac = CompileJavaTask(module)
-    val kotlinc = KotlinCompileTask(module)
     val native = CompileNativeTask(module)
-    val dex = DexBuilderTask(module)
     val packageApk = PackageApkTask(module)
     val align = ZipalignTask(module)
     val sign = SignApkTask(
@@ -62,32 +70,61 @@ class NativeAndroidBuildSystem(
       keyPassword = debugKeyPassword
     )
 
+    val buildConfig = GenerateBuildConfigTask(module)
+    val javac = CompileJavaTask(module)
+    val kotlinc = KotlinCompileTask(module)
+    val dex = DexBuilderTask(module)
+
     val graph = TaskGraph()
       .add(merge)
       .add(compileRes)
       .add(link)
-      .add(buildConfig)
-      .add(javac)
-      .add(kotlinc)
       .add(native)
-      .add(dex)
       .add(packageApk)
       .add(align)
       .add(sign)
       .dependsOn(compileRes.id, merge.id)
       .dependsOn(link.id, compileRes.id)
-      .dependsOn(javac.id, link.id)
-      .dependsOn(javac.id, buildConfig.id)
-      .dependsOn(kotlinc.id, javac.id)
       .dependsOn(native.id, link.id)
-      .dependsOn(native.id, javac.id)
-      .dependsOn(dex.id, javac.id)
-      .dependsOn(dex.id, kotlinc.id)
       .dependsOn(packageApk.id, link.id)
-      .dependsOn(packageApk.id, dex.id)
       .dependsOn(packageApk.id, native.id)
       .dependsOn(align.id, packageApk.id)
       .dependsOn(sign.id, align.id)
+
+    if (hasJvmSources) {
+      graph
+        .add(buildConfig)
+        .add(javac)
+        .add(dex)
+        .dependsOn(javac.id, link.id)
+        .dependsOn(javac.id, buildConfig.id)
+        .dependsOn(native.id, javac.id)
+        .dependsOn(dex.id, javac.id)
+        .dependsOn(packageApk.id, dex.id)
+    }
+
+    if (hasKotlinSources) {
+      graph
+        .add(kotlinc)
+        .dependsOn(kotlinc.id, javac.id)
+        .dependsOn(dex.id, kotlinc.id)
+    }
+
+    logger(
+      buildString {
+        append("NATIVE GRAPH: jvm=")
+        append(hasJvmSources)
+        append(" kotlin=")
+        append(hasKotlinSources)
+        append(" c/cpp=")
+        append(
+          sourceReport.filesByLanguage.keys.any {
+            it == com.itsaky.androidide.language.BuiltInLanguage.C ||
+              it == com.itsaky.androidide.language.BuiltInLanguage.CPP
+          }
+        )
+      }
+    )
 
     val result = graph.execute(
       DefaultBuildContext(

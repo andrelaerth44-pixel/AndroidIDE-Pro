@@ -1,140 +1,714 @@
-<p align="center">
-  <img src="./images/icon.png" alt="AndroidIDE" width="80" height="80"/>
-</p>
+# AndroidIDE Pro
 
-<h2 align="center"><b>AndroidIDE</b></h2>
-<p align="center">
-  An IDE to develop real, Gradle-based Android applications on Android devices.
-<p><br>
+> Continuação e evolução do AndroidIDE original para uma IDE de desenvolvimento Android on-device moderna, modular, extensível e tecnicamente rastreável.
 
-<p align="center">
-<!-- Latest release -->
-<img src="https://img.shields.io/github/v/release/AndroidIDEOfficial/AndroidIDE?include_prereleases&amp;label=latest%20release" alt="Latest release">
-<!-- Build and test -->
-<img src="https://github.com/AndroidIDEOfficial/AndroidIDE/actions/workflows/build.yml/badge.svg" alt="Builds and tests">
-<!-- CodeFactor -->
-<img src="https://www.codefactor.io/repository/github/androidideofficial/androidide/badge/main" alt="CodeFactor">
-<!-- Crowdin -->
-<a href="https://crowdin.com/project/androidide"><img src="https://badges.crowdin.net/androidide/localized.svg" alt="Crowdin"></a>
-<!-- License -->
-<img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License"></p>
+**Status atual:** fase de auditoria e fundação documental. Nenhum código funcional do AndroidIDE foi alterado nesta etapa.  
+**Branch de desenvolvimento:** `work/androidide-pro-dev-foundation`  
+**Base desta branch:** `dev`  
+**Commit-base:** `77ee1a315f34b9ed74a9da94f94a0dc276f72ff6`  
+**Data da auditoria:** 2026-09-24
 
-<p align="center">
-  <a href="https://docs.androidide.com/">Explore the docs »</a> &nbsp; &nbsp;
-</p>
+---
 
-<p align="center">
-  <a href="https://github.com/AndroidIDEOfficial/AndroidIDE/issues/new?labels=bug&template=BUG.yml&title=%5BBug%5D%3A+">Report a bug</a> &nbsp; &#8226; &nbsp;
-  <a href="https://github.com/AndroidIDEOfficial/AndroidIDE/issues/new?labels=feature&template=FEATURE.yml&title=%5BFeature%5D%3A+">Request a feature</a> &nbsp; &#8226; &nbsp;
-  <a href="https://t.me/androidide_discussions">Join us on Telegram</a>
-</p>
+## 1. Visão
 
-> [!WARNING]
-> 
-> THIS PROJECT IS NOT MAINTAINED ANYMORE.
+O AndroidIDE Pro é uma evolução do AndroidIDE. Não é uma IDE nova criada do zero e não é uma cópia do CodeAssist.
 
-## Features
+A regra central do projeto é:
 
-- [x] Gradle support.
-- [x] `JDK 11` and `JDK 17` available for use.
-- [x] Terminal with necessary packages.
-- [x] Custom environment variables (for Build & Terminal).
-- [x] SDK Manager (Available via terminal).
-- [x] API information for classes and their members (since, removed, deprecated).
-- [x] Log reader (shows your app's logs in real-time)
-- [ ] Language servers
-    - [x] Java
-    - [x] XML
-    - [ ] Kotlin
-- [ ] UI Designer
-    - [x] Layout inflater
-    - [x] Resolve resource references
-    - [x] Auto-complete resource values when user edits attributes using the attribute editor
-    - [x] Drag & Drop
-    - [x] Visual attribute editor
-    - [x] Android Widgets
-- [ ] String Translator
-- [ ] Asset Studio (Drawable & Icon Maker)
-- [x] Git
+> Preservar o que já funciona no AndroidIDE, modernizar onde existe ganho técnico real e reutilizar ideias ou componentes do CodeAssist apenas depois de verificar arquitetura, compatibilidade, licença, desempenho e integração.
 
-## Installation
+O produto final deverá permitir desenvolvimento Android diretamente no dispositivo, com editor profissional, análise semântica, build on-device, Java/Kotlin, XML/Compose, C/C++, NDK/CMake, Git, terminal, ferramentas de recursos e uma plataforma extensível.
 
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.svg"
-    alt="Get it on F-Droid"
-    height="80">](https://f-droid.org/packages/com.itsaky.androidide)
-[<img src="https://github.com/Kunzisoft/Github-badge/raw/main/get-it-on-github.svg"
-    alt="Get it on F-Droid"
-    height="80">](https://github.com/AndroidIDEOfficial/AndroidIDE/releases)
+---
 
-> _Please install AndroidIDE from trusted sources only i.e._
-> - [_The AndroidIDE website_](https://androidide.com)
-> - [_GitHub Releases_](https://github.com/AndroidIDEOfficial/AndroidIDE/releases)
-> - [_GitHub Actions_](https://github.com/AndroidIDEOfficial/AndroidIDE/actions?query=branch%3Adev+event%3Apush)
-> - [_F-Droid_](https://f-droid.org/packages/com.itsaky.androidide/)
+## 2. Regra de rastreabilidade
 
-- Download the AndroidIDE APK from the mentioned trusted sources.
-- Follow the
-  instructions [here](https://docs.androidide.com/tutorials/get-started.html) to
-  install the build tools.
+O projeto deverá sempre responder:
 
-## Limitations
+- o que existe hoje;
+- o que foi alterado;
+- por que foi alterado;
+- o que ainda falta;
+- qual é o próximo trabalho;
+- quais decisões arquiteturais já foram tomadas;
+- quais riscos estão abertos.
 
-- For working with projects in AndroidIDE, your project must use Android Gradle Plugin v7.2.0 or
-  newer. Projects with older AGP must be migrated to newer versions.
-- SDK Manager is already included in Android SDK and is accessible in AndroidIDE via its Terminal.
-  But, you cannot use it to install some tools (like NDK) because those tools are not built for
-  Android.
-- No official NDK support because we haven't built the NDK for Android.
+Arquivos de controle:
 
-The app is still being developed actively. It's in beta stage and may not be stable. if you have any
-issues using the app, please let us know.
+- [STATUS](docs/STATUS.md)
+- [TASKS](docs/TASKS.md)
+- [CHANGELOG](docs/CHANGELOG.md)
+- [DECISIONS](docs/DECISIONS.md)
+- [ARCHITECTURE](docs/ARCHITECTURE.md)
+- [ROADMAP](docs/ROADMAP.md)
+- [BUILD ENGINE](docs/BUILD_ENGINE.md)
+- [NDK](docs/NDK_SUPPORT.md)
+- [ICON CENTER](docs/ICON_CENTER.md)
+- [UI GUIDELINES](docs/UI_GUIDELINES.md)
 
-## Contributing
+Depois de cada mudança relevante, a documentação deverá ser atualizada no mesmo ciclo.
 
-See the [contributing guide](./CONTRIBUTING.md).
+---
 
-For translations, visit the [Crowdin project page](https://crowdin.com/project/androidide).
+## 3. Base real do repositório
 
-## Thanks to
+O repositório possui várias linhas históricas importantes.
 
-- [Rosemoe](https://github.com/Rosemoe) for the
-  awesome [CodeEditor](https://github.com/Rosemoe/sora-editor)
-- [Termux](https://github.com/termux) for [Terminal Emulator](https://github.com/termux/termux-app)
-- [Bogdan Melnychuk](https://github.com/bmelnychuk)
-  for [AndroidTreeView](https://github.com/bmelnychuk/AndroidTreeView)
-- [George Fraser](https://github.com/georgewfraser) for
-  the [Java Language Server](https://github.com/georgewfraser/java-language-server)
+### Branch padrão atual
 
-Thanks to all the developers who have contributed to this project.
+`apk-v3-signing`
 
-<p>This project is supported by:</p>
-<p>
-  <a href="https://m.do.co/c/54add371d1d7">
-    <img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/SVG/DO_Logo_horizontal_blue.svg" width="201px">
-  </a>
-</p>
+Ela aponta para um commit de agosto de 2023 e contém uma linha de build antiga do AndroidIDE.
 
-## Contact Us
+### Branch de desenvolvimento escolhida para o AndroidIDE Pro
 
-- [Website](https://m.androidide.com)
-- [Telegram](https://t.me/androidide_discussions)
+`dev`
 
-## License
+É uma linha muito mais recente do AndroidIDE, com commit-base de outubro de 2024. Ela possui a arquitetura moderna de módulos `core`, `editor`, `tooling`, `utilities`, `xml`, `termux`, `java` e `testing`.
+
+### Decisão
+
+O trabalho novo será baseado em `dev`, não em `apk-v3-signing`.
+
+As diferenças específicas de `apk-v3-signing` serão auditadas e portadas somente quando forem necessárias, especialmente as relacionadas à distribuição/APK e assinaturas.
+
+Não será feito um merge indiscriminado dos históricos.
+
+---
+
+## 4. Estado auditado
+
+A arquitetura do branch `dev` contém, entre outros:
+
+### Annotation
+
+- `annotation:annotations`
+- `annotation:processors`
+- `annotation:processors-ksp`
+
+### Core
+
+- `core:actions`
+- `core:app`
+- `core:common`
+- `core:indexing-api`
+- `core:indexing-core`
+- `core:lsp-api`
+- `core:lsp-models`
+- `core:projects`
+- `core:resources`
+
+### Editor
+
+- `editor:api`
+- `editor:impl`
+- `editor:lexers`
+- `editor:treesitter`
+
+### Eventos
+
+- `event:eventbus`
+- `event:eventbus-android`
+- `event:eventbus-events`
+
+### Java/LSP
+
+- `java:javac-services`
+- `java:lsp`
+
+### Logging
+
+- `logging:idestats`
+- `logging:logger`
+- `logging:logsender`
+- `logging:logsender-sample`
+
+### Termux
+
+- `termux:application`
+- `termux:emulator`
+- `termux:shared`
+- `termux:view`
+
+### Tooling
+
+- `tooling:api`
+- `tooling:builder-model-impl`
+- `tooling:events`
+- `tooling:impl`
+- `tooling:model`
+- `tooling:plugin`
+- `tooling:plugin-config`
+
+### Utilities
+
+- `utilities:build-info`
+- `utilities:flashbar`
+- `utilities:framework-stubs`
+- `utilities:lookup`
+- `utilities:preferences`
+- `utilities:shared`
+- `utilities:templates-api`
+- `utilities:templates-impl`
+- `utilities:treeview`
+- `utilities:uidesigner`
+- `utilities:xml-inflater`
+
+### XML
+
+- `xml:aaptcompiler`
+- `xml:dom`
+- `xml:lsp`
+- `xml:resources-api`
+- `xml:utils`
+
+### Testes
+
+- `testing:androidTest`
+- `testing:benchmarks`
+- `testing:commonTest`
+- `testing:gradleToolingTest`
+- `testing:lspTest`
+- `testing:unitTest`
+
+---
+
+## 5. Stack atual auditada
+
+Na linha `dev`, a infraestrutura do projeto usa atualmente:
+
+- Gradle wrapper 8.8 para construir a própria IDE;
+- AGP 8.5.0;
+- Kotlin 1.9.24;
+- Kotlin Coroutines 1.8.1;
+- KSP 1.9.24-1.0.20;
+- Tree-sitter 4.3.1;
+- Sora Editor 0.23.4-ce8de8e-SNAPSHOT;
+- Glide 4.16.0;
+- Navigation 2.7.7;
+- JGit 6.8.0;
+- LSP4J JSON-RPC 0.22.0;
+- Material Components 1.11.0;
+- AAPT2 artifacts alinhados a AGP 8.x;
+- JUnit 4 e JUnit 5;
+- Robolectric;
+- Espresso;
+- MockK/Mockito;
+- WorkManager.
+
+Esses números representam a base auditada, não uma promessa de permanecerem como versões finais. A atualização para versões atuais será feita depois de validar compatibilidade entre Gradle, AGP, Kotlin, JDK, AndroidX e tooling.
+
+---
+
+## 6. Build da própria IDE x build do projeto do usuário
+
+Essa separação será obrigatória.
+
+### Build da IDE
+
+Responsável por compilar o AndroidIDE Pro no ambiente de desenvolvimento.
+
+Pode usar Gradle normalmente.
+
+### Build do usuário
+
+Responsável por gerar o aplicativo do usuário no próprio Android.
+
+O objetivo arquitetural é evoluir de uma dependência central da Gradle Tooling API para um Build Engine on-device próprio, mantendo uma camada de compatibilidade/importação para projetos Gradle existentes.
+
+---
+
+## 7. Arquitetura-alvo
 
 ```
-AndroidIDE is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-AndroidIDE is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with AndroidIDE.  If not, see <https://www.gnu.org/licenses/>.
+AndroidIDE Pro
+├── UI Shell
+├── Project Model
+├── Editor
+│   ├── Sora
+│   ├── Tree-sitter
+│   └── LSP
+├── Indexing
+├── Terminal
+├── Git
+├── Resource Tools
+├── UI Designer
+├── Compose Preview
+├── Build Engine
+│   ├── Project Graph
+│   ├── Task Engine
+│   ├── Incremental State
+│   ├── Cache
+│   ├── Dependency Resolution
+│   ├── Java
+│   ├── Kotlin
+│   ├── Android Resources
+│   ├── AAPT2
+│   ├── D8/R8
+│   ├── Packaging
+│   └── Signing
+├── Native Build
+│   ├── Clang/LLVM
+│   ├── NDK
+│   ├── CMake
+│   └── JNI
+├── Extension System
+└── Compatibility Layer
+    └── Gradle Projects
 ```
 
-Any violations to the license can be reported either by opening an issue or writing a mail to us
-directly.
+Esse desenho é um objetivo arquitetural, não uma implementação já existente.
+
+---
+
+## 8. Build Engine
+
+O Build Engine será dividido em:
+
+### Project Model
+
+Representa:
+
+- workspace;
+- projetos;
+- módulos;
+- source sets;
+- variantes;
+- build types;
+- flavors;
+- SDK;
+- dependências;
+- recursos;
+- manifest;
+- Kotlin/Java;
+- Compose;
+- C/C++;
+- CMake/NDK.
+
+### Task Engine
+
+Cada task deverá possuir:
+
+- identidade;
+- entradas;
+- saídas;
+- propriedades;
+- dependências;
+- execução;
+- diagnóstico;
+- cancelamento.
+
+### Incremental Engine
+
+Usará:
+
+- fingerprints;
+- estado persistente;
+- invalidação;
+- cache;
+- execução somente quando necessário.
+
+### Diagnostics
+
+Os erros deverão ser estruturados com:
+
+- severidade;
+- categoria;
+- arquivo;
+- linha;
+- coluna;
+- código;
+- mensagem;
+- task responsável.
+
+---
+
+## 9. Pipeline Android planejado
+
+A implementação será incremental:
+
+1. configuração do projeto;
+2. dependências;
+3. merge de manifest;
+4. recursos;
+5. AAPT2 compile;
+6. AAPT2 link;
+7. geração de R;
+8. Java;
+9. Kotlin;
+10. KSP/annotation processing;
+11. Compose;
+12. D8;
+13. R8;
+14. packaging;
+15. zipalign;
+16. assinatura;
+17. APK;
+18. AAB;
+19. verificação de artefatos.
+
+---
+
+## 10. Gradle compatibility
+
+Projetos Gradle existentes continuarão sendo tratados como primeira classe.
+
+A compatibilidade terá responsabilidades de:
+
+- importação;
+- descoberta de módulos;
+- descoberta de variantes;
+- leitura de dependências;
+- sincronização;
+- execução de tarefas incompatíveis com o Build Engine;
+- explicação de recursos que não puderem ser convertidos.
+
+A substituição do Gradle não será feita de maneira abrupta.
+
+---
+
+## 11. Editor e linguagem
+
+A base atual será preservada e modernizada.
+
+Prioridade:
+
+1. Java;
+2. Kotlin;
+3. XML;
+4. C;
+5. C++;
+6. JSON/YAML/TOML;
+7. JavaScript/TypeScript;
+8. Python;
+9. Rust;
+10. Go;
+11. Shell;
+12. SQL;
+13. Markdown/HTML/CSS.
+
+Uma linguagem só será considerada suportada quando tiver uma experiência efetiva de edição e diagnóstico adequada ao seu nível de integração.
+
+---
+
+## 12. LSP e Indexing
+
+A infraestrutura de LSP e indexação existente é um ativo do projeto.
+
+A evolução deverá suportar:
+
+- diagnostics;
+- completion;
+- hover;
+- definition;
+- references;
+- rename;
+- formatting;
+- code actions;
+- symbols;
+- workspace symbols.
+
+Indexação deverá privilegiar processamento incremental e persistência em disco para reduzir pressão de memória.
+
+---
+
+## 13. C/C++/NDK
+
+O AndroidIDE Pro terá suporte nativo para:
+
+- NDK;
+- Clang/LLVM;
+- C;
+- C++;
+- CMake;
+- JNI;
+- arm64-v8a;
+- armeabi-v7a;
+- x86;
+- x86_64.
+
+Também deverá existir um NDK Manager para versões instaladas e seleção por projeto.
+
+---
+
+## 14. Interface
+
+A interface será modernizada progressivamente.
+
+Diretrizes:
+
+- Material 3;
+- Compose quando houver ganho;
+- Views existentes mantidas onde a migração não compensar;
+- tipografia clara;
+- navegação previsível;
+- painéis redimensionáveis;
+- command palette;
+- editor com abas;
+- terminal integrado;
+- build output;
+- problems;
+- Logcat;
+- Project view.
+
+Não serão usados como linguagem visual:
+
+- neon;
+- cyberpunk;
+- RGB;
+- brilho excessivo;
+- gradientes decorativos;
+- glassmorphism indiscriminado;
+- elementos 3D decorativos.
+
+---
+
+## 15. Icon Center
+
+Será criada uma plataforma integrada para:
+
+- Material Symbols;
+- bibliotecas de ícones licenciadas de forma compatível;
+- SVG;
+- VectorDrawable;
+- PNG/WebP;
+- App Icon Studio;
+- inserção contextual no código.
+
+O sistema deverá ser extensível e não amarrado a um único fornecedor.
+
+---
+
+## 16. Plugins
+
+A arquitetura deverá permitir plugins para:
+
+- linguagens;
+- LSP;
+- build systems;
+- tasks;
+- templates;
+- icon repositories;
+- ferramentas;
+- temas;
+- integrações externas.
+
+Plugins deverão declarar:
+
+- versão;
+- permissões;
+- dependências;
+- APIs necessárias;
+- compatibilidade.
+
+---
+
+## 17. IA
+
+IA será opcional.
+
+O core funcionará completamente sem IA.
+
+A camada futura poderá aceitar provedores configuráveis via API, com:
+
+- contexto do arquivo;
+- seleção;
+- projeto;
+- chat;
+- geração;
+- edição;
+- refatoração;
+- explicação.
+
+Segredos deverão utilizar armazenamento seguro do Android.
+
+---
+
+## 18. Performance
+
+O projeto será tratado como software para hardware limitado.
+
+Regras:
+
+- jobs canceláveis;
+- cache controlado;
+- carga sob demanda;
+- paralelismo adaptativo;
+- descarregamento de serviços ociosos;
+- evitar ASTs gigantes permanentes na RAM;
+- evitar processos duplicados;
+- operações pesadas em background;
+- persistência quando apropriado.
+
+---
+
+## 19. Segurança
+
+Áreas obrigatórias:
+
+- API keys;
+- credenciais Git;
+- keystores;
+- validação de caminhos;
+- confirmação para ações destrutivas;
+- verificação de downloads;
+- integridade de caches;
+- permissões mínimas possíveis;
+- isolamento de tarefas quando viável.
+
+---
+
+## 20. Testes
+
+Cada camada relevante deverá possuir:
+
+- unit tests;
+- integration tests;
+- build fixtures;
+- regression projects;
+- UI tests;
+- performance/benchmark tests quando necessário.
+
+A aceitação de uma feature exigirá mais do que uma compilação local.
+
+---
+
+## 21. CodeAssist: reaproveitamento controlado
+
+Serão estudados e eventualmente adaptados:
+
+- Task Engine;
+- Build System SPI;
+- build graph;
+- incremental execution;
+- cache;
+- diagnostics;
+- Android pipeline;
+- icon repository;
+- Icon Manager;
+- App Icon Studio;
+- mecanismos de extensão.
+
+Antes de portar código:
+
+1. verificar licença;
+2. identificar autoria;
+3. conferir dependências;
+4. entender o fluxo;
+5. adaptar interfaces ao AndroidIDE;
+6. preservar avisos de copyright quando exigidos;
+7. escrever testes;
+8. registrar a decisão.
+
+---
+
+## 22. Critério de pronto
+
+Uma feature somente será considerada concluída quando:
+
+- implementada;
+- integrada;
+- testada;
+- documentada;
+- compatível com as partes preservadas;
+- registrada no changelog;
+- marcada como concluída no status.
+
+---
+
+## 23. O que não será feito
+
+- reescrever o AndroidIDE inteiro sem necessidade;
+- copiar o CodeAssist inteiro;
+- trocar estabilidade por efeitos visuais;
+- transformar IA em requisito;
+- declarar suporte de linguagem apenas por syntax highlighting;
+- remover recursos sem estratégia de migração;
+- misturar indiscriminadamente branches históricas;
+- atualizar dependências sem validar a cadeia de compatibilidade.
+
+---
+
+## 24. Próximas etapas
+
+### Fase 0 — Fundação
+
+- [x] selecionar base `dev`;
+- [x] criar branch de trabalho;
+- [x] criar especificação;
+- [x] criar rastreamento de status/tarefas;
+- [ ] finalizar inventário de módulos;
+- [ ] mapear dependências por módulo;
+- [ ] mapear entry points;
+- [ ] mapear serviços;
+- [ ] mapear pipelines atuais;
+- [ ] registrar riscos.
+
+### Fase 1 — Build
+
+- [ ] abstração Build System;
+- [ ] Task Engine;
+- [ ] diagnóstico estruturado;
+- [ ] incrementalidade;
+- [ ] cache;
+- [ ] dependências;
+- [ ] Android pipeline inicial;
+- [ ] APK.
+
+### Fase 2 — Native
+
+- [ ] NDK;
+- [ ] Clang/LLVM;
+- [ ] CMake;
+- [ ] JNI;
+- [ ] variantes ABI.
+
+### Fase 3 — UI/UX
+
+- [ ] Compose foundation;
+- [ ] Material 3;
+- [ ] workspace;
+- [ ] command palette;
+- [ ] painéis;
+- [ ] preferences.
+
+### Fase 4 — Tooling
+
+- [ ] Icon Center;
+- [ ] Asset Center;
+- [ ] Compose Preview;
+- [ ] APK inspector;
+- [ ] Logcat;
+- [ ] device tools.
+
+### Fase 5 — Extensibilidade
+
+- [ ] plugin API;
+- [ ] plugin lifecycle;
+- [ ] marketplace/catalog;
+- [ ] external tool providers.
+
+### Fase 6 — IA opcional
+
+- [ ] provider API;
+- [ ] contexto;
+- [ ] chat;
+- [ ] code actions;
+- [ ] edição assistida.
+
+---
+
+## 25. Estado neste commit
+
+**Implementação funcional:** 0 alterações nesta etapa.
+
+**Fundação documental:** em andamento.
+
+**Próximo ponto de trabalho:** terminar a auditoria estrutural do branch `dev`, especialmente o fluxo de build atual, serviços do app, editor/LSP/indexação, sistema de projetos e infraestrutura de Termux.
+
+---
+
+## Licença
+
+O AndroidIDE Pro mantém a GPLv3 da base AndroidIDE. Componentes externos terão sua licença e atribuição avaliadas individualmente antes de integração.

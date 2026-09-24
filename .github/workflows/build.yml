@@ -79,32 +79,37 @@ jobs:
         run: |
           ./gradlew :core:language-support:test :core:android-build:compileKotlin --stacktrace
 
-      - name: Package Kotlin core toolchain
+      - name: Assemble Kotlin core toolchain
         if: matrix.build_type == 'debug'
-        run: ./gradlew :core:android-build:packageKotlinToolchain --stacktrace
-
-      - name: Upload Kotlin core toolchain
-        if: matrix.build_type == 'debug'
-        uses: actions/upload-artifact@v4
-        with:
-          name: androidide-pro-kotlin-toolchain
-          path: core/android-build/build/toolchains/kotlin
-          if-no-files-found: error
+        run: ./gradlew :core:toolchain-kotlin:assembleRelease --stacktrace
 
       - name: Inspect Kotlin core toolchain size
         if: matrix.build_type == 'debug'
         shell: bash
         run: |
           set -euo pipefail
+          shopt -s nullglob
+          apks=(core/toolchain-kotlin/build/outputs/apk/release/*.apk)
+          test "${#apks[@]}" -eq 1
           mkdir -p build/toolchain-size
-          du -sh core/android-build/build/toolchains/kotlin | tee build/toolchain-size/kotlin.txt
+          for apk in "${apks[@]}"; do
+            stat -c '%n %s bytes (%h)' "$apk" | tee -a build/toolchain-size/kotlin-apk.txt
+          done
+
+      - name: Upload Kotlin core toolchain
+        if: matrix.build_type == 'debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidide-pro-kotlin-toolchain-apk
+          path: core/toolchain-kotlin/build/outputs/apk/release/*.apk
+          if-no-files-found: error
 
       - name: Upload Kotlin core toolchain size report
         if: matrix.build_type == 'debug'
         uses: actions/upload-artifact@v4
         with:
           name: androidide-pro-kotlin-toolchain-size
-          path: build/toolchain-size/kotlin.txt
+          path: build/toolchain-size/kotlin-apk.txt
           if-no-files-found: error
 
 

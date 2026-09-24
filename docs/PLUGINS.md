@@ -1,51 +1,40 @@
+
 # AndroidIDE Pro — Plugin Platform
 
-## Goal
+## Escopo
 
-Allow the IDE to gain capabilities without turning the core application into a monolith.
+O sistema de plugins é reservado para extensões opcionais que não pertencem ao núcleo de linguagens e compiladores.
 
-## Plugin categories
+Exemplos:
 
-- languages
-- themes
-- build systems
-- assets
-- tools
-- integrations
-- AI providers
+- temas;
+- integrações externas;
+- ferramentas opcionais;
+- provedores de IA;
+- automações e ações adicionais.
 
-## Principles
+## Fora do sistema de plugins
 
-Plugins should declare:
+Estas capacidades são nativas do AndroidIDE Pro:
 
-- ID
-- version
-- capabilities
-- permissions
-- dependencies
+- Java;
+- Kotlin;
+- C;
+- C++;
+- XML;
+- JSON;
+- Markdown;
+- language services;
+- compiladores;
+- build engine;
+- Android toolchains.
 
-## Safety boundary
+Não existe language plugin nem um plugin que substitua o build engine nativo.
 
-A plugin must not receive broad access to the filesystem, network or projects unless the capability explicitly requires it.
+## Compiler plugins
 
-The permission model must be designed before a marketplace is introduced.
+Compiler plugins Kotlin são extensões do compilador Kotlin nativo. Eles não são linguagens, não instalam um novo backend e não mudam a política de linguagem incorporada.
 
-## Initial API areas
+## Segurança
 
-```text
-Plugin
-├── UI extension
-├── command/action
-├── language provider
-├── build provider
-├── asset repository
-└── tool provider
-```
-
-## Long-term
-
-A local/offline plugin install flow should work without requiring a central marketplace.
-
-## Compiler extension point
-
-O CodeAssist atual usa uma SPI explícita para Kotlin compiler plugins, permitindo que Compose e outras extensões sejam aplicadas por módulo e entregues à tarefa de compilação Kotlin. O AndroidIDE Pro seguirá o mesmo conceito de extensão, mas através dos próprios contratos de build-api. Referência: CodeAssist/docs/extension-points.md.
+Extensões opcionais continuam sujeitas a permissões explícitas, escopo de filesystem, escopo de rede e dependências declaradas.

@@ -244,12 +244,14 @@ class CompileJavaTask(
       add(module.kotlinSourceDir)
       add(module.generatedRDir)
       add(module.generatedBuildConfigDir)
-      add(module.generatedJniHeadersDir)
       add(module.sdk.androidJar())
       addAll(module.compileClasspath)
     }
 
-  override val outputs = listOf(module.classesDir)
+  override val outputs = listOf(
+    module.classesDir,
+    module.generatedJniHeadersDir
+  )
 
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.classesDir.deleteRecursively()

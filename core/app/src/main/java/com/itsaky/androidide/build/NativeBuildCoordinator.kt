@@ -93,7 +93,10 @@ class NativeBuildCoordinator(
       compileSdk = compileSdk,
       minSdk = artifact.minSdkVersion,
       targetSdk = if (artifact.targetSdkVersionOverride > 0) artifact.targetSdkVersionOverride else compileSdk,
-      sdk = sdk
+      sdk = sdk,
+      compileClasspath = module.getCompileClasspaths()
+        .map { it.toPath() }
+        .filter { Files.exists(it) }
     )
 
     val keystore = ensureDebugKeystore()

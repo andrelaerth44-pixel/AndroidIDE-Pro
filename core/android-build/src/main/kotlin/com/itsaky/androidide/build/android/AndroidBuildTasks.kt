@@ -244,6 +244,7 @@ class CompileJavaTask(
       add(module.kotlinSourceDir)
       add(module.generatedRDir)
       add(module.generatedBuildConfigDir)
+      add(module.generatedJniHeadersDir)
       add(module.sdk.androidJar())
       addAll(module.compileClasspath)
     }
@@ -253,6 +254,8 @@ class CompileJavaTask(
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.classesDir.deleteRecursively()
     module.classesDir.createDirectories()
+    module.generatedJniHeadersDir.deleteRecursively()
+    module.generatedJniHeadersDir.createDirectories()
 
     if (!hasJvmSources(module)) {
       Files.writeString(module.classesDir.resolve(".jvm-stamp"), "no-jvm-sources\n")
@@ -323,7 +326,9 @@ class CompileJavaTask(
           "-source", module.javaSourceLevel,
           "-target", module.javaBytecodeLevel,
           "-proc:none",
-          "-g"
+          "-g",
+          "-h",
+          module.generatedJniHeadersDir.toString()
         ),
         null,
         units

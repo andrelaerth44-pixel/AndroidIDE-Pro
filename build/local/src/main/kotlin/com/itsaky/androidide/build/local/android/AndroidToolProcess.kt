@@ -9,7 +9,6 @@
 
 package com.itsaky.androidide.build.local.android
 
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
@@ -42,24 +41,35 @@ object AndroidToolProcess {
       if (environment.isNotEmpty()) builder.environment().putAll(environment)
 
       val process = builder.start()
-      val lines = ArrayList<String>()
-      process.inputStream.bufferedReader().useLines { sequence ->
-        sequence.forEach(lines::add)
+      val lines = java.util.Collections.synchronizedList(ArrayList<String>())
+      val readerThread = Thread {
+        runCatching {
+          process.inputStream.bufferedReader().useLines { sequence ->
+            sequence.forEach(lines::add)
+          }
+        }
+      }.apply {
+        isDaemon = true
+        start()
       }
 
-      if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+      val finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+      if (!finished) {
         process.destroyForcibly()
+        process.waitFor(2, TimeUnit.SECONDS)
+        readerThread.join(2_000)
         return AndroidToolResult(
           success = false,
-          log = lines,
+          log = lines.toList(),
           message = "Android tool timed out after ${timeoutSeconds}s",
         )
       }
 
+      readerThread.join(2_000)
       val exitCode = process.exitValue()
       AndroidToolResult(
         success = exitCode == 0,
-        log = lines,
+        log = lines.toList(),
         exitCode = exitCode,
         message = if (exitCode == 0) null else "Android tool exited with code $exitCode",
       )

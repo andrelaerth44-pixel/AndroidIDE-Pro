@@ -99,6 +99,14 @@ class GradleBuildService : Service(), BuildService, IToolingApiClient,
   private var server: IToolingApiServer? = null
   private var eventListener: EventListener? = null
 
+  private val nativeBuildCoordinator by lazy {
+    NativeBuildCoordinator(
+      isBuildInProgress = { isBuildInProgress },
+      setBuildInProgress = { value -> isBuildInProgress = value },
+      eventListener = { eventListener },
+    )
+  }
+
   private val buildServiceScope = CoroutineScope(
     Dispatchers.Default + CoroutineName("GradleBuildService"))
 
@@ -450,12 +458,21 @@ class GradleBuildService : Service(), BuildService, IToolingApiClient,
       return executeLightweightClean()
     }
 
+    // Native Android builds are attempted before the Tooling API is started. Unsupported projects/tasks
+    // return null and continue through the existing Gradle compatibility path below.
+    nativeBuildCoordinator.tryExecute(tasks)?.let { return it }
+
     checkServerStarted()
     val message = TaskExecutionMessage(listOf(*tasks))
     return performBuildTasks(server!!.executeTasks(message))
   }
 
   override fun cancelCurrentBuild(): CompletableFuture<BuildCancellationRequestResult> {
+    val nativeCancellation = nativeBuildCoordinator.cancel()
+    if (nativeCancellation.wasEnqueued) {
+      return CompletableFuture.completedFuture(nativeCancellation)
+    }
+
     checkServerStarted()
     return server!!.cancelCurrentBuild()
   }

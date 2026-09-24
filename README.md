@@ -438,7 +438,7 @@ Build fixtures serão usados para validar:
 - [ ] plugin runtime;
 - [ ] IA provider layer.
 
-**Próxima ação:** validar o novo módulo em build/test e depois criar o Gradle Adapter atrás do `BuildSystem`, sem alterar ainda o backend Gradle existente.
+**Próxima ação:** criar o Gradle Adapter atrás do `BuildSystem`, mantendo o backend Gradle existente como caminho de execução.
 
 ---
 

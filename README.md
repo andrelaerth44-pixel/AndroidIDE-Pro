@@ -55,8 +55,7 @@ AndroidIDE Pro
 │   ├── Search
 │   └── Refactoring
 ├── Build Router
-│   ├── Native Build (principal)
-│   └── Gradle (fallback)
+│   └── Native Build (única rota)
 └── Native Build Engine
     ├── Resources
     ├── AAPT2
@@ -77,14 +76,13 @@ O Android é a plataforma de desenvolvimento. O fluxo desejado é:
 criar projeto → editar → compilar no aparelho → gerar APK → assinar → instalar → executar
 ~~~
 
-### Native build first
+### Native build only
 
-Projetos simples devem usar o build engine nativo sem iniciar o Gradle daemon. Gradle permanece como backend de compatibilidade para projetos que realmente precisem dele.
+Todo build do produto passa pelo build engine nativo. Linguagens suportadas pertencem ao núcleo; quando uma capacidade nativa ainda não está implementada, o build retorna diagnóstico explícito em vez de trocar para Gradle.
 
 ~~~text
 NativeBuildRouter
-├── NativeAndroidBuildSystem  ← caminho principal
-└── GradleBackend             ← fallback
+└── NativeAndroidBuildSystem  ← rota única
 ~~~
 
 ### Leveza acima de espetáculo
@@ -123,6 +121,7 @@ A fundação inicial está em:
 core/build-api/
 core/build-engine/
 core/android-build/
+core/language-support/
 ~~~
 
 O primeiro grafo de compilação é:
@@ -137,6 +136,10 @@ aapt2LinkDebug
 generateBuildConfigDebug
         ↓
 compileJavaDebug
+        ↓
+compileKotlinDebug
+        ↓
+compileNativeDebug
         ↓
 dexBuilderDebug
         ↓
@@ -182,6 +185,8 @@ Prioridade inicial:
 ~~~text
 Java
 Kotlin
+C
+C++
 XML
 JSON
 Markdown
@@ -259,7 +264,7 @@ Esta ponte foi projetada para reutilizar o modelo de projeto existente do Androi
 - [x] debug signing
 - [x] primeira superfície Compose
 - [x] adapter Workspace → Native Build Engine
-- [x] Native-first BuildRouter com Gradle fallback
+- [x] Native-only BuildRouter
 - [x] ação Build nativa no editor
 - [x] Build Center com progresso e logs estruturados
 - [ ] gerar e instalar Hello World no dispositivo
@@ -289,7 +294,7 @@ Esta ponte foi projetada para reutilizar o modelo de projeto existente do Androi
 ### Fase 4 — Kotlin e Android moderno
 
 - [ ] Kotlin language services
-- [ ] Kotlin compilation
+- [x] Kotlin compilation
 - [ ] Compose project support
 - [ ] modern AndroidX
 - [ ] desugaring
@@ -309,8 +314,8 @@ Esta ponte foi projetada para reutilizar o modelo de projeto existente do Androi
 
 ### Fase 6 — Native
 
-- [ ] NDK toolchain
-- [ ] C/C++
+- [~] Android-hosted LLVM toolchain
+- [x] C/C++ native task
 - [ ] CMake
 - [ ] JNI
 - [ ] native diagnostics
@@ -330,13 +335,13 @@ Esta ponte foi projetada para reutilizar o modelo de projeto existente do Androi
 1. O núcleo não depende da UI.
 2. A UI não conhece detalhes internos do toolchain.
 3. O build nativo não depende do Gradle para executar.
-4. Gradle continua como fallback de compatibilidade.
+4. Gradle não é backend de linguagem nem fallback do Native Build Engine.
 5. Cada tarefa tem entradas e saídas claras.
 6. Recursos pesados são lazy e incrementais.
 7. O editor permanece utilizável em aparelhos modestos.
 8. Nova UI prioriza clareza sobre efeitos.
-9. Recursos experimentais podem ser desativados.
-10. Mudanças arquiteturais importantes são documentadas neste README.
+9. Recursos opcionais de integração podem ser desativados; linguagens do núcleo não são feature flags.
+10. Mudanças arquiteturais importantes são documentadas neste README e em /docs.
 
 ## Regra de ouro
 

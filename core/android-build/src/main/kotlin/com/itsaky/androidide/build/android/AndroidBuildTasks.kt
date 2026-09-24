@@ -115,10 +115,6 @@ class Aapt2LinkTask(
       .filter { it.isRegularFile() && it.extension == "flat" }
       .toList()
 
-    require(compiledFiles.isNotEmpty()) {
-      "AAPT2 produced no compiled resources"
-    }
-
     ProcessTools.run(
       module.sdk.aapt2,
       listOf(

@@ -18,10 +18,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.OutputKeys
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
 
 /**
  * Merges Android resource roots in ascending priority.
@@ -126,7 +122,6 @@ class MergeResourcesTask(
 
     fun writeTo(outDir: Path) {
       if (byQualifier.isEmpty()) return
-      val factory = TransformerFactory.newInstance()
       for ((qualifier, entries) in byQualifier) {
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
         val root = document.createElement("resources")
@@ -135,11 +130,7 @@ class MergeResourcesTask(
         document.appendChild(root)
         val destination = outDir.resolve(qualifier).resolve("values.xml")
         Files.createDirectories(destination.parent)
-        val transformer = factory.newTransformer().apply {
-          setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no")
-          setOutputProperty(OutputKeys.ENCODING, "UTF-8")
-        }
-        transformer.transform(DOMSource(document), StreamResult(destination.toFile()))
+        Files.write(destination, XmlDomWriter.toXml(document).toByteArray(Charsets.UTF_8))
       }
     }
   }

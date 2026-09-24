@@ -88,6 +88,6 @@ No local AI model is required for the first implementation.
 
 ## Architectural inspiration
 
-O CodeAssist atual expõe uma abordagem extensível de repositórios de ícones e file icons por extension points, evitando acoplar cada biblioteca diretamente à UI. O AndroidIDE Pro pode adotar o mesmo princípio arquitetural, mantendo APIs e implementação próprias. citeturn811185search0
+O CodeAssist atual expõe uma abordagem extensível de repositórios de ícones e file icons por extension points, evitando acoplar cada biblioteca diretamente à UI. O AndroidIDE Pro pode adotar o mesmo princípio arquitetural, mantendo APIs e implementação próprias. Referência: CodeAssist/docs/extension-points.md.
 
 A meta do Pro é mais ampla: repositories de ícones serão uma camada do Asset Center, junto com ilustrações, Lottie e outros assets.

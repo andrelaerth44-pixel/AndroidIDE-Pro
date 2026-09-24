@@ -7,17 +7,14 @@ kotlin {
   jvmToolchain(17)
 }
 
+val kotlinToolchain by configurations.creating
+
 dependencies {
   api(projects.core.buildApi)
   implementation(projects.core.buildEngine)
   implementation(projects.core.languageSupport)
   implementation(libs.kotlin.compiler.embeddable)
   implementation(libs.composite.javac)
-}
-
-val kotlinToolchain by configurations.creating
-
-dependencies {
   kotlinToolchain(libs.kotlin.compiler.embeddable)
 }
 

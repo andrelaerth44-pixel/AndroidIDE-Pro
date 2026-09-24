@@ -51,35 +51,35 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [x] bridge Gradle Adapter -> GradleBuildService
 - [x] ponto de criação do BuildSystem no GradleBuildService
 - [x] migrar `clean` para o engine leve sem Gradle
-- [ ] selecionar backend nativo antes do fallback Gradle
-- [ ] migrar `compileJava` para o engine próprio
-- [ ] migrar `assembleDebug` completo para o engine próprio
-- [ ] implementar engine Android leve completo
+- [x] selecionar backend nativo antes do fallback Gradle para `assemble*` compatível
+- [x] migrar `compileJava` para o primeiro pipeline nativo
+- [x] conectar `assembleDebug` ao engine nativo para app Android compatível
+- [~] implementar engine Android leve por etapas
 - [x] tornar Gradle explicitamente fallback de compatibilidade em arquitetura/documentação
 - [ ] descoberta completa de tasks do projeto
 
 ## Fase 2 — Android pipeline
 
 - [ ] generateSources
-- [x] implementar task `mergeResources` nativa (integração no grafo ainda pendente)
+- [x] implementar e integrar `mergeResources` no primeiro DAG nativo
 - [ ] checkAarMetadata
 - [ ] mergeNativeLibs
 - [ ] mergeJavaResource
-- [x] implementar task `aapt2Compile` nativa (integração no grafo ainda pendente)
+- [x] implementar e integrar `aapt2Compile` no primeiro DAG nativo
 - [ ] processManifest
 - [ ] injectAppLogProvider
-- [x] implementar task `aapt2Link` nativa (integração no grafo ainda pendente)
+- [x] implementar e integrar `aapt2Link` no primeiro DAG nativo
 - [ ] integrar geração de R ao grafo nativo; AAPT2 link já produz `R.java`
-- [x] implementar task `compileJava` nativa (integração no grafo ainda pendente)
+- [x] implementar e integrar `compileJava` no primeiro DAG nativo
 - [ ] Kotlin
 - [ ] KSP
 - [ ] Compose
-- [ ] dexBuilder
-- [ ] mergeProjectDex
+- [x] integrar `dexBuilder` nativo no primeiro DAG
+- [x] integrar `mergeProjectDex` nativo no primeiro DAG
 - [ ] mergeExtDex
-- [ ] package APK
-- [ ] signing
-- [ ] APK verification
+- [x] integrar `packageApk` nativo no primeiro DAG
+- [x] integrar assinatura debug nativa no primeiro DAG
+- [ ] APK verification no dispositivo/build real
 - [ ] AAB
 
 ## Fase 3 — Native

@@ -230,6 +230,7 @@ package_toolchain() {
   [[ -x "$lld" ]] || die "lld output is missing: $lld"
 
   cp "$clang" "$OUT/jniLibs/arm64-v8a/libclang.so"
+  cp "$clang" "$OUT/jniLibs/arm64-v8a/libclang++.so"
   cp "$lld" "$OUT/jniLibs/arm64-v8a/libld.lld.so"
 
   local ndk_prebuilt
@@ -289,6 +290,7 @@ package_toolchain() {
   fi
 
   chmod 0755 "$OUT/jniLibs/arm64-v8a/libclang.so"
+  chmod 0755 "$OUT/jniLibs/arm64-v8a/libclang++.so"
   chmod 0755 "$OUT/jniLibs/arm64-v8a/libld.lld.so"
 
   log "LLVM toolchain pack created"

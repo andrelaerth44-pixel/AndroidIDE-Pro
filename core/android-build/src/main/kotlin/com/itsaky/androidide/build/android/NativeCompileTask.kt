@@ -395,7 +395,9 @@ class CompileNativeTask(
               "c",
               "cc",
               "cpp",
-              "cxx"
+              "cxx",
+              "cppm",
+              "ixx"
             )
           }
           .sortedBy { it.toString() }
@@ -450,7 +452,9 @@ class CompileNativeTask(
     source.extension in setOf(
       "cc",
       "cpp",
-      "cxx"
+      "cxx",
+      "cppm",
+      "ixx"
     )
 
   private fun objectName(source: Path): String {

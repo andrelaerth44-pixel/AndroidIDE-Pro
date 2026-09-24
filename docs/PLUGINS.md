@@ -48,4 +48,4 @@ A local/offline plugin install flow should work without requiring a central mark
 
 ## Compiler extension point
 
-O CodeAssist atual usa uma SPI explícita para Kotlin compiler plugins, permitindo que Compose e outras extensões sejam aplicadas por módulo e entregues à tarefa de compilação Kotlin. O AndroidIDE Pro seguirá o mesmo conceito de extensão, mas através dos próprios contratos de build-api. citeturn811185search0
+O CodeAssist atual usa uma SPI explícita para Kotlin compiler plugins, permitindo que Compose e outras extensões sejam aplicadas por módulo e entregues à tarefa de compilação Kotlin. O AndroidIDE Pro seguirá o mesmo conceito de extensão, mas através dos próprios contratos de build-api. Referência: CodeAssist/docs/extension-points.md.

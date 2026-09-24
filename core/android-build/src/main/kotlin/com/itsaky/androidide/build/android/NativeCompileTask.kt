@@ -14,15 +14,19 @@ import kotlin.io.path.walk
 /**
  * Native C/C++ compiler stage.
  *
- * It deliberately owns only the language/toolchain concerns:
- * source discovery, compilation, JNI/native-activity glue and linking.
+ * Supported project shapes:
+ *   - pure C application
+ *   - pure C++ application
+ *   - C + C++ application
+ *   - Java/Kotlin + C/C++ hybrid application
  *
- * Java/Kotlin integration is achieved by the generated shared library. A
- * hybrid app simply loads libappnative through System.loadLibrary() and JNI.
+ * Hybrid applications load the generated shared library from Java/Kotlin
+ * with System.loadLibrary() and expose JNI functions normally.
  *
- * A pure native app can declare android.app.NativeActivity in its manifest.
- * In that case the official android_native_app_glue source is compiled into
- * the same shared library automatically.
+ * Pure-native applications can declare android.app.NativeActivity. The
+ * default library name is "main" for NativeActivity and "appnative" for
+ * hybrid/background native code. Both can be overridden by the project
+ * native configuration or the manifest's android.app.lib_name metadata.
  */
 class CompileNativeTask(
   private val module: AndroidModule
@@ -31,7 +35,9 @@ class CompileNativeTask(
   override val id = "compileNativeDebug"
 
   private val output: Path
-    get() = module.nativeLibDir.resolve("arm64-v8a/libappnative.so")
+    get() = module.nativeLibDir
+      .resolve("arm64-v8a")
+      .resolve("lib" + module.nativeLibraryName + ".so")
 
   private val marker: Path
     get() = module.nativeLibDir.resolve(".native-stamp")
@@ -51,6 +57,14 @@ class CompileNativeTask(
       add(module.nativeSourceDir)
       module.localNativeLibDir?.let(::add)
       module.localNativeIncludeDir?.let(::add)
+      add(
+        module.rootDir
+          .resolve("src/main/cpp/androidide-native.properties")
+      )
+
+      module.nativeBuildConfiguration.includeDirs.forEach(::add)
+      module.nativeBuildConfiguration.libraryDirs.forEach(::add)
+      module.nativeBuildConfiguration.staticLibraries.forEach(::add)
 
       module.sdk.nativeToolchain?.let { toolchain ->
         add(toolchain.compiler)
@@ -62,11 +76,19 @@ class CompileNativeTask(
         toolchain.runtimeSharedLibrary?.let(::add)
         toolchain.includeDirs.forEach(::add)
         toolchain.nativeAppGlueDir?.let(::add)
-        if (requiresNativeActivityGlue(module) &&
-          toolchain.nativeAppGlueDir != null
+
+        if (requiresNativeActivityGlue() &&
+          toolchain.nativeAppGlueDir != null &&
+          module.nativeActivityFunctionName == "ANativeActivity_onCreate"
         ) {
-          add(toolchain.nativeAppGlueDir.resolve("android_native_app_glue.c"))
-          add(toolchain.nativeAppGlueDir.resolve("android_native_app_glue.h"))
+          add(
+            toolchain.nativeAppGlueDir
+              .resolve("android_native_app_glue.c")
+          )
+          add(
+            toolchain.nativeAppGlueDir
+              .resolve("android_native_app_glue.h")
+          )
         }
       }
     }
@@ -74,7 +96,8 @@ class CompileNativeTask(
   override val outputs: List<Path>
     get() = buildList {
       add(marker)
-      if (hasSources()) {
+
+      if (hasSourcesOrNativeActivity()) {
         add(output)
       }
     }
@@ -95,9 +118,8 @@ class CompileNativeTask(
       output.deleteIfExists()
       Files.writeString(
         marker,
-        "abi=arm64-v8a
-status=no-native-sources
-"
+        "abi=arm64-v8a\n" +
+          "status=no-native-sources\n"
       )
       return@runCatching TaskResult(true, "No C/C++ sources")
     }
@@ -126,27 +148,38 @@ status=no-native-sources
           add(it.toString())
         }
 
+        module.nativeBuildConfiguration.includeDirs.forEach {
+          add("-I")
+          add(it.toString())
+        }
+
         toolchain.includeDirs.forEach {
           add("-I")
           add(it.toString())
         }
 
-        toolchain.nativeAppGlueDir?.let { glue ->
-          if (requiresNativeActivityGlue(module)) {
+        if (requiresNativeActivityGlue() &&
+          module.nativeActivityFunctionName == "ANativeActivity_onCreate"
+        ) {
+          toolchain.nativeAppGlueDir?.let {
             add("-I")
-            add(glue.toString())
+            add(it.toString())
           }
         }
 
         add("-fPIC")
         add("-fexceptions")
         add("-frtti")
-        add("-O0")
-        add("-g")
         add("-fdata-sections")
         add("-ffunction-sections")
         add("-fstack-protector-strong")
         add("-DANDROID")
+
+        if (isCpp(source)) {
+          addAll(module.nativeBuildConfiguration.cppFlags)
+        } else {
+          addAll(module.nativeBuildConfiguration.cFlags)
+        }
 
         add(
           "-std=" + if (source.extension == "c") {
@@ -172,10 +205,10 @@ status=no-native-sources
       object
     }
 
-    output.parent.createDirectories()
-
     val hasCpp = sources.any(::isCpp)
-    val nativeActivity = requiresNativeActivityGlue(module)
+    val nativeActivity = requiresNativeActivityGlue()
+
+    output.parent.createDirectories()
 
     val linkArgs = buildList {
       if (hasCpp) {
@@ -189,11 +222,10 @@ status=no-native-sources
       add(toolchain.resourceDir.toString())
       add("--ld-path=" + toolchain.linker)
 
-      add("-shared")
-      add("-Wl,-z,max-page-size=16384")
-      add("-Wl,-z,common-page-size=16384")
-      add("-Wl,--gc-sections")
-      add("-Wl,-soname,libappnative.so")
+      module.nativeBuildConfiguration.libraryDirs.forEach {
+        add("-L")
+        add(it.toString())
+      }
 
       if (hasCpp) {
         add("-stdlib=libc++")
@@ -203,13 +235,31 @@ status=no-native-sources
       }
 
       if (nativeActivity) {
-        // NativeActivity + android_native_app_glue requires the Android
-        // platform library at link time.
         add("-landroid")
         add("-llog")
+
+        // Prevent --gc-sections from discarding the NativeActivity entry.
+        add("-Wl,-u," + module.nativeActivityFunctionName)
       }
 
+      module.nativeBuildConfiguration.linkLibraries.forEach {
+        add("-l" + it)
+      }
+
+      module.nativeBuildConfiguration.staticLibraries.forEach {
+        add(it.toString())
+      }
+
+      addAll(module.nativeBuildConfiguration.linkerFlags)
+
+      add("-shared")
+      add("-Wl,-z,max-page-size=16384")
+      add("-Wl,-z,common-page-size=16384")
+      add("-Wl,--gc-sections")
+      add("-Wl,-soname,lib" + module.nativeLibraryName + ".so")
+
       objects.forEach(::add)
+
       add("-o")
       add(output.toString())
     }
@@ -238,9 +288,11 @@ status=no-native-sources
       buildString {
         appendLine("abi=arm64-v8a")
         appendLine("toolchain=" + toolchain.version)
+        appendLine("library=" + module.nativeLibraryName)
         appendLine("cStandard=" + module.cLanguageStandard)
         appendLine("cppStandard=" + module.cppLanguageStandard)
         appendLine("nativeActivity=" + nativeActivity)
+        appendLine("nativeActivityFunction=" + module.nativeActivityFunctionName)
         appendLine("sources=" + sources.size)
         appendLine("output=" + output)
       }
@@ -251,14 +303,12 @@ status=no-native-sources
       buildString {
         append("Built ")
         append(sources.size)
-        append(" C/C++ source file(s)")
+        append(" C/C++ source file(s) into ")
+        append(output)
 
         if (nativeActivity) {
-          append(" with NativeActivity glue")
+          append(" with NativeActivity support")
         }
-
-        append(" into ")
-        append(output)
       }
     )
   }.getOrElse {
@@ -292,22 +342,36 @@ status=no-native-sources
       "Android LLVM resource directory is missing: " + toolchain.resourceDir
     }
 
-    if (requiresNativeActivityGlue(module)) {
+    if (requiresNativeActivityGlue() &&
+      module.nativeActivityFunctionName == "ANativeActivity_onCreate"
+    ) {
       val glue = toolchain.nativeAppGlueDir
         ?: error(
           "This NativeActivity project requires android_native_app_glue " +
             "from the Core LLVM Toolchain Pack."
         )
 
-      check(Files.isRegularFile(glue.resolve("android_native_app_glue.c"))) {
+      check(
+        Files.isRegularFile(
+          glue.resolve("android_native_app_glue.c")
+        )
+      ) {
         "android_native_app_glue.c is missing from the Core LLVM Toolchain Pack."
       }
 
-      check(Files.isRegularFile(glue.resolve("android_native_app_glue.h"))) {
+      check(
+        Files.isRegularFile(
+          glue.resolve("android_native_app_glue.h")
+        )
+      ) {
         "android_native_app_glue.h is missing from the Core LLVM Toolchain Pack."
       }
 
-      check(sources.none { it.fileName.toString() == "android_native_app_glue.c" } ) {
+      check(
+        sources.none {
+          it.fileName.toString() == "android_native_app_glue.c"
+        }
+      ) {
         "Do not add a second android_native_app_glue.c to a NativeActivity project."
       }
     }
@@ -332,7 +396,9 @@ status=no-native-sources
           .forEach(::add)
       }
 
-      if (requiresNativeActivityGlue(module)) {
+      if (requiresNativeActivityGlue() &&
+        module.nativeActivityFunctionName == "ANativeActivity_onCreate"
+      ) {
         val glue = toolchain.nativeAppGlueDir
           ?.resolve("android_native_app_glue.c")
 
@@ -350,7 +416,10 @@ status=no-native-sources
     return result.distinct()
   }
 
-  private fun hasSources(): Boolean =
+  private fun hasSourcesOrNativeActivity(): Boolean =
+    hasNativeSourceFiles() || requiresNativeActivityGlue()
+
+  private fun hasNativeSourceFiles(): Boolean =
     Files.exists(module.nativeSourceDir) &&
       module.nativeSourceDir.walk().any {
         it.isRegularFile() &&
@@ -362,13 +431,8 @@ status=no-native-sources
           )
       }
 
-  private fun requiresNativeActivityGlue(
-    module: AndroidModule
-  ): Boolean =
-    runCatching {
-      Files.readString(module.manifest)
-        .contains("android.app.NativeActivity")
-    }.getOrDefault(false)
+  private fun requiresNativeActivityGlue(): Boolean =
+    module.manifestContainsNativeActivity()
 
   private fun compilerFor(
     toolchain: AndroidNativeToolchain,

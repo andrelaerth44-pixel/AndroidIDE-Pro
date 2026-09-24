@@ -4,42 +4,50 @@
 
 Executar builds Android diretamente no dispositivo com controle fino de tarefas, cache, memória e toolchains.
 
-## Princípios
+## Situação atual
 
-1. Gradle não é a API interna do novo engine.
-2. Tasks precisam declarar entradas e saídas.
-3. Diagnósticos devem ser estruturados.
-4. Tudo precisa ser cancelável.
-5. Cache precisa ser invalidável e versionado.
-6. Paralelismo precisa respeitar recursos do dispositivo.
+O build existente é Gradle-first:
+
+- `GradleBuildService` vive como foreground service;
+- `ToolingServerRunner` inicia um processo Java;
+- `ToolingApiServerImpl` abre `ProjectConnection`;
+- Gradle tasks são executadas por nome;
+- cancelamento usa `CancellationTokenSource`;
+- o AAPT2 usado no build é sobrescrito para um binário compatível com Android;
+- o sistema não permite dois builds concorrentes no mesmo serviço.
+
+Este sistema será preservado como caminho de compatibilidade até o novo engine possuir cobertura suficiente.
+
+## Fronteira de substituição
+
+A fronteira recomendada é:
+
+`BuildService -> BuildSystem SPI -> {Gradle Adapter | Native Engine}`
+
+O app não deve precisar saber se uma tarefa foi executada por Gradle ou pelo engine próprio.
 
 ## Contratos iniciais
 
 ### BuildSystem
 
-Deverá representar:
-
 - `id`;
 - tipos de projeto suportados;
-- `createBuildGraph`;
-- tasks disponíveis;
-- execução de tasks;
-- ações especiais.
+- criação de build graph;
+- tarefas disponíveis;
+- execução;
+- ações.
 
 ### Task
 
-Deverá representar:
-
-- `id`;
+- identidade;
 - entradas;
 - saídas;
 - parâmetros;
 - dependências;
-- executor.
+- executor;
+- recursos estimados.
 
 ### BuildDiagnostic
-
-Deverá conter:
 
 - severity;
 - kind;
@@ -49,49 +57,74 @@ Deverá conter:
 - detail;
 - task.
 
-## Task graph
-
-Exemplo:
+## Grafo
 
 ```
 resolveDependencies
         |
-mergeResources ----+
-        |           |
-aapt2Compile        |
-        |           |
-aapt2Link ----------+
-        |
-compileKotlin
-        |
-compileJava
-        |
-dex
-        |
-package
-        |
-sign
+projectModel
+    +---+-----------------+
+    |                     |
+resources             compileJava/Kotlin
+    |                     |
+AAPT2                generatedSources
+    +---------+-----------+
+              |
+             dex
+              |
+           package
+              |
+            sign
 ```
 
-O grafo real será determinado pelo modelo de projeto.
+O grafo será variante-aware.
 
 ## Incrementalidade
 
-Fingerprint deve considerar:
+Fingerprint deve incluir somente o estado necessário para decidir se a task é válida:
 
-- conteúdo;
-- caminho lógico;
-- metadados necessários;
-- toolchain;
+- conteúdos;
+- paths lógicos;
 - configuração;
-- dependências.
+- dependências;
+- toolchain;
+- versão do task implementation.
 
 ## Cache
 
-O cache terá versão de formato e política de invalidação.
+O cache deverá possuir:
 
-## Gradle adapter
+- versionamento;
+- content addressing onde útil;
+- limites;
+- limpeza;
+- detecção de corrupção;
+- invalidação por toolchain/configuração.
 
-Projetos Gradle poderão produzir um Project Model e, onde necessário, delegar para Gradle.
+## Gradle Adapter
 
-A compatibilidade será um adapter, não a fundação do engine.
+O adapter deverá:
+
+1. abrir um projeto Gradle;
+2. obter metadata/model;
+3. produzir Project Model;
+4. mapear tasks;
+5. executar Gradle quando não houver equivalente interno;
+6. converter diagnósticos e resultados.
+
+## Migração
+
+A primeira implementação não deverá tentar substituir todo o Gradle.
+
+A ordem deve ser:
+
+1. interface;
+2. adapter;
+3. projeto controlado;
+4. build Android mínimo;
+5. diagnóstico;
+6. incremental;
+7. dependências;
+8. variantes;
+9. Gradle compatibility completa.
+

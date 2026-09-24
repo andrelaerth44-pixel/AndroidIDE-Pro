@@ -55,7 +55,6 @@ class CoreNativeToolchainSelfTest {
       ProcessTools.run(
         executable = toolchain.compiler,
         args = listOf(
-          "clang",
           "--driver-mode=g++",
           "--target=aarch64-linux-android26",
           "--sysroot", toolchain.sysroot.toString(),
@@ -104,7 +103,6 @@ class CoreNativeToolchainSelfTest {
     ProcessTools.run(
       executable = toolchain.compiler,
       args = buildList {
-        add("clang")
         if (cpp) add("--driver-mode=g++")
         add("--target=aarch64-linux-android26")
         add("--sysroot")

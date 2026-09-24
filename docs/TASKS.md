@@ -61,16 +61,16 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 ## Fase 2 — Android pipeline
 
 - [ ] generateSources
-- [ ] mergeResources
+- [x] implementar task `mergeResources` nativa (integração no grafo ainda pendente)
 - [ ] checkAarMetadata
 - [ ] mergeNativeLibs
 - [ ] mergeJavaResource
-- [ ] aapt2Compile
+- [x] implementar task `aapt2Compile` nativa (integração no grafo ainda pendente)
 - [ ] processManifest
 - [ ] injectAppLogProvider
-- [ ] aapt2Link
-- [ ] R generation
-- [ ] Java
+- [x] implementar task `aapt2Link` nativa (integração no grafo ainda pendente)
+- [ ] integrar geração de R ao grafo nativo; AAPT2 link já produz `R.java`
+- [x] implementar task `compileJava` nativa (integração no grafo ainda pendente)
 - [ ] Kotlin
 - [ ] KSP
 - [ ] Compose

@@ -29,7 +29,7 @@ class NativeBuildAction : ActionItem {
     icon = context.getDrawable(R.drawable.ic_build)
 
     enabled = runCatching {
-      IProjectManager.getInstance().getWorkspace()?.androidProjects()?.any() == true
+      IProjectManager.getInstance().getWorkspace()?.androidProjects()?.any { it.isApplication } == true
     }.getOrDefault(false)
   }
 
@@ -45,7 +45,9 @@ class NativeBuildAction : ActionItem {
       workspace.findModuleForFile(file, false) as? AndroidModule
     } else null
 
-    val target = module ?: workspace.androidProjects().firstOrNull() ?: return false
+    val target = module?.takeIf { it.isApplication }
+      ?: workspace.androidProjects().firstOrNull { it.isApplication }
+      ?: return false
 
     context.startActivity(
       Intent(context, BuildCenterActivity::class.java).apply {

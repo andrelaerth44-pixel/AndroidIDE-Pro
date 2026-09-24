@@ -242,31 +242,47 @@ class PackageApkTask(
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.unsignedApk.ensureParent()
 
+    val seen = HashSet<String>()
     java.util.zip.ZipFile(module.resourcesApk.toFile()).use { input ->
       java.util.zip.ZipOutputStream(module.unsignedApk.outputStream()).use { output ->
-        val existing = HashSet<String>()
-
         input.entries().asSequence().forEach { entry ->
-          val copy = java.util.zip.ZipEntry(entry.name).apply {
-            method = entry.method
-            time = entry.time
-          }
-          output.putNextEntry(copy)
+          if (!seen.add(entry.name)) return@forEach
+
+          val target = java.util.zip.ZipEntry(entry.name)
+          output.putNextEntry(target)
           input.getInputStream(entry).use { it.copyTo(output) }
           output.closeEntry()
-          existing.add(entry.name)
         }
 
-        if ("classes.dex" !in existing) {
+        if (seen.add("classes.dex")) {
           output.putNextEntry(java.util.zip.ZipEntry("classes.dex"))
           module.dexDir.resolve("classes.dex").inputStream().use { it.copyTo(output) }
           output.closeEntry()
+        }
+
+        if (module.assetDir.exists()) {
+          module.assetDir.walk()
+            .filter { it.isRegularFile() }
+            .forEach { asset ->
+              val name = "assets/" + module.assetDir
+                .relativize(asset)
+                .toString()
+                .replace('\\', '/')
+
+              if (!seen.add(name)) return@forEach
+
+              output.putNextEntry(java.util.zip.ZipEntry(name))
+              asset.inputStream().use { it.copyTo(output) }
+              output.closeEntry()
+            }
         }
       }
     }
 
     TaskResult(true)
-  }.getOrElse { TaskResult(false, it.message ?: "APK packaging failed") }
+  }.getOrElse {
+    TaskResult(false, it.message ?: "APK packaging failed")
+  }
 }
 
 class ZipalignTask(

@@ -13,7 +13,8 @@ class NativeAndroidBuildSystem(
   private val debugKeystore: Path,
   private val debugStorePassword: String = "android",
   private val debugKeyAlias: String = "androiddebugkey",
-  private val debugKeyPassword: String = "android"
+  private val debugKeyPassword: String = "android",
+  private val logger: (String) -> Unit = ::println
 ) : BuildSystem {
 
   override fun assemble(request: BuildRequest): BuildResult {
@@ -63,7 +64,7 @@ class NativeAndroidBuildSystem(
       .dependsOn(align.id, packageApk.id)
       .dependsOn(sign.id, align.id)
 
-    val result = graph.execute(DefaultBuildContext())
+    val result = graph.execute(DefaultBuildContext(logger))
 
     return if (result.success) {
       BuildResult(

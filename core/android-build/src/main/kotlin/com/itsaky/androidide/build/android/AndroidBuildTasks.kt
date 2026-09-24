@@ -219,7 +219,11 @@ class CompileJavaTask(
     try {
       fileManager.setLocation(
         StandardLocation.CLASS_PATH,
-        listOf(module.sdk.androidJar().toFile(), module.classesDir.toFile())
+        buildList {
+          add(module.sdk.androidJar().toFile())
+          add(module.classesDir.toFile())
+          addAll(module.compileClasspath.map(Path::toFile))
+        }
       )
       fileManager.setLocation(
         StandardLocation.SOURCE_PATH,
@@ -301,11 +305,12 @@ class KotlinCompileTask(
     val arguments = K2JVMCompilerArguments().apply {
       freeArgs = sources.map(Path::toString).toMutableList()
       destination = module.kotlinOutputJar.toString()
-      classpath = listOf(
-        module.sdk.androidJar(),
-        module.classesDir
-      ).joinToString(File.pathSeparator)
-      includeRuntime = true
+      classpath = buildList {
+        add(module.sdk.androidJar())
+        add(module.classesDir)
+        addAll(module.compileClasspath)
+      }.joinToString(File.pathSeparator)
+      includeRuntime = false
       noReflect = true
       jvmTarget = "11"
       moduleName = module.name.replace(Regex("[^A-Za-z0-9_]"), "_")
@@ -353,7 +358,7 @@ class DexBuilderTask(
         "--output", module.dexDir.toString(),
         module.classesDir.toString(),
         module.kotlinOutputJar.toString()
-      ),
+      ) + module.compileClasspath.map(Path::toString),
       logger = context::log
     )
 

@@ -22,7 +22,7 @@ import kotlin.system.measureTimeMillis
 /** First executable Java compilation task for the native Android build engine. */
 class JavaCompileTask(
   override val id: TaskId,
-  private val sources: List<Path>,
+  private val sourceRoots: List<Path>,
   private val classpath: List<Path>,
   private val outputDir: Path,
   private val bootClasspath: List<Path> = emptyList(),
@@ -32,7 +32,7 @@ class JavaCompileTask(
 ) : BuildTask {
 
   override val inputs: Set<Artifact> =
-    (sources + classpath + bootClasspath).map(::Artifact).toSet()
+    (sourceRoots + classpath + bootClasspath).map(::Artifact).toSet()
 
   override val outputs: Set<Artifact> = setOf(Artifact(outputDir))
 
@@ -41,7 +41,8 @@ class JavaCompileTask(
       return TaskResult(id, TaskResult.State.CANCELLED, message = "Java compilation cancelled")
     }
 
-    if (sources.none(Files::isRegularFile)) {
+    val sources = sourceRoots.flatMap(::discoverSources)
+    if (sources.isEmpty()) {
       return TaskResult(id, TaskResult.State.SKIPPED, message = "No Java sources")
     }
 
@@ -99,6 +100,17 @@ class JavaCompileTask(
         diagnostics = listOf(diagnostic),
         message = "Java compilation failed internally",
       )
+    }
+  }
+
+  private fun discoverSources(root: Path): List<Path> {
+    if (Files.isRegularFile(root)) return listOf(root)
+    if (!Files.isDirectory(root)) return emptyList()
+    return Files.walk(root).use { stream ->
+      stream.filter(Files::isRegularFile)
+        .filter { it.fileName.toString().endsWith(".java") }
+        .sorted()
+        .toList()
     }
   }
 }

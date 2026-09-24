@@ -42,7 +42,7 @@ class BuildGraph(tasks: Collection<BuildTask>) {
 
     while (remaining.isNotEmpty()) {
       val ready = remaining.values
-        .filter { candidate -> candidate.dependencies.none(remaining::containsKey) }
+        .filter { candidate -> candidate.dependencies.none { dependency -> remaining.containsKey(dependency) } }
         .sortedBy(BuildTask::id)
 
       require(ready.isNotEmpty()) {

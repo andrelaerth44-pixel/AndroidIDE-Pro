@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.itsaky.androidide.R
+import com.itsaky.androidide.toolchain.CoreKotlinToolchainManager
 import com.itsaky.androidide.toolchain.CoreToolchainManager
 import java.io.File
 
@@ -41,21 +42,18 @@ fun ToolchainCenterScreen(
   onClose: () -> Unit
 ) {
   val context = LocalContext.current
-  val manager = remember { CoreToolchainManager(context.applicationContext) }
-  var ready by remember { mutableStateOf(manager.isInstalled()) }
+  val llvmManager = remember { CoreToolchainManager(context.applicationContext) }
+  val kotlinManager = remember { CoreKotlinToolchainManager(context.applicationContext) }
+
+  var llvmReady by remember { mutableStateOf(llvmManager.isInstalled()) }
+  var kotlinReady by remember { mutableStateOf(kotlinManager.isInstalled()) }
   var importing by remember { mutableStateOf(false) }
 
-  val picker = rememberLauncherForActivityResult(
-    ActivityResultContracts.OpenDocument()
-  ) { uri ->
-    if (uri == null) return@rememberLauncherForActivityResult
+  fun installApk(uri: android.net.Uri, fileName: String) {
     importing = true
 
     runCatching {
-      val target = File(
-        context.cacheDir,
-        "toolchains/llvm-core-pack.apk"
-      )
+      val target = File(context.cacheDir, "toolchains/" + fileName)
       target.parentFile?.mkdirs()
 
       context.contentResolver.openInputStream(uri).use { input ->
@@ -85,6 +83,18 @@ fun ToolchainCenterScreen(
     }
   }
 
+  val llvmPicker = rememberLauncherForActivityResult(
+    ActivityResultContracts.OpenDocument()
+  ) { uri ->
+    uri?.let { installApk(it, "llvm-core-pack.apk") }
+  }
+
+  val kotlinPicker = rememberLauncherForActivityResult(
+    ActivityResultContracts.OpenDocument()
+  ) { uri ->
+    uri?.let { installApk(it, "kotlin-core-pack.apk") }
+  }
+
   AndroidIDEProTheme {
     Scaffold(
       topBar = {
@@ -105,46 +115,47 @@ fun ToolchainCenterScreen(
           .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
       ) {
-        Surface(
-          modifier = Modifier.fillMaxWidth(),
-          color = if (ready) {
-            MaterialTheme.colorScheme.primaryContainer
-          } else {
-            MaterialTheme.colorScheme.errorContainer
-          },
-          shape = MaterialTheme.shapes.large
-        ) {
-          Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-          ) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-              Icon(Icons.Default.Build, contentDescription = null)
-              Text(
-                text = "LLVM C/C++ • Android arm64",
-                style = MaterialTheme.typography.titleMedium
-              )
-            }
-
-            Text(
-              text = if (ready) {
-                "Pronto para compilar C17 e C++20 no próprio dispositivo."
-              } else {
-                "O pacote Core LLVM ainda não está instalado neste dispositivo."
-              },
-              style = MaterialTheme.typography.bodyMedium
-            )
-          }
-        }
-
         Text(
-          text = "O compilador é um componente de primeira classe do AndroidIDE Pro. " +
-            "Ele não é um plugin de linguagem e não usa Gradle para compilar o seu projeto.",
+          text = "Compiladores de primeira classe do AndroidIDE Pro. " +
+            "Nenhuma linguagem depende de plugin ou de Gradle para compilar o projeto.",
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        ToolchainCard(
+          title = "LLVM C/C++ • Android arm64",
+          ready = llvmReady,
+          description = if (llvmReady) {
+            "Pronto para C17 e C++20 no dispositivo."
+          } else {
+            "Instale o pack para compilar C/C++."
+          },
+          onInstall = {
+            llvmPicker.launch(
+              arrayOf(
+                "application/vnd.android.package-archive",
+                "application/octet-stream"
+              )
+            )
+          }
+        )
+
+        ToolchainCard(
+          title = "Kotlin Compiler • 1.9.24",
+          ready = kotlinReady,
+          description = if (kotlinReady) {
+            "Pronto para compilar Kotlin no dispositivo."
+          } else {
+            "Instale o pack para projetos Kotlin."
+          },
+          onInstall = {
+            kotlinPicker.launch(
+              arrayOf(
+                "application/vnd.android.package-archive",
+                "application/octet-stream"
+              )
+            )
+          }
         )
 
         if (importing) {
@@ -157,42 +168,69 @@ fun ToolchainCenterScreen(
         ) {
           Button(
             onClick = {
-              picker.launch(
-                arrayOf(
-                  "application/vnd.android.package-archive",
-                  "application/octet-stream"
-                )
-              )
+              llvmReady = llvmManager.isInstalled()
+              kotlinReady = kotlinManager.isInstalled()
+              importing = false
             },
-            enabled = !importing,
             modifier = Modifier.weight(1f)
           ) {
-            Text("Importar pack LLVM")
-          }
-
-          IconButton(
-            onClick = {
-              ready = manager.isInstalled()
-              importing = false
-            }
-          ) {
             Icon(Icons.Default.Refresh, contentDescription = null)
+            Text(" Atualizar")
+          }
+
+          Button(
+            onClick = onClose,
+            modifier = Modifier.weight(1f)
+          ) {
+            Text(context.getString(R.string.build_center_close))
           }
         }
+      }
+    }
+  }
+}
 
+@Composable
+private fun ToolchainCard(
+  title: String,
+  ready: Boolean,
+  description: String,
+  onInstall: () -> Unit
+) {
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    color = if (ready) {
+      MaterialTheme.colorScheme.primaryContainer
+    } else {
+      MaterialTheme.colorScheme.errorContainer
+    },
+    shape = MaterialTheme.shapes.large
+  ) {
+    Column(
+      modifier = Modifier.padding(18.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+      ) {
+        Icon(Icons.Default.Build, contentDescription = null)
         Text(
-          text = "Use o APK oficial AndroidIDE Pro LLVM Toolchain produzido pelo pipeline " +
-            "de distribuição arm64 do projeto.",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant
+          text = title,
+          style = MaterialTheme.typography.titleMedium
         )
+      }
 
-        Button(
-          onClick = onClose,
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Text(context.getString(R.string.build_center_close))
-        }
+      Text(
+        text = description,
+        style = MaterialTheme.typography.bodyMedium
+      )
+
+      Button(
+        onClick = onInstall,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text(if (ready) "Reinstalar / atualizar" else "Importar Core Pack")
       }
     }
   }

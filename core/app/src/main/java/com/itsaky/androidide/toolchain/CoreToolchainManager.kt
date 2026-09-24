@@ -17,7 +17,15 @@ class CoreToolchainManager(
   private val context: Context
 ) {
 
-  fun resolveLlvm(): AndroidNativeToolchain? {
+  fun resolveLlvm(): AndroidNativeToolchain? =
+    resolveLlvmInternal(installIfMissing = true)
+
+  fun isInstalled(): Boolean =
+    resolveLlvmInternal(installIfMissing = false) != null
+
+  private fun resolveLlvmInternal(
+    installIfMissing: Boolean
+  ): AndroidNativeToolchain? {
     val packageContext = runCatching {
       context.createPackageContext(
         LLVM_PACKAGE,
@@ -48,6 +56,8 @@ class CoreToolchainManager(
     }.getOrNull()
 
     if (!marker.exists() || installedStamp != archiveStamp) {
+      if (!installIfMissing) return null
+
       val installed = runCatching {
         installAssetArchive(
           packageContext = packageContext,
@@ -89,8 +99,6 @@ class CoreToolchainManager(
         .takeIf { Files.isDirectory(it) }
     )
   }
-
-  fun isInstalled(): Boolean = resolveLlvm() != null
 
   fun describe(): String =
     if (isInstalled()) {

@@ -5,5 +5,6 @@ plugins {
 
 dependencies {
   api(projects.build.api)
+  implementation(libs.composite.jdt)
   testImplementation(libs.tests.junit)
 }

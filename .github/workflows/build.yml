@@ -263,18 +263,16 @@ jobs:
         with:
           java-version: ${{ env.BUILD_JAVA_VERSION }}
           distribution: ${{ env.BUILD_JAVA_DIST }}
-      - name: Download arm64-v8a APK
+      - name: Download release APK artifacts
         uses: actions/download-artifact@v4
         with:
-          name: apk-arm64-v8a-release
-      - name: Download x86_64 APK
-        uses: actions/download-artifact@v4
-        with:
-          name: apk-x86_64-release
-      - name: Download armeabi-v7a APK
-        uses: actions/download-artifact@v4
-        with:
-          name: apk-armeabi-v7a-release
+          name: androidide-pro-release-apk
+          path: release-apks
+      - name: Flatten release APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          find release-apks -type f -name '*.apk' -exec cp {} ./ \;
       - name: Change Gradle wrapper permissions
         run: chmod +x ./gradlew
       - name: Restore cache

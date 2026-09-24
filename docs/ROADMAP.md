@@ -25,6 +25,7 @@
 [x] Build action
 [x] Build Center
 [x] Install APK action
+[x] Native-first BuildRouter with Gradle fallback
 [ ] Validar Hello World em dispositivo físico
 [ ] Run APK a partir do IDE
 [ ] Build cancellation real

@@ -1,30 +1,27 @@
 # Changelog de Engenharia
 
-## 2026-09-24 — Fundação documental
+## 2026-09-24 — Auditoria estrutural inicial
 
-### Adicionado
+### Confirmado
 
-- branch `work/androidide-pro-dev-foundation`;
-- README mestre;
-- status;
-- arquitetura;
-- tarefas;
-- roadmap;
-- decisões;
-- especificação do Build Engine;
-- especificação NDK;
-- especificação Icon Center;
-- diretrizes de UI.
+- base de desenvolvimento: `dev`;
+- build da própria IDE: Gradle 8.8 / AGP 8.5.0 / Kotlin 1.9.24;
+- app principal: `core:app`;
+- build do usuário: Gradle Tooling API;
+- Project Manager e Workspace model existentes;
+- LSP API e Java LSP existentes;
+- UI principal ainda baseada em Views/XML;
+- AAPT2 com override para binário compatível com Android;
+- tooling executado em processo Java separado;
+- cancelamento de build já existente.
 
-### Descobertas
+### Decisões
 
-- `apk-v3-signing` é uma linha histórica de 2023;
-- `dev` contém a arquitetura mais recente do AndroidIDE disponível neste fork;
-- o trabalho futuro deverá partir de `dev`;
-- o app atual permanece fortemente baseado em Views/XML;
-- o build do usuário ainda depende de Gradle Tooling API/Gradle;
-- o repositório já possui blocos importantes que podem ser preservados.
+- preservar Project Manager/Workspace;
+- criar Build System SPI em torno do fluxo atual;
+- manter Gradle como adapter de compatibilidade;
+- não implementar o novo engine diretamente dentro do Service/UI.
 
 ### Ainda não feito
 
-Nenhuma alteração funcional do produto foi implementada nesta etapa.
+Nenhuma mudança funcional no produto.

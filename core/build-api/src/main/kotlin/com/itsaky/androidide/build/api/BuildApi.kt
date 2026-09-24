@@ -1,0 +1,42 @@
+package com.itsaky.androidide.build.api
+
+import java.nio.file.Path
+
+data class BuildRequest(
+  val moduleName: String,
+  val variant: String = "debug"
+)
+
+data class BuildResult(
+  val success: Boolean,
+  val outputApk: Path? = null,
+  val message: String = ""
+)
+
+data class TaskResult(
+  val success: Boolean,
+  val message: String = ""
+)
+
+interface BuildTask {
+  val id: String
+  val inputs: List<Path>
+  val outputs: List<Path>
+  fun execute(context: BuildContext): TaskResult
+}
+
+interface BuildContext {
+  fun log(message: String)
+  fun fail(message: String): Nothing {
+    throw BuildFailureException(message)
+  }
+}
+
+class BuildFailureException(
+  message: String,
+  cause: Throwable? = null
+) : RuntimeException(message, cause)
+
+interface BuildSystem {
+  fun assemble(request: BuildRequest): BuildResult
+}

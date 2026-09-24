@@ -64,7 +64,12 @@ class NativeAndroidBuildSystem(
       .dependsOn(align.id, packageApk.id)
       .dependsOn(sign.id, align.id)
 
-    val result = graph.execute(DefaultBuildContext(logger))
+    val result = graph.execute(
+      DefaultBuildContext(
+        cacheRoot = module.buildDir.resolve(".cache"),
+        logger = logger
+      )
+    )
 
     return if (result.success) {
       BuildResult(

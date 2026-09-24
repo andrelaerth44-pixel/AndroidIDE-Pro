@@ -107,6 +107,7 @@ class Aapt2LinkTask(
         "-o", module.resourcesApk.toString(),
         "--manifest", module.manifest.toString(),
         "--java", module.generatedRDir.toString(),
+        "--custom-package", module.namespace,
         "--min-sdk-version", module.minSdk.toString(),
         "--target-sdk-version", module.targetSdk.toString(),
         "-I", module.sdk.androidJar().toString(),

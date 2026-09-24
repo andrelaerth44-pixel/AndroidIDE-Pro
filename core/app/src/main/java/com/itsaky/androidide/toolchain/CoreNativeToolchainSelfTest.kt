@@ -53,9 +53,8 @@ class CoreNativeToolchainSelfTest {
       )
 
       ProcessTools.run(
-        executable = toolchain.compiler,
+        executable = toolchain.cppCompiler,
         args = listOf(
-          "--driver-mode=g++",
           "--target=aarch64-linux-android26",
           "--sysroot", toolchain.sysroot.toString(),
           "-resource-dir", toolchain.resourceDir.toString(),
@@ -101,9 +100,8 @@ class CoreNativeToolchainSelfTest {
     environment: Map<String, String>
   ) {
     ProcessTools.run(
-      executable = toolchain.compiler,
-      args = buildList {
-        if (cpp) add("--driver-mode=g++")
+      executable = if (cpp) toolchain.cppCompiler else toolchain.compiler,
+      args = buildList { add("--driver-mode=g++")
         add("--target=aarch64-linux-android26")
         add("--sysroot")
         add(toolchain.sysroot.toString())

@@ -97,6 +97,11 @@ class NativeBuildCoordinator(
       compileClasspath = module.getCompileClasspaths()
         .map { it.toPath() }
         .filter { Files.exists(it) }
+        .filterNot {
+          it.toAbsolutePath().normalize().startsWith(
+            module.projectDir.toPath().toAbsolutePath().normalize()
+          )
+        }
     )
 
     val keystore = ensureDebugKeystore()

@@ -48,11 +48,14 @@ class CoreToolchainManager(
     }.getOrNull()
 
     if (!marker.exists() || installedStamp != archiveStamp) {
-      installAssetArchive(
-        packageContext = packageContext,
-        root = root,
-        expectedStamp = archiveStamp
-      )
+      val installed = runCatching {
+        installAssetArchive(
+          packageContext = packageContext,
+          root = root,
+          expectedStamp = archiveStamp
+        )
+      }.isSuccess
+      if (!installed) return null
     }
 
     val compiler = nativeLibraryDir.resolve(COMPILER_LIBRARY)

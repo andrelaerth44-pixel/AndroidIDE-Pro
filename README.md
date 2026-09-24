@@ -417,7 +417,8 @@ Build fixtures serão usados para validar:
 - [x] arquitetura alvo;
 - [x] contrato inicial do Build System;
 - [x] `:build:api` registrado na árvore do projeto;
-- [x] testes do `BuildGraph` para ordenação, dependência ausente e ciclo.
+- [x] testes do `BuildGraph` para ordenação, dependência ausente e ciclo;
+- [x] checagem estática do `BuildGraph` simplificada para reduzir risco de inferência de referências Kotlin.
 
 ### Em andamento
 

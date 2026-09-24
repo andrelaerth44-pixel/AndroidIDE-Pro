@@ -26,7 +26,9 @@
 - [x] Auditoria inicial de UI/Editor concluída
 - [x] UI Designer/templates/resources/XML/CI mapeados em nível arquitetural
 - [~] Matriz de riscos
-- [ ] Build/test do novo módulo validado (CI/local ainda pendente)
+- [x] compilação independente da API validada com Kotlin;
+- [x] smoke test do `BuildGraph` validado;
+- [ ] build Gradle completo do repositório validado
 - [x] Primeiro código funcional do AndroidIDE Pro iniciado
 
 ## Constatações principais
@@ -92,7 +94,8 @@ Validação:
 - [x] árvore e arquivos verificados via GitHub;
 - [x] inclusão do módulo no `settings.gradle.kts` corrigida;
 - [x] implementação do `BuildGraph` revisada estaticamente;
-- [ ] compilação/testes executados em CI/local.
+- [x] compilação independente e smoke test executados localmente;
+- [ ] compilação/testes completos via Gradle/CI.
 
 Ainda não implementado:
 

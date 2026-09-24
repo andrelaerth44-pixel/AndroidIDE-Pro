@@ -33,7 +33,7 @@ signDebug
 
 ## Linguagens
 
-Java usa o caminho javac do IDE.
+Java usa `JavacTool`/nb-javac embarcado no próprio processo do Build Engine.
 
 Kotlin usa K2JVMCompiler embutido em processo, produzindo classes.jar para D8.
 
@@ -70,7 +70,7 @@ Implementado no código:
 - Android SDK/tool resolution;
 - AAPT2;
 - BuildConfig;
-- Java build path;
+- Java build path com compilador embarcado;
 - Kotlin compiler embutido;
 - C/C++ native task;
 - D8;

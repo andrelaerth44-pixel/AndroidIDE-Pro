@@ -7,8 +7,9 @@ kotlin {
   jvmToolchain(17)
 }
 
-description = "Built-in language support for AndroidIDE Pro"
-
 dependencies {
+  api(projects.core.languageApi)
   testImplementation(libs.tests.junit)
 }
+
+description = "Built-in language support for AndroidIDE Pro"

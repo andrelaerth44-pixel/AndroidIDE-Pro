@@ -222,22 +222,29 @@ class NativeBuildCoordinator(
     module.getCompileModuleProjects()
       .filterIsInstance<AndroidModule>()
       .forEach { projectModule ->
-        projectModule.mainSourceSet?.sourceProvider?.resDirectories
-          ?.forEach { res ->
-            result["project-res|" + res.absolutePath] =
-              AndroidDependencyPaths(
-                resFolder = res.toPath(),
-                jniFolder = projectModule.projectDir
-                  .resolve("src/main/jniLibs")
-                  .takeIf(File::isDirectory)
-                  ?.toPath(),
-                assetsFolder = projectModule.projectDir
-                  .resolve("src/main/assets")
-                  .takeIf(File::isDirectory)
-                  ?.toPath(),
-                runtimeJars = listOf(projectModule.getGeneratedJar().toPath())
-              )
-          }
+        val resources = projectModule.mainSourceSet
+          ?.sourceProvider
+          ?.resDirectories
+          ?.firstOrNull()
+          ?.toPath()
+
+        val jni = projectModule.projectDir
+          .resolve("src/main/jniLibs")
+          .takeIf { it.isDirectory }
+          ?.toPath()
+
+        val assets = projectModule.projectDir
+          .resolve("src/main/assets")
+          .takeIf { it.isDirectory }
+          ?.toPath()
+
+        result["project|" + projectModule.path] =
+          AndroidDependencyPaths(
+            resFolder = resources,
+            jniFolder = jni,
+            assetsFolder = assets,
+            runtimeJars = listOf(projectModule.getGeneratedJar().toPath())
+          )
       }
 
     return result.values.toList()

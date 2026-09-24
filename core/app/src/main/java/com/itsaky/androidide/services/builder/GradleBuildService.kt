@@ -445,14 +445,14 @@ class GradleBuildService : Service(), BuildService, IToolingApiClient,
     }
   }
   override fun executeTasks(vararg tasks: String): CompletableFuture<TaskExecutionResult> {
+    // Root clean is handled by the lightweight engine and does not start Gradle.
+    if (tasks.size == 1 && tasks[0] == "clean") {
+      return executeLightweightClean()
+    }
+
     checkServerStarted()
     val message = TaskExecutionMessage(listOf(*tasks))
     return performBuildTasks(server!!.executeTasks(message))
-  }
-
-  /** Creates the new BuildSystem view while keeping this service as the Gradle runtime owner. */
-  fun createBuildSystemAdapter(): GradleBuildSystem {
-    return GradleBuildSystem(GradleBuildServiceTaskExecutor(this))
   }
 
   override fun cancelCurrentBuild(): CompletableFuture<BuildCancellationRequestResult> {

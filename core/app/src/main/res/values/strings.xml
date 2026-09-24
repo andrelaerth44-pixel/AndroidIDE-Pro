@@ -21,4 +21,8 @@
   <string name="androidide_pro_tagline">Code. Build. Ship.</string>
   <string name="androidide_pro_workspace">Workspace</string>
   <string name="androidide_pro_create_subtitle">Start a new Android project</string>
+  <string name="action_build_project">Build</string>
+  <string name="action_build_running">Building…</string>
+  <string name="action_build_success">Build completed</string>
+  <string name="action_build_failed">Build failed</string>
 </resources>

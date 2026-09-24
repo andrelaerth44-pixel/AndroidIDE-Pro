@@ -42,7 +42,7 @@ class JavaCompileTaskTest {
       )
       val result = JavaCompileTask(
         id = ":app:compileJavaDebug",
-        sources = listOf(source),
+        sourceRoots = listOf(source),
         classpath = emptyList(),
         outputDir = output,
       ).execute(context)

@@ -30,14 +30,14 @@ enum class BuiltInLanguage(
   C(
     "c",
     "C",
-    setOf("c", "h"),
+    setOf("c", "h", "inc", "def"),
     NativeCompilerKind.C,
     BuiltInLanguageSupport.NATIVE_BUILD_REQUIRES_CORE_TOOLCHAIN
   ),
   CPP(
     "cpp",
     "C++",
-    setOf("cc", "cpp", "cxx", "hh", "hpp", "hxx"),
+    setOf("cc", "cpp", "cxx", "cppm", "ixx", "hh", "hpp", "hxx", "ipp", "inl", "tpp"),
     NativeCompilerKind.CPP,
     BuiltInLanguageSupport.NATIVE_BUILD_REQUIRES_CORE_TOOLCHAIN
   ),

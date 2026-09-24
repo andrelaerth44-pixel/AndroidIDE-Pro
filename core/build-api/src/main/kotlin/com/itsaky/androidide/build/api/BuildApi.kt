@@ -10,7 +10,8 @@ data class BuildRequest(
 data class BuildResult(
   val success: Boolean,
   val outputApk: Path? = null,
-  val message: String = ""
+  val message: String = "",
+  val applicationId: String? = null
 )
 
 data class TaskResult(

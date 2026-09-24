@@ -1,85 +1,99 @@
 # AndroidIDE Pro — Architectural Decisions
 
-## ADR-001 — Native build first
+## ADR-001 — Native build is the product route
 
 **Status:** Accepted
 
-The AndroidIDE Pro native-compatible path should not require a Gradle daemon.
+O AndroidIDE Pro usa o Native Build Engine como rota de compilação do produto.
 
-**Reason:** on-device memory and startup cost are core product constraints.
+O Build Router não possui um backend Gradle de fallback para linguagens.
 
-Gradle remains a compatibility/fallback backend.
+Se uma capacidade ainda não estiver pronta, o usuário recebe diagnóstico explícito.
 
-## ADR-002 — Reuse the existing Workspace
+## ADR-002 — Workspace existente permanece autoritativo
 
 **Status:** Accepted
 
-The existing AndroidIDE Workspace/AndroidModule model remains authoritative during migration.
+O Workspace/AndroidModule do AndroidIDE continua sendo a fonte de verdade durante a migração.
 
-**Reason:** creating a second project model would duplicate logic and increase synchronization bugs.
-
-Adapters are preferred.
+Adaptadores alimentam o Native Build Engine.
 
 ## ADR-003 — Compose migration is incremental
 
 **Status:** Accepted
 
-New Pro surfaces use Compose + Material 3, while stable legacy surfaces can remain until their replacement is justified.
+Novas superfícies Pro usam Compose + Material 3 enquanto as superfícies legadas continuam funcionando até serem substituídas com segurança.
 
-**Reason:** a whole-app rewrite would increase risk and temporarily reduce functionality.
-
-## ADR-004 — UI stays restrained
+## ADR-004 — UI restraint
 
 **Status:** Accepted
 
-No neon/cyberpunk/RGB/glow-heavy visual language.
+A UI evita neon, cyberpunk, RGB, glow excessivo e animações decorativas.
 
-**Reason:** the product is a professional IDE. Readability, density and performance matter more than visual spectacle.
+A prioridade é leitura, densidade, toque e performance.
 
 ## ADR-005 — Build graph is task based
 
 **Status:** Accepted
 
-Build stages are independent tasks with declared inputs/outputs.
+Cada estágio declara inputs, outputs e dependências.
 
-**Reason:** required for incremental execution, diagnostics and future parallelism.
+Isso permite incrementalidade, diagnósticos, cache e futura execução paralela.
 
 ## ADR-006 — Documentation is part of implementation
 
 **Status:** Accepted
 
-Important architectural changes must update the relevant documentation.
-
-**Reason:** the project is large enough that memory cannot depend on conversation history.
+Mudanças arquiteturais devem atualizar a documentação.
 
 ## ADR-007 — Asset repositories are extension points
 
 **Status:** Accepted
 
-Bibliotecas de ícones são providers atrás de um contrato IconRepository, e não integrações específicas da UI.
+Repositórios de ícones e assets são providers atrás de contratos estáveis.
 
-**Reason:** novas bibliotecas devem poder ser adicionadas sem alterar a camada visual central.
-
-## ADR-008 — Kotlin compiler plugins are build extensions
+## ADR-008 — Kotlin compiler extensions are build extensions
 
 **Status:** Accepted
 
-Compiler plugins Kotlin, como Compose, devem ser selecionados por capacidades do módulo e fornecidos por um contrato genérico de compiler plugins.
+Compiler plugins Kotlin, como Compose, pertencem ao contrato de extensão do compilador.
 
-**Reason:** extensões do compilador não devem ficar codificadas diretamente na implementação da tarefa Kotlin.
+Eles não transformam Kotlin em linguagem-plugin.
 
 ## ADR-009 — Languages are built-in
 
 **Status:** Accepted
 
-Java, Kotlin, C e C++ são capacidades do núcleo AndroidIDE Pro. Não existe mecanismo de ativação, desativação ou instalação dessas linguagens como plugins.
+Java, Kotlin, C e C++ são capacidades do núcleo.
 
-**Reason:** o IDE deve trazer consigo os compiladores e language services das linguagens que declara suportadas.
+Toolchains pesados podem ser distribuídos como Core Toolchain Packs, mas isso não transforma a linguagem em plugin.
 
-## ADR-010 — No Gradle fallback for languages
+Não existe toggle para ligar/desligar uma linguagem.
+
+## ADR-010 — No Gradle fallback
 
 **Status:** Accepted
 
-Quando uma linguagem ou capacidade ainda não possui implementação nativa completa, o build retorna diagnóstico explícito.
+Nenhuma falha de uma implementação nativa deve redirecionar o projeto para Gradle.
 
-Não há fallback silencioso para Gradle.
+Gradle pode continuar existindo no repositório para tarefas de engenharia, mas não é o backend do Build Router do AndroidIDE Pro.
+
+## ADR-011 — Core Toolchain Packs
+
+**Status:** Accepted
+
+Compiladores pesados podem ficar fora do APK-base quando isso reduzir tamanho e RAM.
+
+O AndroidIDE Pro administra esses componentes como produto oficial através do Core Toolchain Manager.
+
+Os packs possuem versão, checksum e ciclo de atualização próprios.
+
+## ADR-012 — Android-hosted LLVM
+
+**Status:** Accepted
+
+C/C++ usa LLVM/Clang/LLD construído para executar no Android arm64.
+
+Um NDK desktop não é executado diretamente no aparelho.
+
+O pack reduzido contém apenas o target e runtime necessários ao primeiro ABI suportado.

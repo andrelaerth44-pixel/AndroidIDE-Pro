@@ -212,3 +212,8 @@ A cadeia Gradle existente continua em processo separado, e a política de compat
 - sem build cache pelo backend de compatibilidade.
 
 A meta arquitetural é que builds Android comuns sejam executados pelo engine próprio, mantendo Gradle para casos de compatibilidade.
+
+
+## Primeira operação migrada
+
+O root task `clean` já usa o engine leve. O `GradleBuildService.executeTasks("clean")` intercepta esse caso e remove os diretórios `build/` conhecidos pelo Workspace, sem iniciar o Tooling API server. `assemble`, compilação e outras tasks continuam no backend Gradle até que os equivalentes próprios sejam implementados.

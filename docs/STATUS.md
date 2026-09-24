@@ -105,7 +105,8 @@ Validação:
 - [x] bridge `GradleTaskExecutor` -> `GradleBuildService` implementado;
 - [x] `SequentialBuildExecutor` adicionado com propagação de falha/cancelamento;
 - [x] ponto de criação `createBuildSystemAdapter()` adicionado sem alterar o caminho antigo;
-- [ ] integração do fluxo principal com o novo pipeline.
+- [x] `clean` migrado para o engine leve no `GradleBuildService`;
+- [ ] integração de `assemble`/compile com o engine próprio.
 
 Ainda não implementado:
 

@@ -48,7 +48,8 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [x] Gradle adapter de planejamento
 - [x] bridge Gradle Adapter -> GradleBuildService
 - [x] ponto de criação do BuildSystem no GradleBuildService
-- [ ] migrar uma operação de build controlada para o novo pipeline
+- [x] migrar `clean` para o engine leve sem Gradle
+- [ ] migrar `assembleDebug`/compilação para o engine próprio
 - [ ] implementar engine Android leve sem Gradle
 - [ ] tornar Gradle explicitamente fallback de compatibilidade
 - [ ] descoberta completa de tasks do projeto

@@ -38,6 +38,7 @@ apply {
 buildscript {
   dependencies {
   implementation(projects.build.gradleAdapter)
+  implementation(projects.build.local)
     classpath(libs.logging.logback.core)
     classpath(libs.composite.desugaringCore)
   }

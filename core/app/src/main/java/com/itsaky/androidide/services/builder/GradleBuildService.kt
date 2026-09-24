@@ -376,6 +376,74 @@ class GradleBuildService : Service(), BuildService, IToolingApiClient,
     return performBuildTasks(server!!.initialize(params))
   }
 
+  /**
+   * Executes the root clean task without starting Gradle or the Tooling API.
+   *
+   * This is the first operation migrated to the lightweight runtime build engine.
+   */
+  private fun executeLightweightClean(): CompletableFuture<TaskExecutionResult> {
+    return CompletableFuture.supplyAsync {
+      if (isBuildInProgress) {
+        throw BuildInProgressException()
+      }
+
+      isBuildInProgress = true
+      try {
+        val manager = ProjectManagerImpl.getInstance()
+        val workspace = manager.requireWorkspace()
+        val root = workspace.getProjectDir().toPath()
+
+        val modules = buildList {
+          add(workspace.getRootProject())
+          addAll(workspace.getSubProjects())
+        }.distinctBy { it.projectDir.absolutePath }
+          .map { project ->
+            BuildModule(
+              id = project.path,
+              projectDir = project.projectDir.toPath(),
+              type = BuildModuleType.UNKNOWN,
+            )
+          }
+
+        val buildProject = BuildProject(root, modules)
+        val context = BuildContext(
+          projectDir = root,
+          cacheDir = root.resolve(".androidide").resolve("build-cache"),
+          toolchainsDir = root.resolve(".androidide").resolve("toolchains"),
+          diagnostics = BuildDiagnosticSink { diagnostic ->
+            eventListener?.onOutput("[${diagnostic.severity}] ${diagnostic.message}")
+          },
+        )
+
+        eventListener?.prepareBuild(BuildInfo(listOf("clean")))
+        val result = SequentialBuildExecutor().execute(
+          LightweightBuildSystem().createBuildGraph(
+            buildProject,
+            BuildRequest(requestedTasks = setOf("clean")),
+            context,
+          ),
+          context,
+        )
+
+        return@supplyAsync when (result.state) {
+          com.itsaky.androidide.build.api.BuildResult.State.SUCCESS -> {
+            eventListener?.onBuildSuccessful(listOf("clean"))
+            TaskExecutionResult.SUCCESS
+          }
+          com.itsaky.androidide.build.api.BuildResult.State.CANCELLED -> {
+            eventListener?.onBuildFailed(listOf("clean"))
+            TaskExecutionResult(false, TaskExecutionResult.Failure.BUILD_CANCELLED)
+          }
+          com.itsaky.androidide.build.api.BuildResult.State.FAILED -> {
+            eventListener?.onBuildFailed(listOf("clean"))
+            TaskExecutionResult(false, TaskExecutionResult.Failure.BUILD_FAILED)
+          }
+        }
+      } finally {
+        isBuildInProgress = false
+      }
+    }
+  }
   override fun executeTasks(vararg tasks: String): CompletableFuture<TaskExecutionResult> {
     checkServerStarted()
     val message = TaskExecutionMessage(listOf(*tasks))

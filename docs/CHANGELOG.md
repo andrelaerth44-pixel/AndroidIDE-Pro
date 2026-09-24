@@ -1,5 +1,13 @@
 # Changelog de Engenharia
 
+## 2026-09-24 — First runtime operation without Gradle
+
+### Adicionado
+
+- `clean` agora é executado pelo engine local, sem iniciar Gradle, Tooling API ou daemon;
+- integração do `LightweightBuildSystem` com `GradleBuildService` para o caso root `clean`;
+- dependência do `core:app` no módulo `:build:local`.
+
 ## 2026-09-24 — Mobile resource policy
 
 ### Decisão

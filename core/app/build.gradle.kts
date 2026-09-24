@@ -155,6 +155,7 @@ dependencies {
 
   // Local projects here
   implementation(projects.core.actions)
+  implementation(projects.core.androidBuild)
   implementation(projects.core.common)
   implementation(projects.core.indexingApi)
   implementation(projects.core.indexingCore)

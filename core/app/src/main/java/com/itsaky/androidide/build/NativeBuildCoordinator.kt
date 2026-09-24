@@ -168,6 +168,14 @@ class NativeBuildCoordinator(
       dependencyAssetDirs = collectAndroidDependencies(module)
         .mapNotNull { it.assetsFolder }
         .filter { Files.isDirectory(it) },
+      localNativeLibDir = module.projectDir
+        .toPath()
+        .resolve("src/main/jniLibs")
+        .takeIf { Files.isDirectory(it) },
+      localNativeIncludeDir = module.projectDir
+        .toPath()
+        .resolve("src/main/cpp")
+        .takeIf { Files.isDirectory(it) },
       javaSourceLevel = module.compilerSettings.getJavaSourceVersion(),
       javaBytecodeLevel = module.compilerSettings.getJavaBytecodeVersion(),
       kotlinCompilerClassLoader = kotlinCompilerClassLoader,

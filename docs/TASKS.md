@@ -44,7 +44,7 @@ Legend:
 
 ## Assets
 
-[ ] Icon Center repository API  
+[x] Icon Center repository API  
 [ ] Material Symbols repository  
 [ ] MDI repository  
 [ ] Lucide repository  
@@ -67,7 +67,7 @@ Legend:
 
 ## Platform
 
-[ ] Plugin API  
+[x] Plugin API  
 [ ] permission model  
 [ ] plugin loader  
 [ ] language plugins  

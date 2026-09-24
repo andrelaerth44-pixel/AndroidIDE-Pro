@@ -310,6 +310,8 @@ class GradleBuildService : Service(), BuildService, IToolingApiClient,
     if (BuildPreferences.isOfflineEnabled) {
       extraArgs.add("--offline")
     }
+    // Gradle is a compatibility backend, not the primary mobile build engine.
+    extraArgs.addAll(GradleResourcePolicy().toArguments())
     return CompletableFuture.completedFuture(extraArgs)
   }
 

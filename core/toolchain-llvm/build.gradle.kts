@@ -12,6 +12,7 @@ val toolchainOut = providers.gradleProperty("llvm.toolchain.dir")
   .orElse(layout.projectDirectory.dir("toolchain-out").asFile)
 
 val toolchainAssets = toolchainOut.map { it.resolve("assets/toolchain") }
+val toolchainJni = toolchainOut.map { it.resolve("jniLibs") }
 val generatedAssetsDir = layout.buildDirectory.dir("generated/toolchain/assets")
 
 android {
@@ -30,6 +31,10 @@ android {
     buildConfig = false
   }
 
+  packaging {
+    jniLibs.useLegacyPackaging = true
+  }
+
   buildTypes {
     getByName("release") {
       signingConfig = signingConfigs.getByName("debug")
@@ -37,6 +42,7 @@ android {
   }
 
   sourceSets["main"].assets.srcDir(generatedAssetsDir)
+  sourceSets["main"].jniLibs.srcDir(toolchainJni)
 
 }
 

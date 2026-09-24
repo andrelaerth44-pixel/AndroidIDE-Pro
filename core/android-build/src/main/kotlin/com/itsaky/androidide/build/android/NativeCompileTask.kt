@@ -435,7 +435,9 @@ class CompileNativeTask(
             "c",
             "cc",
             "cpp",
-            "cxx"
+            "cxx",
+            "cppm",
+            "ixx"
           )
       }
 

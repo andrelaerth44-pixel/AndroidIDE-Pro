@@ -77,6 +77,7 @@ class CoreToolchainManager(
     val compiler = root.resolve("bin/clang")
     val cppCompiler = root.resolve("bin/clang++")
     val linker = root.resolve("bin/ld.lld")
+    val clangd = root.resolve("bin/clangd")
     val runtimeLibraryDir = root.resolve("lib")
     val runtimeSharedLibrary = runtimeLibraryDir
       .resolve("libc++_shared.so")
@@ -88,6 +89,7 @@ class CoreToolchainManager(
     if (!compiler.isRegularFile() ||
       !cppCompiler.isRegularFile() ||
       !linker.isRegularFile() ||
+      !clangd.isRegularFile() ||
       !runtimeSharedLibrary.isRegularFile() ||
       !Files.isDirectory(runtimeLibraryDir) ||
       !Files.isDirectory(sysroot) ||
@@ -101,6 +103,7 @@ class CoreToolchainManager(
       compiler = compiler,
       cppCompiler = cppCompiler,
       linker = linker,
+      clangd = clangd,
       sysroot = sysroot,
       resourceDir = resourceDir,
       runtimeLibraryDir = runtimeLibraryDir,

@@ -120,6 +120,8 @@ rootProject.name = "AndroidIDE"
 
 // keep this sorted alphabetically
 include(
+  ":build:api",
+  ":build:gradle-adapter",
   ":annotation:annotations",
   ":annotation:processors",
   ":annotation:processors-ksp",

@@ -20,6 +20,13 @@
 - APK install action from Build Center.
 - Resizable application workspace for phone/tablet.
 - Engineering documentation under `docs/`.
+- Built-in language core for Java, Kotlin, C, C++, XML, JSON and Markdown.
+- Immutable built-in language backend contract with no language register/unregister API.
+- Native-only Build Router with no Gradle language fallback.
+- Embedded `JavacTool`/nb-javac Java compilation.
+- Embedded Kotlin compiler invocation through `K2JVMCompiler`.
+- Native C/C++ compilation task with Android-hosted LLVM toolchain contract.
+- Native library packaging for `arm64-v8a`.
 
 ### Changed
 
@@ -29,7 +36,8 @@
 ### Not yet verified
 
 - End-to-end physical-device Hello World build/install.
-- Kotlin compilation in the native build engine.
+- Physical validation of embedded Kotlin and Java compiler paths.
+- Distribution of the Android-hosted LLVM binaries.
 - Full dependency resolution.
 - R8.
 - NDK build.

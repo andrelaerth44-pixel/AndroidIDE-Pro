@@ -227,7 +227,20 @@ Build → Verify → Install → Launch
 
 ## Core Toolchains
 
-Linguagens são parte do núcleo. Toolchains pesados são armazenados pelo próprio IDE em `filesDir/toolchains/`, permitindo manter o APK-base sob controle sem transformar compiladores em plugins. O CI já produz o pack Kotlin separadamente.
+Linguagens são parte do núcleo. Compiladores pesados são distribuídos como Core Toolchain Packs oficiais e administrados pelo próprio IDE.
+
+~~~text
+core/toolchain-kotlin/
+core/toolchain-llvm/
+       ↓
+Core Toolchain Manager
+       ↓
+filesDir/toolchains/
+~~~
+
+O Core Kotlin Toolchain fornece K2JVMCompiler sem colocar o compilador no APK-base.
+O Core LLVM Toolchain fornece clang/clang++/lld executáveis para Android arm64 e o runtime necessário para C17/C++20.
+Esses packs não são plugins de linguagem e não criam toggles.
 
 ## Performance
 
@@ -250,7 +263,7 @@ Existing IWorkspace / AndroidModule
     ↓
 NativeAndroidBuildSystem
     ↓
-AAPT2 → embedded javac → embedded kotlinc → embedded LLVM → D8 → package → zipalign → apksigner
+AAPT2 → JavacTool → Core Kotlin Toolchain → Core LLVM Toolchain → D8 → package → zipalign → apksigner
 ~~~
 
 Esta ponte foi projetada para reutilizar o modelo de projeto existente do AndroidIDE em vez de criar um segundo Workspace paralelo.
@@ -274,7 +287,10 @@ Esta ponte foi projetada para reutilizar o modelo de projeto existente do Androi
 - [x] Native-only BuildRouter
 - [x] ação Build nativa no editor
 - [x] Build Center com progresso e logs estruturados
-- [ ] gerar e instalar Hello World no dispositivo
+- [ ] gerar, instalar e executar Hello World no dispositivo
+- [x] Install action no Build Center
+- [x] Run action no Build Center
+- [x] Core Toolchain Center
 
 ### Fase 2 — Workspace Pro
 
@@ -359,7 +375,11 @@ Quando a resposta for não, a próxima tarefa deve identificar qual camada está
 ---
 ## Features
 
-- [x] Gradle support.
+- [x] Native Build Engine.
+- [x] Java compilation.
+- [x] Kotlin compilation through Core Kotlin Toolchain.
+- [x] C/C++ compilation through Core LLVM Toolchain.
+- [x] AAPT2 / D8 / APK packaging.
 - [x] `JDK 11` and `JDK 17` available for use.
 - [x] Terminal with necessary packages.
 - [x] Custom environment variables (for Build & Terminal).
@@ -369,7 +389,8 @@ Quando a resposta for não, a próxima tarefa deve identificar qual camada está
 - [ ] Language servers
     - [x] Java
     - [x] XML
-    - [ ] Kotlin
+    - [x] Kotlin core build path
+    - [x] C/C++ core build path
 - [ ] UI Designer
     - [x] Layout inflater
     - [x] Resolve resource references

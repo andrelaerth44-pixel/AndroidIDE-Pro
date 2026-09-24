@@ -40,7 +40,7 @@ lib/arm64-v8a/libmain.so
 
 O ponto de entrada padrão é ANativeActivity_onCreate, preservado pelo linker.
 
-A documentação oficial do Android define NativeActivity como uma forma de implementar uma Activity puramente nativa; o nome da biblioteca pode ser definido por android.app.lib_name e o ponto de entrada por android.app.func_name. citeturn634849search0turn634849search7
+A API Android NativeActivity permite implementar uma Activity puramente nativa; o nome da biblioteca pode ser definido por android.app.lib_name e o ponto de entrada por android.app.func_name.
 
 ## 2. Aplicativo somente C++
 

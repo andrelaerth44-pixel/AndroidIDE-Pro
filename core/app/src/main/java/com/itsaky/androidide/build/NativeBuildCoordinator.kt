@@ -10,7 +10,6 @@ import com.itsaky.androidide.build.android.NativeAndroidBuildSystem
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
-import kotlin.math.max
 
 /**
  * AndroidIDE Pro bridge between the existing Workspace model and the Gradle-free
@@ -82,7 +81,7 @@ class NativeBuildCoordinator(
       applicationId = applicationId,
       compileSdk = compileSdk,
       minSdk = artifact.minSdkVersion,
-      targetSdk = max(artifact.targetSdkVersionOverride, compileSdk),
+      targetSdk = if (artifact.targetSdkVersionOverride > 0) artifact.targetSdkVersionOverride else compileSdk,
       sdk = sdk
     )
 

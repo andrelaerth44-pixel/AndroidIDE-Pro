@@ -96,33 +96,9 @@ fetch_sources() {
 }
 
 patch_llvm_for_android() {
-  # LLVM 18 can reject the shared-Dylib configuration because a helper target
-  # is linked once with keyword syntax and once without it. Apply the narrow
-  # compatibility change only when the original form is still present.
-  local file
-  for file in \
-    "$LLVM_SRC/lld/tools/lld/CMakeLists.txt" \
-    "$LLVM_SRC/clang/cmake/modules/AddClang.cmake"; do
-    [[ -f "$file" ]] || continue
-    if grep -q 'target_link_libraries(obj.\${target} \${ARGN})' "$file"; then
-      perl -0pi -e \
-        's/target_link_libraries\(obj\.\$\{target\} \$\{ARGN\}\)/target_link_libraries(obj.\$\{target\} \$\{type\} \$\{ARGN\})/' \
-        "$file"
-    fi
-  done
-
-  # Android only needs ELF. Disable the other LLD flavors and make the
-  # generated driver table agree with the libraries that remain.
-  local lld_top="$LLVM_SRC/lld/CMakeLists.txt"
-  local lld_tool="$LLVM_SRC/lld/tools/lld/CMakeLists.txt"
-  local lld_main="$LLVM_SRC/lld/tools/lld/lld.cpp"
-  if [[ -f "$lld_top" ]] && grep -q "^add_subdirectory(MachO)" "$lld_top"; then
-    perl -pi -e 's/^add_subdirectory\\((COFF|MachO|MinGW|wasm)\\)/# removed for AndroidIDE Pro arm64 ELF build: $1/' "$lld_top"
-
-    perl -0pi -e 's/lld_target_link_libraries\\(lld\\s+PRIVATE\\s+lldCommon\\s+lldCOFF\\s+lldELF\\s+lldMachO\\s+lldMinGW\\s+lldWasm\\s+\\)/lld_target_link_libraries(lld\\n  PRIVATE\\n  lldCommon\\n  lldELF\\n  )/s' "$lld_tool"
-
-    perl -0pi -e 's/LLD_HAS_DRIVER\\(coff\\)\\nLLD_HAS_DRIVER\\(elf\\)\\nLLD_HAS_DRIVER\\(mingw\\)\\nLLD_HAS_DRIVER\\(macho\\)\\nLLD_HAS_DRIVER\\(wasm\\)/LLD_HAS_DRIVER(elf)\\n#undef LLD_ALL_DRIVERS\\n#define LLD_ALL_DRIVERS {{lld::Gnu, \\&lld::elf::link}}/' "$lld_main"
-  fi
+  # Keep the LLVM/LLD sources unmodified. Size reduction happens at CMake
+  # configuration and packaging time, not through source-tree rewrites.
+  :
 }
 
 build_host_tools() {
@@ -150,7 +126,6 @@ build_host_tools() {
 }
 
 configure_android_tools() {
-  patch_llvm_for_android
   local ndk_toolchain="$NDK_ROOT/build/cmake/android.toolchain.cmake"
 
   log "Configuring Android arm64 LLVM tools"

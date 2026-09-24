@@ -45,3 +45,30 @@ interface IconRepository {
 
   fun supports(format: IconFormat): Boolean
 }
+
+
+class IconRepositoryRegistry {
+  private val repositories = linkedMapOf<String, IconRepository>()
+
+  fun register(repository: IconRepository): Boolean {
+    if (repositories.containsKey(repository.id)) return false
+    repositories[repository.id] = repository
+    return true
+  }
+
+  fun unregister(repositoryId: String): Boolean =
+    repositories.remove(repositoryId) != null
+
+  fun find(repositoryId: String): IconRepository? =
+    repositories[repositoryId]
+
+  fun all(): List<IconRepository> =
+    repositories.values.toList()
+
+  suspend fun search(query: IconQuery): List<IconAsset> {
+    return repositories.values
+      .flatMap { it.search(query) }
+      .sortedBy { it.name.lowercase() }
+      .take(query.limit)
+  }
+}

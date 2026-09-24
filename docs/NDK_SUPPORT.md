@@ -1,78 +1,158 @@
-# AndroidIDE Pro — NDK Support
+# AndroidIDE Pro — Native C/C++ Support
 
-## Goal
+## Escopo atual
 
-Make C/C++ a first-class on-device development target.
+C e C++ são capacidades nativas do AndroidIDE Pro.
 
-## Toolchain
+Primeiro alvo:
 
-Target architecture:
+- C17;
+- C++20;
+- Android arm64;
+- ABI arm64-v8a;
+- geração de .so;
+- empacotamento automático no APK.
 
-```text
-NDK Manager
-   ↓
-LLVM / Clang
-   ↓
-clangd
-   ↓
-CMake
-   ↓
-Native Build Engine
-   ↓
-.so / .a
-   ↓
+O caminho de build não usa Gradle.
+
+## Arquitetura
+
+~~~text
+src/main/cpp
+    ↓
+NativeLanguageScanner
+    ↓
+CompileNativeTask
+    ↓
+Core LLVM Toolchain
+    ├── clang
+    ├── clang++
+    └── lld
+    ↓
+libappnative.so
+    ↓
+lib/arm64-v8a/
+    ↓
 APK
-```
+~~~
 
-## Languages
+## Android-hosted LLVM
 
-Initial targets:
+O compilador precisa executar no próprio Android. Por isso o Pro não tenta executar o clang Linux/macOS/Windows de um NDK desktop.
 
-- C11/C17
-- C++17/C++20
+O Core LLVM Toolchain é construído para Android arm64 e distribuído em core/toolchain-llvm e tools/llvm-toolchain.
 
-Newer language modes are added when the on-device toolchain supports them reliably.
+## C
 
-## ABI
+Extensões:
 
-- arm64-v8a
-- armeabi-v7a
-- x86
-- x86_64
+~~~text
+.c
+.h
+~~~
 
-## Features
+Default:
 
-- syntax highlighting
-- clangd completion
-- navigation
-- diagnostics
-- CMake support
-- JNI
-- native packaging
+~~~text
+-std=c17
+-fPIC
+-O2
+-fdata-sections
+-ffunction-sections
+-fstack-protector-strong
+-DANDROID
+~~~
 
-## JNI Wizard
+## C++
 
-Future wizard can generate Kotlin/Java declarations plus C/C++ JNI boilerplate.
+Extensões:
 
-## Native build modules
+~~~text
+.cc
+.cpp
+.cxx
+.hh
+.hpp
+.hxx
+~~~
 
-Planned separation:
+Default:
 
-- androidide-build-native
-- androidide-build-java
-- androidide-build-kotlin
-- androidide-build-compose
-- androidide-build-resources
+~~~text
+-std=c++20
+-fPIC
+-O2
+-fdata-sections
+-ffunction-sections
+-fstack-protector-strong
+-DANDROID
+-stdlib=libc++
+~~~
 
-## Performance
+O runtime libc++_shared.so é incluído no APK em lib/arm64-v8a quando C++ está presente.
 
-NDK tools must be installed/downloaded independently and cached by version and ABI.
+## Páginas de 16 KiB
 
-Do not embed every NDK toolchain into the base APK.
+O linker recebe:
 
+~~~text
+-Wl,-z,max-page-size=16384
+-Wl,-z,common-page-size=16384
+~~~
 
-## Native C/C++ defaults
+## Source discovery
 
-The first native Android backend uses `arm64-v8a` and defaults to C17 and C++20.
+O Build Engine varre src/main/cpp e reconhece as extensões nativas suportadas.
 
-The linker is configured with 16 KiB maximum/common page-size flags for AArch64. This keeps the produced shared library aligned with current Android large-page requirements.
+Arquivos desconhecidos com extensão são reportados pelo scanner.
+
+## Integrado
+
+- descoberta C/C++;
+- C17;
+- C++20;
+- compile + link;
+- objetos determinísticos;
+- arm64-v8a;
+- .so;
+- libc++_shared.so;
+- packaging;
+- TaskGraph;
+- fingerprints;
+- diagnóstico de ausência do Core LLVM.
+
+## Próximas capacidades
+
+Ainda separadas do primeiro vertical slice:
+
+- CMake;
+- múltiplas ABIs;
+- clangd;
+- JNI Wizard;
+- debugging nativo;
+- static libraries;
+- native unit-test runner;
+- LLDB;
+- profiling.
+
+## Validação final
+
+A implementação só será marcada como fisicamente validada depois de:
+
+~~~text
+Hello C project
+  → Build
+  → signed APK
+  → install
+  → launch
+  → native code executed
+
+Hello C++ project
+  → Build
+  → signed APK
+  → install
+  → launch
+  → native code executed
+~~~
+
+Essa etapa depende de execução em Android arm64 real ou ambiente Android equivalente.

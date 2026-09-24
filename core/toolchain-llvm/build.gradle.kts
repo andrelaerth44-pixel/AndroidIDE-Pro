@@ -31,6 +31,12 @@ android {
     buildConfig = false
   }
 
+  buildTypes {
+    getByName("release") {
+      signingConfig = signingConfigs.getByName("debug")
+    }
+  }
+
   sourceSets["main"].jniLibs.srcDir(toolchainLibs)
   sourceSets["main"].assets.srcDir(generatedAssetsDir)
 

@@ -1,80 +1,128 @@
 # AndroidIDE Pro — Core Toolchains
 
-## Regra
+## Princípio
 
-Compiladores e toolchains são parte do AndroidIDE Pro, mas os binários pesados não precisam ficar dentro do APK-base.
+Java, Kotlin, C e C++ são linguagens nativas do AndroidIDE Pro. Os compiladores e runtimes pesados podem ser distribuídos como **Core Toolchain Packs**, mas continuam sendo componentes oficiais do produto.
 
-Isso não cria plugins de linguagem.
+Core Toolchain Pack **não é plugin de linguagem**.
 
-A arquitetura é:
+Não existe ativação/desativação de linguagem, instalação de linguagem como plugin ou fallback de compilação para Gradle.
+
+## Estrutura
 
 ~~~text
-AndroidIDE Pro APK
-    ↓
+AndroidIDE Pro
+  ↓
 Core Toolchain Manager
-    ↓
-app-specific files/toolchains/
-    ├── kotlin/
-    ├── llvm/
-    ├── rust/
-    ├── go/
-    └── javascript/
+  ├── Kotlin Toolchain APK
+  │     ↓
+  │   package classloader
+  │     ↓
+  │   K2JVMCompiler
+  │
+  └── LLVM Toolchain APK
+        ↓
+      Android arm64 native libraries
+        ↓
+      clang / clang++ / lld
 ~~~
 
-O usuário não ativa ou desativa uma linguagem. O IDE conhece a linguagem e administra automaticamente os componentes necessários para compilá-la.
-
-## Por que separar do APK
-
-Um compiler/toolchain completo pode ser grande.
-
-O Kotlin compiler embeddable 1.9.24, por exemplo, tem aproximadamente 60 MB como artefato JAR antes das demais dependências. A toolchain Android NDK completa r30 distribuída para Linux tem cerca de 739 MB. O AndroidIDE Pro não deve copiar um NDK de desktop inteiro para dentro do APK.
-
-O Pro deve distribuir apenas o subconjunto necessário para executar o compilador no Android.
+Os arquivos auxiliares extraídos ficam em filesDir/toolchains por versão.
 
 ## Kotlin
 
-O primeiro pack já é gerado pelo build:
+O módulo core/toolchain-kotlin produz o APK com o compilador Kotlin 1.9.24.
 
-~~~text
-core/android-build/build/toolchains/kotlin/
-~~~
+O AndroidIDE Pro resolve o pacote pela API de package context com inclusão de código e usa o classloader do pacote.
 
-O workflow do GitHub Actions publica esse pack separado do APK.
+O Build Engine não depende mais de kotlin-compiler-embeddable no APK principal.
 
-Próxima etapa: fazer o runtime Kotlin carregar esse pack por classloader interno em vez de depender das classes do compiler dentro do APK.
+A tarefa Kotlin carrega K2JVMCompiler por reflexão e executa o compilador no processo do Build Engine. Não existe daemon Kotlin para builds de projeto.
 
 ## LLVM C/C++
 
-O pack nativo será:
+O módulo core/toolchain-llvm produz o APK do compilador nativo Android arm64.
+
+Alvo atual:
 
 ~~~text
-toolchains/llvm/
-└── arm64-v8a/
-    ├── bin/
-    ├── lib/
-    └── sysroot/
+host: Android arm64
+target: aarch64-linux-android
+ABI do app: arm64-v8a
+C: C17
+C++: C++20
 ~~~
 
-Somente binários capazes de executar no próprio Android serão incluídos.
+O pack contém somente o necessário para compilar e linkar C/C++ no próprio Android:
 
-## Regras de tamanho
+- driver LLVM/Clang;
+- LLD ELF;
+- libLLVM;
+- libclang-cpp;
+- libc++_shared;
+- clang resource directory;
+- runtimes de compilação;
+- sysroot AArch64 reduzido;
+- headers;
+- bibliotecas Android;
+- android_native_app_glue quando disponível.
 
-1. Não embutir um SDK/NDK desktop inteiro.
-2. Não duplicar compiler/runtime dentro do APK de projeto.
-3. Preferir packs por host ABI.
-4. Distribuir somente arquivos realmente usados pelo Build Engine.
-5. Remover símbolos e ferramentas de desenvolvimento que não são necessários em produção.
-6. Ter relatório automático do tamanho do APK e de cada toolchain pack.
-7. Estabelecer orçamento máximo de tamanho antes de promover uma toolchain ao release.
+Não distribuímos um NDK desktop inteiro dentro do APK.
+
+## Build do pack LLVM
+
+~~~text
+tools/llvm-toolchain/build-android-llvm.sh
+        ↓
+host tablegen
+        ↓
+LLVM/Clang/LLD cross-build para Android arm64
+        ↓
+redução para ELF/AArch64
+        ↓
+sysroot + runtime + driver
+        ↓
+core/toolchain-llvm APK
+~~~
+
+O builder reduz o produto com MinSizeRel, backend AArch64, LLVM/Clang compartilhados, LLD somente ELF e remoção de componentes de desenvolvimento.
+
+## Integridade e atualização
+
+Cada toolchain.zip gera SHA-256 e o valor fica em toolchain.properties.
+
+O Core Toolchain Manager:
+
+- valida a versão;
+- extrai para diretório temporário;
+- rejeita ZIP path traversal;
+- troca o diretório de forma atômica;
+- remove versões antigas.
+
+O debug signing dos packs serve apenas para artefatos de desenvolvimento/CI. Release final usa assinatura de distribuição.
+
+## CI
+
+O workflow principal publica o Core Kotlin Toolchain separadamente.
+
+O workflow .github/workflows/build-llvm-toolchain.yml gera o Core LLVM Android arm64 e publica:
+
+- APK do pack;
+- relatório de tamanho;
+- SHA-256.
 
 ## Estado
 
-- [x] conceito de Core Toolchain Pack
-- [x] Kotlin pack gerado pelo Gradle
-- [x] Kotlin pack publicado pelo CI
-- [ ] Kotlin runtime classloader
-- [ ] Core Toolchain Manager
-- [ ] LLVM Android arm64 pack
-- [ ] checksum + assinatura dos packs
-- [ ] atualização incremental de toolchains
-- [ ] garbage collection de versões antigas
+- [x] Core Toolchain API
+- [x] armazenamento por versão/ABI
+- [x] Core Kotlin Toolchain APK
+- [x] Kotlin package classloader
+- [x] Core LLVM toolchain model
+- [x] Android arm64 LLVM builder
+- [x] Core LLVM Toolchain APK module
+- [x] Toolchain Center
+- [x] checksum metadata
+- [ ] validação física em aparelho Android arm64
+- [ ] atualização online autenticada
+- [ ] download resumível
+- [ ] múltiplos ABIs

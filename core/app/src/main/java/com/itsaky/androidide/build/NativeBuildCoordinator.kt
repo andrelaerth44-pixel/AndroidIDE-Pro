@@ -1,17 +1,18 @@
 package com.itsaky.androidide.build
 
 import android.content.Context
-import com.itsaky.androidide.projects.IWorkspace
-import com.itsaky.androidide.projects.android.AndroidModule
 import com.android.builder.model.v2.ide.LibraryType.ANDROID_LIBRARY
-import com.itsaky.androidide.build.api.BuildRequest
-import com.itsaky.androidide.build.api.BuildResult
 import com.itsaky.androidide.build.android.AndroidSdk
 import com.itsaky.androidide.build.android.NativeAndroidBuildSystem
-import com.itsaky.androidide.toolchain.api.BuiltInToolchainPaths
-import com.itsaky.androidide.toolchain.api.ToolchainKind
+import com.itsaky.androidide.build.android.AndroidModule as NativeAndroidModule
+import com.itsaky.androidide.build.api.BuildRequest
+import com.itsaky.androidide.build.api.BuildResult
+import com.itsaky.androidide.projects.IWorkspace
+import com.itsaky.androidide.projects.android.AndroidModule
+import com.itsaky.androidide.toolchain.CoreToolchainManager
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Base64
 import kotlin.io.path.createDirectories
 import kotlin.math.max
 
@@ -19,12 +20,16 @@ import kotlin.math.max
  * AndroidIDE Pro bridge between the existing Workspace model and the Gradle-free
  * native Android build engine.
  *
- * This class deliberately lives in the app layer: the native build engine remains
- * independent from the IDE project model and Android Context.
+ * Java/Kotlin/C/C++ implementations stay in core. Heavy compiler binaries are
+ * resolved by CoreToolchainManager and are never treated as language plugins.
  */
 class NativeBuildCoordinator(
   private val appContext: Context
 ) {
+
+  private val coreToolchainManager by lazy {
+    CoreToolchainManager(appContext)
+  }
 
   fun assembleDebug(
     workspace: IWorkspace,
@@ -81,21 +86,39 @@ class NativeBuildCoordinator(
       message = "No Android Build Tools installation was found"
     )
 
+    val sourceDir = module.projectDir.toPath().resolve("src/main/cpp")
+    val hasNativeSources = hasNativeSources(sourceDir)
+    val llvmToolchain = coreToolchainManager.resolveLlvm()
+
+    logger(coreToolchainManager.describe())
+
+    if (hasNativeSources && llvmToolchain == null) {
+      return BuildResult(
+        success = false,
+        message = "This project contains C/C++ sources, but the first-party Android LLVM " +
+          "Core Toolchain Pack is not installed for this device ABI."
+      )
+    }
+
     val sdk = AndroidSdk(
       root = sdkRoot,
       buildToolsVersion = buildToolsVersion,
       compileSdk = compileSdk,
-      nativeToolchainRoot = appContext.filesDir.toPath().resolve("toolchains/llvm")
+      nativeToolchain = llvmToolchain
     )
 
-    val nativeModule = com.itsaky.androidide.build.android.AndroidModule(
+    val nativeModule = NativeAndroidModule(
       name = module.path.removePrefix(":").ifBlank { module.name },
       rootDir = module.projectDir.toPath(),
       namespace = namespace,
       applicationId = applicationId,
       compileSdk = compileSdk,
       minSdk = artifact.minSdkVersion,
-      targetSdk = if (artifact.targetSdkVersionOverride > 0) artifact.targetSdkVersionOverride else compileSdk,
+      targetSdk = if (artifact.targetSdkVersionOverride > 0) {
+        artifact.targetSdkVersionOverride
+      } else {
+        compileSdk
+      },
       sdk = sdk,
       compileClasspath = module.getCompileClasspaths()
         .map { it.toPath() }
@@ -116,7 +139,7 @@ class NativeBuildCoordinator(
     val keystore = ensureDebugKeystore()
       ?: return BuildResult(
         success = false,
-        message = "Unable to create or locate the AndroidIDE Pro debug keystore"
+        message = "Unable to provision the AndroidIDE Pro debug keystore"
       )
 
     return NativeAndroidBuildSystem(
@@ -129,6 +152,18 @@ class NativeBuildCoordinator(
         variant = "debug"
       )
     )
+  }
+
+  private fun hasNativeSources(root: Path): Boolean {
+    if (!Files.isDirectory(root)) return false
+    return Files.walk(root).use { stream ->
+      stream.anyMatch {
+        Files.isRegularFile(it) &&
+          it.fileName.toString().substringAfterLast('.', "") in setOf(
+            "c", "cc", "cpp", "cxx"
+          )
+      }
+    }
   }
 
   private fun findBuildToolsVersion(root: Path): String? {
@@ -152,38 +187,14 @@ class NativeBuildCoordinator(
     return runCatching {
       file.parent.createDirectories()
 
-      val keytool = Path.of(
-        System.getProperty("java.home"),
-        "bin",
-        "keytool"
-      )
+      val encoded = NativeBuildCoordinator::class.java
+        .getResourceAsStream("/debug.keystore.b64")
+        ?.bufferedReader()
+        ?.use { it.readText().trim() }
+        ?: error("Embedded AndroidIDE Pro debug keystore resource is missing")
 
-      check(Files.exists(keytool)) {
-        "keytool not found at " + keytool
-      }
-
-      ProcessBuilder(
-        keytool.toString(),
-        "-genkeypair",
-        "-v",
-        "-keystore", file.toString(),
-        "-storepass", "android",
-        "-alias", "androiddebugkey",
-        "-keypass", "android",
-        "-keyalg", "RSA",
-        "-keysize", "2048",
-        "-validity", "10000",
-        "-dname", "CN=Android Debug,O=Android,C=US"
-      )
-        .redirectErrorStream(true)
-        .start()
-        .also { process ->
-          process.inputStream.bufferedReader().use { it.readText() }
-          check(process.waitFor() == 0) {
-            "keytool failed to create debug keystore"
-          }
-        }
-
+      val bytes = Base64.getDecoder().decode(encoded)
+      Files.write(file, bytes)
       file
     }.getOrNull()
   }

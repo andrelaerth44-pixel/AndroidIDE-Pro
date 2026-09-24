@@ -198,8 +198,8 @@ configure_android_tools() {
     -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384" \
     -DCMAKE_MODULE_LINKER_FLAGS="-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384"
 
-  log "Building Android clang/lld"
-  "$NINJA" -C "$ANDROID_BUILD" -j "$JOBS" clang lld
+  log "Building Android clang/lld/clangd"
+  "$NINJA" -C "$ANDROID_BUILD" -j "$JOBS" clang lld clangd
 }
 
 copy_first() {
@@ -233,6 +233,10 @@ package_toolchain() {
   cp "$clang" "$OUT/assets/toolchain/bin/clang"
   cp "$clang" "$OUT/assets/toolchain/bin/clang++"
   cp "$lld" "$OUT/assets/toolchain/bin/ld.lld"
+
+  local clangd="$ANDROID_BUILD/bin/clangd"
+  [[ -x "$clangd" ]] || die "clangd output is missing: $clangd"
+  cp "$clangd" "$OUT/assets/toolchain/bin/clangd"
 
   local ndk_prebuilt
   ndk_prebuilt="$NDK_ROOT/toolchains/llvm/prebuilt/$(ls "$NDK_ROOT/toolchains/llvm/prebuilt" | head -1)"

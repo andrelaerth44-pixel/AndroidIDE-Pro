@@ -4,6 +4,7 @@
 
 O branch `dev` separa o projeto em domínios:
 
+- `build`: contratos do futuro Build Engine;
 - `core`: app, projetos, recursos, indexação e contratos LSP;
 - `editor`: API, implementação, lexers e Tree-sitter;
 - `tooling`: API, modelos, eventos, implementação e configuração;
@@ -74,7 +75,17 @@ O futuro Build Engine deverá fornecer dados compatíveis com o modelo interno, 
 
 Não será criado um segundo Project Manager paralelo.
 
-## 5. Arquitetura-alvo
+## 5. Build System API implementada
+
+O novo módulo `:build:api` é independente de `core:app`, Activities e do backend Gradle.
+
+A primeira fronteira é:
+
+`BuildProject -> BuildSystem -> BuildGraph -> BuildExecutor`
+
+Essa separação permite adicionar o Gradle Adapter sem obrigar a UI a conhecer Gradle.
+
+## 6. Arquitetura-alvo
 
 ```
 UI
@@ -93,7 +104,7 @@ Tooling API            Task Graph
                 Toolchain + Cache
 ```
 
-## 6. LSP
+## 7. LSP
 
 A API LSP existente já possui:
 
@@ -106,7 +117,7 @@ A API LSP existente já possui:
 
 Isso permite adicionar Kotlin/XML/C/C++ sem criar um segundo sistema de transporte.
 
-## 7. UI
+## 8. UI
 
 O shell atual em Views/XML será tratado como infraestrutura existente.
 
@@ -119,7 +130,7 @@ A migração para Compose/Material 3 será incremental:
 5. tool windows;
 6. superfícies especializadas.
 
-## 8. Segurança arquitetural
+## 9. Segurança arquitetural
 
 O manifest atual usa permissões amplas e `largeHeap`. A modernização deverá separar:
 
@@ -130,7 +141,7 @@ O manifest atual usa permissões amplas e `largeHeap`. A modernização deverá 
 
 A regra futura será a menor autoridade possível compatível com a funcionalidade.
 
-## 9. Limites
+## 10. Limites
 
 Nenhum Build Task novo deverá depender diretamente de Activity, Fragment ou View.
 

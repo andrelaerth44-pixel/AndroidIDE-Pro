@@ -136,18 +136,30 @@ class NativeBuildCoordinator(
         compileSdk
       },
       sdk = sdk,
-      compileClasspath = module.getCompileClasspaths()
-        .map { it.toPath() }
-        .filter { Files.exists(it) }
+      compileClasspath = buildList {
+        addAll(
+          module.getCompileClasspaths()
+            .map { it.toPath() }
+            .filter { Files.exists(it) }
+        )
+        collectRuntimeJars(module).forEach { runtime ->
+          if (Files.exists(runtime)) add(runtime)
+        }
+      }.distinct()
         .filterNot {
           it.toAbsolutePath().normalize().startsWith(
             module.projectDir.toPath().toAbsolutePath().normalize()
           )
         },
-      dependencyResourceDirs = module.libraryMap.values
-        .filter { it.type == ANDROID_LIBRARY }
-        .mapNotNull { it.androidLibraryData?.resFolder?.toPath() }
+      dependencyResourceDirs = collectAndroidDependencies(module)
+        .mapNotNull { it.resFolder }
         .filter { Files.exists(it) },
+      dependencyNativeLibDirs = collectAndroidDependencies(module)
+        .mapNotNull { it.jniFolder }
+        .filter { Files.isDirectory(it) },
+      dependencyAssetDirs = collectAndroidDependencies(module)
+        .mapNotNull { it.assetsFolder }
+        .filter { Files.isDirectory(it) },
       javaSourceLevel = module.compilerSettings.getJavaSourceVersion(),
       javaBytecodeLevel = module.compilerSettings.getJavaBytecodeVersion(),
       kotlinCompilerClassLoader = kotlinCompilerClassLoader
@@ -170,6 +182,69 @@ class NativeBuildCoordinator(
       )
     )
   }
+
+  private data class AndroidDependencyPaths(
+    val resFolder: Path?,
+    val jniFolder: Path?,
+    val assetsFolder: Path?,
+    val runtimeJars: List<Path>
+  )
+
+  private fun collectAndroidDependencies(
+    module: AndroidModule
+  ): List<AndroidDependencyPaths> {
+    val result = LinkedHashMap<String, AndroidDependencyPaths>()
+    val visitedLibraries = HashSet<String>()
+
+    fun visitLibrary(key: String, owner: AndroidModule) {
+      if (!visitedLibraries.add(owner.path + "|" + key)) return
+      val library = owner.libraryMap[key] ?: return
+
+      if (library.type == ANDROID_LIBRARY) {
+        library.androidLibraryData?.let { data ->
+          result[key + "|" + data.resFolder.absolutePath] =
+            AndroidDependencyPaths(
+              resFolder = data.resFolder.toPath(),
+              jniFolder = data.jniFolder.toPath(),
+              assetsFolder = data.assetsFolder.toPath(),
+              runtimeJars = data.runtimeJarFiles.map { it.toPath() }
+            )
+        }
+      }
+
+      library.dependencies.forEach { dependency ->
+        visitLibrary(dependency, owner)
+      }
+    }
+
+    module.libraries.forEach { visitLibrary(it, module) }
+
+    module.getCompileModuleProjects()
+      .filterIsInstance<AndroidModule>()
+      .forEach { projectModule ->
+        projectModule.mainSourceSet?.sourceProvider?.resDirectories
+          ?.forEach { res ->
+            result["project-res|" + res.absolutePath] =
+              AndroidDependencyPaths(
+                resFolder = res.toPath(),
+                jniFolder = projectModule.projectDir
+                  .resolve("src/main/jniLibs")
+                  .takeIf(File::isDirectory)
+                  ?.toPath(),
+                assetsFolder = projectModule.projectDir
+                  .resolve("src/main/assets")
+                  .takeIf(File::isDirectory)
+                  ?.toPath(),
+                runtimeJars = listOf(projectModule.getGeneratedJar().toPath())
+              )
+          }
+      }
+
+    return result.values.toList()
+  }
+
+  private fun collectRuntimeJars(module: AndroidModule): List<Path> =
+    collectAndroidDependencies(module).flatMap { it.runtimeJars }
 
   private fun hasKotlinSources(root: Path): Boolean {
     if (!Files.isDirectory(root)) return false

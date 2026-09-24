@@ -4,10 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import com.itsaky.androidide.R
 import com.itsaky.androidide.build.NativeBuildCoordinator
-import com.itsaky.androidide.lookup.Lookup
 import com.itsaky.androidide.projects.IProjectManager
-import com.itsaky.androidide.projects.ModuleProject
-import com.itsaky.androidide.projects.android.AndroidModule
 import com.itsaky.androidide.projects.android.AndroidModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,7 +12,11 @@ import com.itsaky.androidide.actions.ActionItem.Location.EDITOR_TOOLBAR
 
 class NativeBuildAction : ActionItem {
 
-  override val id: String = "androidide.pro.build.native"
+  companion object {
+    const val ID = "androidide.pro.build.native"
+  }
+
+  override val id: String = ID
   override var label: String = ""
   override var visible: Boolean = true
   override var enabled: Boolean = true

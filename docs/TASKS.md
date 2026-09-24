@@ -12,7 +12,7 @@ Legend:
 [x] TaskGraph  
 [x] AndroidModule adapter  
 [x] AAPT2 compile/link  
-[x] Java build path  
+[x] Java build path — javac embarcado  
 [x] D8 path  
 [x] APK package  
 [x] zipalign  

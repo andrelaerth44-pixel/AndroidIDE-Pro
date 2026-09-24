@@ -7,6 +7,8 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.lang.reflect.Proxy
+import java.nio.charset.StandardCharsets
 import java.nio.file.StandardCopyOption
 import java.util.Locale
 import java.util.zip.ZipOutputStream
@@ -14,12 +16,6 @@ import jdkx.tools.DiagnosticListener
 import jdkx.tools.JavaFileObject
 import jdkx.tools.StandardLocation
 import openjdk.tools.javac.api.JavacTool
-import org.jetbrains.kotlin.cli.common.ExitCode
-import org.jetbrains.kotlin.cli.common.Services
-import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
-import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
-import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
-import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.deleteRecursively
@@ -352,12 +348,17 @@ class KotlinCompileTask(
   override val id = "compileKotlinDebug"
 
   override val inputs: List<Path>
-    get() = listOf(
-      module.sourceDir,
-      module.kotlinSourceDir,
-      module.classesDir,
-      module.sdk.androidJar()
-    ) + module.compileClasspath
+    get() = buildList {
+      add(module.sourceDir)
+      add(module.kotlinSourceDir)
+      add(module.classesDir)
+      add(module.sdk.androidJar())
+      module.compileClasspath.forEach(::add)
+      module.kotlinCompilerClassLoader?.let {
+        // The compiler lives in a first-party APK and is represented by its
+        // package classloader rather than a writable code directory.
+      }
+    }
 
   override val outputs = listOf(module.kotlinOutputJar)
 
@@ -379,43 +380,130 @@ class KotlinCompileTask(
       return@runCatching TaskResult(true, "No Kotlin sources")
     }
 
+    val loader = module.kotlinCompilerClassLoader
+      ?: return@runCatching TaskResult(
+        false,
+        "Kotlin sources require the first-party Core Kotlin Toolchain Pack."
+      )
+
     module.classesDir.createDirectories()
 
-    val arguments = K2JVMCompilerArguments().apply {
-      freeArgs = sources.map(Path::toString).toMutableList()
-      destination = module.kotlinOutputJar.toString()
-      classpath = buildList {
+    val argumentsClass = Class.forName(
+      "org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments",
+      true,
+      loader
+    )
+    val arguments = argumentsClass.getDeclaredConstructor().newInstance()
+
+    setCompilerArgument(arguments, "setFreeArgs", sources.map(Path::toString).toMutableList())
+    setCompilerArgument(arguments, "setDestination", module.kotlinOutputJar.toString())
+    setCompilerArgument(
+      arguments,
+      "setClasspath",
+      buildList {
         add(module.sdk.androidJar())
         add(module.classesDir)
         addAll(module.compileClasspath)
       }.joinToString(File.pathSeparator)
-      includeRuntime = false
-      noReflect = true
-      jvmTarget = module.javaBytecodeLevel
-      moduleName = module.name.replace(Regex("[^A-Za-z0-9_]"), "_")
-      skipRuntimeVersionCheck = true
+    )
+    setCompilerArgument(arguments, "setIncludeRuntime", false)
+    setCompilerArgument(arguments, "setNoReflect", true)
+    setCompilerArgument(arguments, "setJvmTarget", module.javaBytecodeLevel)
+    setCompilerArgument(
+      arguments,
+      "setModuleName",
+      module.name.replace(Regex("[^A-Za-z0-9_]"), "_")
+    )
+    setCompilerArgument(arguments, "setSkipRuntimeVersionCheck", true)
+
+    val messageCollectorClass = Class.forName(
+      "org.jetbrains.kotlin.cli.common.messages.MessageCollector",
+      true,
+      loader
+    )
+    var compilerErrors = false
+
+    val collector = Proxy.newProxyInstance(
+      loader,
+      arrayOf(messageCollectorClass)
+    ) { _, method, args ->
+      when (method.name) {
+        "report" -> {
+          val severity = args?.getOrNull(0)?.toString() ?: "MESSAGE"
+          val message = args?.getOrNull(1)?.toString() ?: ""
+          if (severity.contains("ERROR", ignoreCase = true)) {
+            compilerErrors = true
+          }
+          context.log("kotlinc " + severity + ": " + message)
+          null
+        }
+        "hasErrors" -> compilerErrors
+        "clear" -> null
+        else -> defaultReflectionValue(method.returnType)
+      }
     }
 
-    val collector = PrintingMessageCollector(
-      System.out,
-      MessageRenderer.PLAIN_RELATIVE_PATHS,
-      false
+    val servicesClass = Class.forName(
+      "org.jetbrains.kotlin.cli.common.Services",
+      true,
+      loader
     )
+    val services = servicesClass.getField("EMPTY").get(null)
 
-    val exitCode = K2JVMCompiler().exec(
+    val compilerClass = Class.forName(
+      "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler",
+      true,
+      loader
+    )
+    val compiler = compilerClass.getDeclaredConstructor().newInstance()
+
+    val exec = compilerClass.methods.firstOrNull { method ->
+      method.name == "exec" &&
+        method.parameterTypes.size == 3 &&
+        method.parameterTypes[0].isAssignableFrom(messageCollectorClass) &&
+        method.parameterTypes[1].isAssignableFrom(servicesClass) &&
+        method.parameterTypes[2].isAssignableFrom(argumentsClass)
+    } ?: error("Kotlin compiler exec method not found")
+
+    val exitCode = exec.invoke(
+      compiler,
       collector,
-      Services.EMPTY,
+      services,
       arguments
     )
 
-    require(exitCode == ExitCode.OK) {
-      "Kotlin compiler failed: " + exitCode
+    val exitName = (exitCode as? Enum<*>)?.name ?: exitCode.toString()
+    check(!compilerErrors && exitName == "OK") {
+      "Kotlin compiler failed with " + exitName
     }
 
     TaskResult(true)
-  }.getOrElse {
-    TaskResult(false, it.message ?: "Kotlin compilation failed")
+  }.getOrElse { throwable ->
+    val cause = generateSequence(throwable) { it.cause }.lastOrNull() ?: throwable
+    TaskResult(false, cause.message ?: "Kotlin compilation failed")
   }
+
+  private fun setCompilerArgument(
+    arguments: Any,
+    setterName: String,
+    value: Any
+  ) {
+    val setter = arguments.javaClass.methods.firstOrNull {
+      it.name == setterName && it.parameterTypes.size == 1
+    } ?: error("Kotlin compiler argument setter not found: " + setterName)
+
+    setter.invoke(arguments, value)
+  }
+
+  private fun defaultReflectionValue(returnType: Class<*>): Any? =
+    when (returnType) {
+      Boolean::class.javaPrimitiveType -> false
+      Int::class.javaPrimitiveType -> 0
+      Long::class.javaPrimitiveType -> 0L
+      Float::class.javaPrimitiveType -> 0f
+      Double::class.javaPrimitiveType -> 0.0
+      else -> null
+    }
 }
 
 class DexBuilderTask(

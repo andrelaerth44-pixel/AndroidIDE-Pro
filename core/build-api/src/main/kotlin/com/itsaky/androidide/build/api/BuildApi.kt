@@ -42,6 +42,12 @@ interface BuildSystem {
 }
 
 
+data class KotlinCompileContext(
+  val moduleId: String,
+  val classpath: List<Path> = emptyList(),
+  val properties: Map<String, String> = emptyMap()
+)
+
 data class KotlinCompilerPluginOptions(
   val classpath: List<Path> = emptyList(),
   val options: Map<String, String> = emptyMap()
@@ -50,7 +56,7 @@ data class KotlinCompilerPluginOptions(
 interface KotlinCompilerPlugin {
   val id: String
 
-  fun appliesTo(module: Any): Boolean
+  fun appliesTo(context: KotlinCompileContext): Boolean
 
-  fun options(module: Any): KotlinCompilerPluginOptions
+  fun options(context: KotlinCompileContext): KotlinCompilerPluginOptions
 }

@@ -78,6 +78,8 @@ data class AndroidModule(
   val classesDir: Path get() = buildDir.resolve("intermediates/classes/debug")
   val kotlinOutputJar: Path get() = buildDir.resolve("intermediates/kotlin/debug/classes.jar")
   val nativeLibDir: Path get() = buildDir.resolve("intermediates/native-libs/debug")
+  val compileCommandsFile: Path get() =
+    buildDir.resolve("intermediates/native/debug/compile_commands.json")
   val dexDir: Path get() = buildDir.resolve("intermediates/dex/debug")
   val resourcesApk: Path get() = buildDir.resolve("outputs/resources.ap_")
   val unsignedApk: Path get() = buildDir.resolve("outputs/app-debug-unsigned.apk")

@@ -2,33 +2,69 @@
 
 ## Objetivo
 
-Executar builds Android diretamente no dispositivo com controle fino de tarefas, cache, memória e toolchains.
+Executar builds Android diretamente no dispositivo com controle fino de tarefas, cache, memória e
+toolchains.
+
+A arquitetura-alvo é inspirada no modelo público do CodeAssist: um engine incremental próprio que
+transforma o projeto em um DAG de tarefas e chama as ferramentas Android diretamente, sem hospedar
+um daemon Gradle como caminho normal.
 
 ## Situação atual
 
-O build existente é Gradle-first:
+O build legado ainda é Gradle-first:
 
 - `GradleBuildService` vive como foreground service;
 - `ToolingServerRunner` inicia um processo Java;
 - `ToolingApiServerImpl` abre `ProjectConnection`;
 - Gradle tasks são executadas por nome;
 - cancelamento usa `CancellationTokenSource`;
-- o AAPT2 usado no build é sobrescrito para um binário compatível com Android;
 - o sistema não permite dois builds concorrentes no mesmo serviço.
 
-Este sistema será preservado como caminho de compatibilidade até o novo engine possuir cobertura suficiente.
+Esse caminho será preservado como **compatibilidade**. Não é a arquitetura-alvo para os builds APK
+normais.
+
+## Referência CodeAssist
+
+A execução real observada no CodeAssist para um Hello World mostrou 17 etapas:
+
+```
+generateSourcesDebug
+mergeResourcesDebug
+checkAarMetadataDebug
+mergeNativeLibsDebug
+mergeJavaResourceDebug
+aapt2CompileDebug
+processManifestDebug
+injectAppLogProviderDebug
+aapt2LinkDebug
+generateRFileDebug
+compileJavaDebug
+dexBuilderDebug
+mergeProjectDexDebug
+mergeExtDexDebug
+packageApkDebug
+signDebug
+assembleDebug
+```
+
+A documentação pública atual do CodeAssist confirma a ideia arquitetural: projeto próprio, task DAG
+incremental, fingerprints/cache persistente, ferramentas Java como JDT/ecj/D8/R8/apksigner no processo
+e AAPT2 nativo como subprocesso.
+
+A referência detalhada está em `docs/CODEASSIST_BUILD_PIPELINE.md`.
 
 ## Fronteira de substituição
 
-A fronteira recomendada é:
+`BuildService -> BuildSystem SPI -> {Native Android Engine | Gradle Compatibility}`
 
-`BuildService -> BuildSystem SPI -> {Gradle Adapter | Native Engine}`
+O app não deve precisar saber se uma operação específica veio do backend nativo ou do fallback.
 
-O app não deve precisar saber se uma tarefa foi executada por Gradle ou pelo engine próprio.
+A seleção futura deve preferir o engine nativo para cada tarefa suportada e recorrer ao adapter Gradle
+somente quando a cobertura nativa for insuficiente.
 
-## API inicial implementada
+## API implementada
 
-O módulo `:build:api` agora contém a primeira fronteira independente do Gradle.
+O módulo `:build:api` contém:
 
 ### Modelos
 
@@ -51,7 +87,7 @@ O módulo `:build:api` agora contém a primeira fronteira independente do Gradle
 
 `BuildTask` declara:
 
-- `id`;
+- identidade;
 - dependências;
 - inputs;
 - outputs;
@@ -68,152 +104,160 @@ O módulo `:build:api` agora contém a primeira fronteira independente do Gradle
 
 e fornece ordenação topológica determinística.
 
-### Diagnostics/Cancellation
-
-A API possui:
-
-- `BuildDiagnostic`;
-- `BuildDiagnosticSink`;
-- `CancellationToken`.
-
 ### Executor
 
-`BuildExecutor` e `BuildResult` definem o contrato do executor, mas ainda não existe uma implementação concreta.
+`SequentialBuildExecutor` é a primeira implementação concreta do `BuildExecutor`. Ele fornece
+a baseline correta para dependências, falha, cancelamento e diagnósticos antes de adicionarmos
+concorrência limitada, fingerprints e cache.
 
-## Contratos iniciais
-
-### BuildSystem
-
-- `id`;
-- tipos de projeto suportados;
-- criação de build graph;
-- tarefas disponíveis;
-- execução;
-- ações.
-
-### Task
-
-- identidade;
-- entradas;
-- saídas;
-- parâmetros;
-- dependências;
-- executor;
-- recursos estimados.
-
-### BuildDiagnostic
-
-- severity;
-- kind;
-- source;
-- location;
-- code;
-- detail;
-- task.
-
-## Grafo
+## Grafo Android-alvo
 
 ```
-resolveDependencies
-        |
-projectModel
-    +---+-----------------+
-    |                     |
-resources             compileJava/Kotlin
-    |                     |
-AAPT2                generatedSources
-    +---------+-----------+
-              |
-             dex
-              |
-           package
-              |
-            sign
+generateSources
+      |
+      +---- mergeResources
+      +---- checkAarMetadata
+      +---- mergeNativeLibs
+      +---- mergeJavaResource
+                 |
+            aapt2Compile
+                 |
+          processManifest
+                 |
+             aapt2Link
+                 |
+          generateRFile
+                 |
+        compileJava/Kotlin
+                 |
+            dexBuilder
+          /             \
+mergeProjectDex     mergeExtDex
+          \             /
+             packageApk
+                 |
+                sign
+                 |
+              assemble
 ```
 
-O grafo será variante-aware.
+O DAG final será variante-aware e poderá executar ramos independentes com paralelismo limitado por
+memória. A execução atual permanece sequencial até existir um scheduler que conheça custo/memória.
 
 ## Incrementalidade
 
 Fingerprint deve incluir somente o estado necessário para decidir se a task é válida:
 
-- conteúdos;
-- paths lógicos;
-- configuração;
-- dependências;
+- conteúdo dos inputs;
+- caminhos lógicos;
+- configuração/variant;
+- classpath/dependências;
 - toolchain;
-- versão do task implementation.
+- versão da implementação da task.
+
+O estado da task deverá sobreviver ao processo do app para que uma nova compilação consiga pular
+tarefas realmente inalteradas.
 
 ## Cache
 
-O cache deverá possuir:
+O cache nativo deverá possuir:
 
 - versionamento;
 - content addressing onde útil;
-- limites;
-- limpeza;
+- limites de espaço;
+- limpeza/LRU;
 - detecção de corrupção;
 - invalidação por toolchain/configuração.
 
+Não devemos construir um cache gigante que transforme armazenamento em novo gargalo.
+
+## Toolchains existentes a reutilizar
+
+O repositório já possui:
+
+- composite build `java-compiler`;
+- composite build `javac`;
+- `:java:javac-services`;
+- `:xml:aaptcompiler`;
+- dependências AAPT2/protobuf relacionadas a recursos.
+
+A regra é reutilizar primeiro. O engine não deve criar uma segunda implementação de javac/AAPT2 sem
+justificativa técnica.
+
 ## Gradle Adapter
 
-A primeira implementação está em `:build:gradle-adapter`.
+A implementação está em `:build:gradle-adapter`.
 
 Ela já:
 
 1. converte `IProject` para `BuildProject`;
-2. preserva o diretório e os caminhos dos módulos;
+2. preserva diretórios e módulos;
 3. planeja `assemble`, `assemble<Variant>` e tasks requisitadas;
-4. adiciona `clean` como dependência quando solicitado;
-5. mantém a execução atrás de `GradleTaskExecutor`.
+4. adiciona `clean` quando solicitado;
+5. mantém execução atrás de `GradleTaskExecutor`;
+6. aplica a política de recursos de compatibilidade.
 
-Ainda faltam:
+O executor default do adapter continua deliberadamente não-operacional para impedir execução
+acidental.
 
-6. descobrir o catálogo completo de tasks;
-7. conectar `GradleTaskExecutor` ao `GradleBuildService`;
-8. converter logs/diagnósticos do Tooling API em `BuildDiagnostic`;
-9. mapear de forma autoritativa Android application vs library.
-
-O executor default do adapter é deliberadamente não-operacional para impedir execução acidental.
-
-Para o caminho real, `core:app` fornece `GradleBuildServiceTaskExecutor`, que chama o `BuildService` existente, traduz resultados para `TaskResult` e encaminha cancelamento. `GradleBuildService.createBuildSystemAdapter()` cria essa combinação.
-
-A migração do fluxo principal ainda não foi feita: o novo pipeline existe como caminho reversível de integração.
-
-## Migração
-
-A primeira implementação não deverá tentar substituir todo o Gradle.
-
-A ordem deve ser:
-
-1. interface;
-2. adapter;
-3. projeto controlado;
-4. build Android mínimo;
-5. diagnóstico;
-6. incremental;
-7. dependências;
-8. variantes;
-9. Gradle compatibility completa.
-
-
+No app, `GradleBuildServiceTaskExecutor` faz a ponte para o serviço legado somente quando o
+backend Gradle é selecionado.
 
 ## Regra de peso do AndroidIDE Pro
 
-O aplicativo não deve carregar Gradle como biblioteca de execução dentro do processo principal.
+O aplicativo não deve carregar Gradle como biblioteca de execução no processo principal.
 
-A cadeia Gradle existente continua em processo separado, e a política de compatibilidade reduz o impacto com:
+O fallback Gradle continua isolado e limitado. A própria documentação do Gradle observa que
+`--no-daemon` pode resultar em uma JVM de uso único dependendo dos argumentos da JVM, portanto a
+política não deve ser interpretada como "zero processos Gradle". A solução estrutural continua
+sendo remover Gradle do caminho normal. citeturn521816search2
+
+A política existente mantém:
 
 - heap limitado;
-- um worker;
+- `max-workers=1`;
 - sem paralelismo;
-- sem daemon persistente;
-- sem file-system watching;
-- sem build cache pelo backend de compatibilidade.
+- daemon desabilitado;
+- file-system watching desabilitado;
+- build cache desabilitado pelo fallback.
 
-A meta arquitetural é que builds Android comuns sejam executados pelo engine próprio, mantendo Gradle para casos de compatibilidade.
-
+As opções são suportadas pelas interfaces de linha de comando/configuração do Gradle. citeturn521816search0turn521816search1
 
 ## Primeira operação migrada
 
-O root task `clean` já usa o engine leve. O `GradleBuildService.executeTasks("clean")` intercepta esse caso e remove os diretórios `build/` conhecidos pelo Workspace, sem iniciar o Tooling API server. `assemble`, compilação e outras tasks continuam no backend Gradle até que os equivalentes próprios sejam implementados.
+O root task `clean` já usa o engine leve. `GradleBuildService.executeTasks("clean")` intercepta esse
+caso e remove os diretórios `build/` conhecidos pelo Workspace sem iniciar o Tooling API server.
+
+`assemble`, compilação, recursos, dex e assinatura ainda não estão migrados.
+
+## Próxima sequência
+
+A implementação deve seguir a sequência mostrada pelo CodeAssist:
+
+1. Project/ClassPath snapshot;
+2. fingerprint + estado persistente;
+3. `generateSources`;
+4. `mergeResources`;
+5. `checkAarMetadata`;
+6. `processManifest`;
+7. `aapt2Compile`;
+8. `aapt2Link` + R;
+9. `compileJava`;
+10. `compileKotlin`;
+11. `dexBuilder`;
+12. merges de dex;
+13. `packageApk`;
+14. `sign`;
+15. `assemble/install`;
+16. R8 para release;
+17. AAB;
+18. NDK/Clang/JNI.
+
+A primeira integração executável deve ser um Hello World Java completo dentro do engine nativo,
+sem Gradle, reutilizando os módulos de javac e AAPT já existentes.
+
+## Validação
+
+Ainda não foi executado o build Gradle completo do repositório nem um APK completo pelo novo engine.
+O estado atual deve ser tratado como fundação arquitetural + primeira operação nativa validada
+estruturalmente.

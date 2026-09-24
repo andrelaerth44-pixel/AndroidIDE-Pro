@@ -585,7 +585,7 @@ class PackageApkTask(
           Files.list(module.dexDir).use { stream ->
             stream
               .filter { Files.isRegularFile(it) }
-              .filter { it.fileName.toString().matches(Regex("classes(\\\\d+)?\\\\.dex")) }
+              .filter { it.fileName.toString().matches(Regex("classes(\\d+)?\\.dex")) }
               .sorted { a, b -> a.fileName.toString().compareTo(b.fileName.toString()) }
               .forEach { dex ->
                 val name = dex.fileName.toString()

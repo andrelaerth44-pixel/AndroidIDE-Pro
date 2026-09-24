@@ -1,11 +1,22 @@
-
 # AndroidIDE Pro — Native Build Engine
 
 ## Objetivo
 
-Compilar, empacotar, alinhar e assinar aplicações Android diretamente no dispositivo, sem depender de Gradle daemon e sem trocar de backend quando o projeto usa outra linguagem nativa.
+Compilar, empacotar, alinhar e assinar aplicações Android diretamente no dispositivo, sem Gradle daemon no build do projeto.
 
-## Pipeline atual
+O Build Router possui somente uma rota:
+
+~~~text
+Workspace
+  ↓
+BuildRouter
+  ↓
+NativeAndroidBuildSystem
+  ↓
+TaskGraph
+~~~
+
+## Grafo atual
 
 ~~~text
 mergeResourcesDebug
@@ -31,74 +42,143 @@ zipalignDebug
 signDebug
 ~~~
 
-## Linguagens
+## Java
 
-Java usa `JavacTool`/nb-javac embarcado no próprio processo do Build Engine.
+Java usa o JavacTool/nb-javac já integrado ao AndroidIDE.
 
-Kotlin usa K2JVMCompiler embutido em processo, produzindo classes.jar para D8.
+O processo não chama java.home/bin/javac.
 
-C/C++ usam a toolchain LLVM executável no Android, compilando C17/C++20 e ligando libappnative.so para arm64-v8a. O link usa flags compatíveis com páginas de 16 KiB.
+Classpath inclui android.jar, classes do próprio módulo e JARs do Workspace.
 
-Dependências JAR entram no classpath do javac/kotlinc e no input do D8. Recursos de Android libraries são compilados separadamente por AAPT2 e entram no mesmo link final; isso evita sobrescrever arquivos `values/*.xml` inteiros durante o merge. Os diretórios de recursos também fazem parte dos fingerprints.
+As versões source/target vêm do modelo do módulo.
 
-## Build Router
+## Kotlin
 
-O Build Router agora tem uma única rota:
+O compilador Kotlin não fica mais no APK-base.
 
 ~~~text
-Workspace + AndroidModule
+Core Kotlin Toolchain APK
         ↓
-BuildRouter
+package classloader
         ↓
-NativeAndroidBuildSystem
+K2JVMCompiler
         ↓
-Built-in language pipeline
+classes.jar
+        ↓
+D8
 ~~~
 
-Não existe mais GradleBackend no roteador. Quando uma capacidade nativa ainda está incompleta, o build falha com diagnóstico explícito.
+A tarefa Kotlin usa reflexão para carregar as classes do compiler e encaminha diagnósticos para o BuildContext.
 
-## Grafo e cache
+Quando não existem fontes .kt, a tarefa produz um output vazio estável para manter o DAG incremental.
 
-Cada tarefa declara inputs, outputs e dependências. O TaskGraph usa fingerprints SHA-256 persistentes para UP-TO-DATE.
+## C/C++
 
-## Estado atual
+~~~text
+Core LLVM Toolchain APK
+        ↓
+AndroidNativeToolchain
+        ↓
+clang / clang++ / lld
+        ↓
+libappnative.so
+~~~
 
-Implementado no código:
+O primeiro backend usa C17, C++20 e arm64-v8a.
 
-- Build API;
-- TaskGraph;
-- fingerprints persistentes;
-- AndroidModule;
-- Android SDK/tool resolution;
-- AAPT2;
-- BuildConfig;
-- Java build path com compilador embarcado;
-- Kotlin compiler embutido;
-- C/C++ native task;
-- D8;
-- APK packaging;
-- zipalign;
-- debug signing;
-- Workspace adapter;
-- Build Center;
-- instalação de APK;
-- rota única nativa.
+O link passa flags de páginas de 16 KiB.
 
-Ainda falta a validação física em dispositivo e a distribuição real da LLVM executável no Android.
+## Projeto puramente nativo
 
-## Core Toolchains
+Um projeto pode não possuir Java nem Kotlin.
 
-Toolchains pesados pertencem ao produto, mas devem ser armazenados em `filesDir/toolchains/` e administrados pelo Core Toolchain Manager. O CI já gera um pack Kotlin separado para permitir essa evolução sem transformar linguagem em plugin.
+Nesse cenário:
 
-## Próximas etapas
+- BuildConfig não precisa ser gerado;
+- javac é pulado;
+- Kotlin é pulado;
+- D8 é pulado;
+- libraries nativas continuam no APK;
+- AAPT2 processa manifesto/resources;
+- APK segue para zipalign e assinatura.
 
-1. unificar o compilador Java de build com o javac embarcado usado pelo LSP;
-2. distribuir/gerenciar a LLVM toolchain Android;
-3. AAR/JAR classpath;
-4. desugaring;
-5. multidex;
-6. Compose compiler plugins;
-7. R8;
-8. release/AAB;
-9. múltiplas ABIs;
-10. CMake/JNI.
+## Recursos
+
+~~~text
+merged resources
+      ↓
+aapt2 compile
+      ↓
+dependency .flat files
+      +
+application .flat files
+      ↓
+aapt2 link
+~~~
+
+Recursos de Android libraries são compilados separadamente e entram no link final.
+
+## D8
+
+D8 recebe classes Java/Kotlin, android.jar, compile classpath e minSdk.
+
+Quando não existe bytecode de programa, o estágio grava um marcador e não executa D8.
+
+## Packaging
+
+O empacotador inclui:
+
+- resources.ap_;
+- classes*.dex, quando existem;
+- lib/*/*.so;
+- assets/*.
+
+C++ recebe libc++_shared.so quando necessário.
+
+## Incrementalidade
+
+O TaskGraph usa fingerprints SHA-256 persistentes.
+
+A versão atual inclui:
+
+- versão do algoritmo;
+- ID da tarefa;
+- inputs recursivos;
+- outputs;
+- inventário de diretórios;
+- tamanho e mtime dos arquivos.
+
+Se um output desaparece, a tarefa é executada novamente. Se um filho desaparece de um diretório de output, a tarefa também é invalidada.
+
+## Assinatura
+
+~~~text
+package
+  ↓
+zipalign
+  ↓
+apksigner
+~~~
+
+A debug keystore é provisionada pelo próprio AndroidIDE Pro. Ela é somente de desenvolvimento.
+
+## Limites atuais
+
+Ainda faltam:
+
+- AAR dependency graph completo;
+- desugaring completo;
+- Compose compiler integration;
+- multidex de produção;
+- R8;
+- AAB;
+- flavors/build types completos;
+- release signing UI;
+- múltiplas ABIs;
+- CMake;
+- clangd;
+- JNI Wizard;
+- debugging nativo;
+- Run/Debug integrado.
+
+Nada disso deve reintroduzir Gradle no Build Router.

@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
   api(projects.core.buildApi)
+  testImplementation(libs.tests.junit)
 }
 
 description = "Gradle-free build task engine"

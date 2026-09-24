@@ -73,6 +73,8 @@ data class AndroidModule(
   val generatedDir: Path get() = buildDir.resolve("generated/debug")
   val generatedRDir: Path get() = generatedDir.resolve("r")
   val generatedBuildConfigDir: Path = generatedDir.resolve("buildConfig")
+  val generatedJniHeadersDir: Path get() =
+    generatedDir.resolve("jni")
   val classesDir: Path get() = buildDir.resolve("intermediates/classes/debug")
   val kotlinOutputJar: Path get() = buildDir.resolve("intermediates/kotlin/debug/classes.jar")
   val nativeLibDir: Path get() = buildDir.resolve("intermediates/native-libs/debug")

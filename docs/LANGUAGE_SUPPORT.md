@@ -1,40 +1,91 @@
-# AndroidIDE Pro — Language Support
 
-## Model
+# AndroidIDE Pro — Native Language Core
 
-Cada linguagem deve separar editor-time e build-time capabilities.
+## Regra principal
+
+Java, Kotlin, C e C++ fazem parte do núcleo do AndroidIDE Pro.
+
+Não existe linguagem de programação como plugin, nem ativação/desativação de linguagem. Uma linguagem só é declarada suportada quando seu editor/language services e seu caminho de build/run fazem parte do próprio IDE.
+
+## Arquitetura
 
 ~~~text
-LanguageBackend
-├── analyze
-├── completion
-├── diagnostics
-├── navigation
-└── compiler
+Editor
+  ↓
+BuiltInLanguageRegistry
+  ↓
+Language services
+  ├── parsing
+  ├── completion
+  ├── diagnostics
+  ├── navigation
+  └── refactoring
+  ↓
+Native Build Engine
+  ├── Java compiler
+  ├── Kotlin compiler
+  └── Android-hosted LLVM
+      ├── C
+      └── C++
 ~~~
 
-Um backend pode fornecer análise sem necessariamente fornecer compilação, e o build system pode usar uma implementação diferente para gerar bytecode.
+core/language-support é uma camada interna do produto; não é um mecanismo de plugins.
 
-## Current
+## Linguagens incorporadas
 
-- Java: editor/backend existente; native V1 compilation path inicial.
-- Kotlin: editor infrastructure exists in the AndroidIDE base; native compiler path is planned.
-- XML: existing Android XML infrastructure.
+| Linguagem | Editor | Build nativo |
+|---|---:|---:|
+| Java | sim | sim |
+| Kotlin | sim | sim, compiler em processo |
+| C | em evolução | sim, LLVM on-device |
+| C++ | em evolução | sim, LLVM on-device |
+| XML | sim | sim, AAPT2 |
+| JSON | sim | infraestrutura |
+| Markdown | sim | infraestrutura |
 
-## Planned
-
-- JavaScript / TypeScript
-- Python
-- C / C++
-- Rust
-- Go
-- Bash
-- HTML / CSS / SCSS
-- JSON / YAML / TOML
-- SQL
+A validação física de todos os caminhos em aparelho ainda precisa ser concluída.
 
 ## Kotlin
 
-Kotlin support will be added to the native build engine as a compiler backend rather than as a special case inside AndroidModule.
+~~~text
+.kt
+ ↓
+K2JVMCompiler embutido
+ ↓
+classes.jar
+ ↓
+D8
+ ↓
+classes.dex
+~~~
 
-Compiler plugins such as Compose must be contributed through a generic compiler-plugin contract.
+Não existe daemon Kotlin no caminho do Native Build Engine.
+
+## C / C++
+
+~~~text
+<AndroidIDE Pro>/toolchains/llvm/
+└── arm64-v8a/
+    ├── bin/
+    │   ├── clang
+    │   └── clang++
+    └── sysroot/
+~~~
+
+Essa toolchain será distribuída e gerenciada pelo próprio AndroidIDE Pro. Não será instalada como plugin.
+
+## Regra para novas linguagens
+
+Para adicionar uma linguagem:
+
+1. implementar editor/language services;
+2. implementar compiler/runtime on-device;
+3. registrar em BuiltInLanguageRegistry;
+4. integrar ao build graph;
+5. documentar e testar.
+
+Não se cria LanguagePlugin.
+
+## Regra de build
+
+Quando uma linguagem ainda não possui implementação nativa completa, o build retorna um diagnóstico explícito. Ele não muda silenciosamente para Gradle.

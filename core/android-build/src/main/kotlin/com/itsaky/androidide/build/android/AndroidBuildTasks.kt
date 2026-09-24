@@ -3,17 +3,17 @@ package com.itsaky.androidide.build.android
 import com.itsaky.androidide.build.api.BuildContext
 import com.itsaky.androidide.build.api.BuildTask
 import com.itsaky.androidide.build.api.TaskResult
+import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.io.File
-import java.nio.charset.StandardCharsets
 import java.util.Locale
+import java.util.zip.ZipOutputStream
 import jdkx.tools.DiagnosticListener
 import jdkx.tools.JavaFileObject
 import jdkx.tools.StandardLocation
 import openjdk.tools.javac.api.JavacTool
-import java.util.zip.ZipOutputStream
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.common.Services
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
 import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.exists
 import kotlin.io.path.extension
@@ -47,6 +48,29 @@ private fun copyTree(from: Path, to: Path) {
     }
   }
 }
+
+private fun hasFiles(root: Path): Boolean =
+  root.exists() && Files.walk(root).use { stream -> stream.anyMatch(Files::isRegularFile) }
+
+private fun hasJvmSources(module: AndroidModule): Boolean =
+  (module.sourceDir.exists() &&
+    module.sourceDir.walk().any { it.isRegularFile() && it.extension == "java" }) ||
+    (module.kotlinSourceDir.exists() &&
+      module.kotlinSourceDir.walk().any { it.isRegularFile() && it.extension == "kt" })
+
+private fun hasJavaBytecode(root: Path): Boolean =
+  root.exists() &&
+    Files.walk(root).use { stream ->
+      stream.anyMatch { Files.isRegularFile(it) && it.fileName.toString().endsWith(".class") }
+    }
+
+private fun hasKotlinBytecode(jar: Path): Boolean =
+  jar.exists() &&
+    runCatching {
+      java.util.zip.ZipFile(jar.toFile()).use { zip ->
+        zip.entries().asSequence().any { !it.isDirectory && it.name.endsWith(".class") }
+      }
+    }.getOrDefault(false)
 
 class MergeResourcesTask(
   private val module: AndroidModule
@@ -80,16 +104,7 @@ class Aapt2CompileTask(
       addAll(module.dependencyResourceDirs)
     }
 
-    val hasResources = resourceRoots.any { root ->
-      if (!root.exists()) {
-        false
-      } else {
-        Files.walk(root).use { stream ->
-          stream.anyMatch(Files::isRegularFile)
-        }
-      }
-    }
-
+    val hasResources = resourceRoots.any(::hasFiles)
     if (!hasResources) {
       context.log("AAPT2: no resources to compile")
       return@runCatching TaskResult(true, "No Android resources")
@@ -186,15 +201,23 @@ class GenerateBuildConfigTask(
   private val module: AndroidModule
 ) : BuildTask {
   override val id = "generateBuildConfigDebug"
-  override val inputs = emptyList<Path>()
 
   private val file = module.generatedBuildConfigDir
     .resolve(module.namespace.replace('.', '/'))
     .resolve("BuildConfig.java")
 
-  override val outputs = listOf(file)
+  override val inputs: List<Path>
+    get() = emptyList()
+
+  override val outputs: List<Path>
+    get() = if (hasJvmSources(module)) listOf(file) else emptyList()
 
   override fun execute(context: BuildContext): TaskResult = runCatching {
+    if (!hasJvmSources(module)) {
+      file.deleteIfExists()
+      return@runCatching TaskResult(true, "No Java/Kotlin sources; BuildConfig not generated")
+    }
+
     file.ensureParent()
 
     val content = buildString {
@@ -223,6 +246,7 @@ class CompileJavaTask(
   override val inputs: List<Path>
     get() = buildList {
       add(module.sourceDir)
+      add(module.kotlinSourceDir)
       add(module.generatedRDir)
       add(module.generatedBuildConfigDir)
       add(module.sdk.androidJar())
@@ -234,6 +258,10 @@ class CompileJavaTask(
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.classesDir.deleteRecursively()
     module.classesDir.createDirectories()
+
+    if (!hasJvmSources(module)) {
+      return@runCatching TaskResult(true, "No Java/Kotlin sources")
+    }
 
     val sources = buildList {
       if (module.sourceDir.exists()) {
@@ -398,11 +426,20 @@ class DexBuilderTask(
     module.sdk.d8,
     module.sdk.androidJar()
   ) + module.compileClasspath
-  override val outputs = listOf(module.dexDir.resolve("classes.dex"))
+  override val outputs = listOf(module.dexDir)
 
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.dexDir.deleteRecursively()
     module.dexDir.createDirectories()
+
+    val hasProgramBytecode =
+      hasJavaBytecode(module.classesDir) ||
+        hasKotlinBytecode(module.kotlinOutputJar)
+
+    if (!hasProgramBytecode) {
+      context.log("D8: no Java/Kotlin bytecode; skipping dex")
+      return@runCatching TaskResult(true, "No JVM bytecode")
+    }
 
     ProcessTools.run(
       module.sdk.d8,
@@ -424,17 +461,20 @@ class PackageApkTask(
   private val module: AndroidModule
 ) : BuildTask {
   override val id = "packageApkDebug"
-  override val inputs = listOf(
-    module.resourcesApk,
-    module.dexDir.resolve("classes.dex"),
-    module.nativeLibDir
-  )
+
+  override val inputs: List<Path>
+    get() = buildList {
+      add(module.resourcesApk)
+      add(module.dexDir)
+      add(module.nativeLibDir)
+      module.sdk.nativeToolchain?.runtimeSharedLibrary?.let(::add)
+    }
+
   override val outputs = listOf(module.unsignedApk)
 
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.unsignedApk.ensureParent()
 
-    val nativeLib = module.nativeLibDir.resolve("arm64-v8a/libappnative.so")
     val seen = HashSet<String>()
     java.util.zip.ZipFile(module.resourcesApk.toFile()).use { input ->
       java.util.zip.ZipOutputStream(module.unsignedApk.outputStream()).use { output ->
@@ -447,17 +487,44 @@ class PackageApkTask(
           output.closeEntry()
         }
 
-        if (seen.add("classes.dex")) {
-          output.putNextEntry(java.util.zip.ZipEntry("classes.dex"))
-          module.dexDir.resolve("classes.dex").inputStream().use { it.copyTo(output) }
-          output.closeEntry()
+        if (Files.exists(module.dexDir)) {
+          Files.list(module.dexDir).use { stream ->
+            stream
+              .filter { Files.isRegularFile(it) }
+              .filter { it.fileName.toString().matches(Regex("classes(\\\\d+)?\\\\.dex")) }
+              .sorted { a, b -> a.fileName.toString().compareTo(b.fileName.toString()) }
+              .forEach { dex ->
+                val name = dex.fileName.toString()
+                if (!seen.add(name)) return@forEach
+                output.putNextEntry(java.util.zip.ZipEntry(name))
+                dex.inputStream().use { it.copyTo(output) }
+                output.closeEntry()
+              }
+          }
         }
 
-        if (Files.exists(nativeLib)) {
-          val name = "lib/arm64-v8a/libappnative.so"
+        val nativeDir = module.nativeLibDir.resolve("arm64-v8a")
+        if (Files.isDirectory(nativeDir)) {
+          Files.list(nativeDir).use { stream ->
+            stream
+              .filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".so") }
+              .sorted { a, b -> a.fileName.toString().compareTo(b.fileName.toString()) }
+              .forEach { library ->
+                val name = "lib/arm64-v8a/" + library.fileName
+                if (!seen.add(name)) return@forEach
+                output.putNextEntry(java.util.zip.ZipEntry(name))
+                library.inputStream().use { it.copyTo(output) }
+                output.closeEntry()
+              }
+          }
+        }
+
+        val runtime = module.sdk.nativeToolchain?.runtimeSharedLibrary
+        if (runtime != null && Files.isRegularFile(runtime)) {
+          val name = "lib/arm64-v8a/libc++_shared.so"
           if (seen.add(name)) {
             output.putNextEntry(java.util.zip.ZipEntry(name))
-            nativeLib.inputStream().use { it.copyTo(output) }
+            runtime.inputStream().use { it.copyTo(output) }
             output.closeEntry()
           }
         }

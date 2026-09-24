@@ -6,5 +6,6 @@ plugins {
 dependencies {
   api(projects.build.api)
   implementation(libs.composite.jdt)
+  implementation(libs.android.r8)
   testImplementation(libs.tests.junit)
 }

@@ -113,9 +113,11 @@ Validação:
 - [x] `clean` migrado para o engine leve;
 - [x] dependências do build engine corrigidas no `core:app`;
 - [ ] primeiro APK completo pelo engine nativo.
+- [ ] conectar as tasks nativas ao grafo Android e ao comando `assembleDebug`.
 
 ## Próximo item
 
-Implementar `compileJava` como primeira etapa real do APK nativo, reutilizando o `javac` já existente
-no composite build. Depois conectar AAPT2 e completar o Hello World antes de ampliar para dependências
-complexas, Kotlin, D8/R8 e NDK.
+Próximo item:
+
+Conectar as tasks nativas já implementadas ao Project/Workspace Model, formando o primeiro grafo de `assembleDebug`.
+A compilação Java usa JDT/ecj diretamente; o caminho ART-safe evita dependência de JRT. Depois entram D8, package e assinatura.

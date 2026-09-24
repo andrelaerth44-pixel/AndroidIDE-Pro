@@ -9,7 +9,7 @@ set -euo pipefail
 #
 # The resulting layout is consumed by :core:toolchain-llvm:
 #   out/
-#     jniLibs/arm64-v8a/*.so
+#     jniLibs/arm64-v8a/{libclang.so,libld.lld.so,libLLVM.so,libclang-cpp.so,libc++_shared.so}
 #     assets/toolchain/{sysroot,lib-clang,native_app_glue}/...
 #
 # Expected build host: Linux x86_64.
@@ -222,26 +222,25 @@ copy_first() {
 
 package_toolchain() {
   rm -rf "$OUT"
-  mkdir -p "$OUT/assets/toolchain/bin" "$OUT/assets/toolchain/lib"
+  mkdir -p "$OUT/jniLibs/arm64-v8a" "$OUT/assets/toolchain"
 
   local clang="$ANDROID_BUILD/bin/clang"
   local lld="$ANDROID_BUILD/bin/lld"
   [[ -x "$clang" ]] || die "clang output is missing: $clang"
   [[ -x "$lld" ]] || die "lld output is missing: $lld"
 
-  cp "$clang" "$OUT/assets/toolchain/bin/clang"
-  cp "$clang" "$OUT/assets/toolchain/bin/clang++"
-  cp "$lld" "$OUT/assets/toolchain/bin/ld.lld"
+  cp "$clang" "$OUT/jniLibs/arm64-v8a/libclang.so"
+  cp "$lld" "$OUT/jniLibs/arm64-v8a/libld.lld.so"
 
   local ndk_prebuilt
   ndk_prebuilt="$NDK_ROOT/toolchains/llvm/prebuilt/$(ls "$NDK_ROOT/toolchains/llvm/prebuilt" | head -1)"
 
   log "Collecting LLVM shared libraries"
-  copy_first "$OUT/assets/toolchain/lib/libLLVM.so"     "$ANDROID_BUILD/lib/libLLVM.so"     "$ANDROID_BUILD/lib/libLLVM.so.*"
+  copy_first "$OUT/jniLibs/arm64-v8a/libLLVM.so"     "$ANDROID_BUILD/lib/libLLVM.so"     "$ANDROID_BUILD/lib/libLLVM.so.*"
 
-  copy_first "$OUT/assets/toolchain/lib/libclang-cpp.so"     "$ANDROID_BUILD/lib/libclang-cpp.so"     "$ANDROID_BUILD/lib/libclang-cpp.so.*"
+  copy_first "$OUT/jniLibs/arm64-v8a/libclang-cpp.so"     "$ANDROID_BUILD/lib/libclang-cpp.so"     "$ANDROID_BUILD/lib/libclang-cpp.so.*"
 
-  copy_first "$OUT/assets/toolchain/lib/libc++_shared.so"     "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -path '*/aarch64-v8a/*' -print -quit)"     "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -print -quit)"
+  copy_first "$OUT/jniLibs/arm64-v8a/libc++_shared.so"     "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -path '*/aarch64-v8a/*' -print -quit)"     "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -print -quit)"
 
   log "Collecting clang resource directory"
   cp -R "$ANDROID_BUILD/lib/clang" "$OUT/assets/toolchain/lib-clang"
@@ -281,22 +280,20 @@ package_toolchain() {
     cp "$glue/android_native_app_glue.c"        "$glue/android_native_app_glue.h"        "$OUT/assets/toolchain/native_app_glue/"
   fi
 
-  log "Stripping shared libraries"
+  log "Stripping native toolchain binaries"
   local strip="$ndk_prebuilt/bin/llvm-strip"
   if [[ -x "$strip" ]]; then
-    for lib in "$OUT/assets/toolchain/lib"/*.so; do
+    for lib in "$OUT"/jniLibs/arm64-v8a/*.so; do
       "$strip" --strip-unneeded "$lib" || true
     done
   fi
 
-  chmod 0755 "$OUT/assets/toolchain/bin/clang"
-  chmod 0755 "$OUT/assets/toolchain/bin/clang++"
-  chmod 0755 "$OUT/assets/toolchain/bin/ld.lld"
+  chmod 0755 "$OUT/jniLibs/arm64-v8a/libclang.so"
+  chmod 0755 "$OUT/jniLibs/arm64-v8a/libld.lld.so"
 
   log "LLVM toolchain pack created"
-  du -sh "$OUT/assets"
-  find "$OUT/assets/toolchain/bin" -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
-  find "$OUT/assets/toolchain/lib" -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
+  du -sh "$OUT/jniLibs" "$OUT/assets"
+  find "$OUT/jniLibs/arm64-v8a" -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
 }
 
 case "${1:-all}" in

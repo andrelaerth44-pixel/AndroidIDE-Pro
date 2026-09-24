@@ -79,6 +79,18 @@ jobs:
         run: |
           ./gradlew :core:language-support:test :core:android-build:compileKotlin --stacktrace
 
+      - name: Package Kotlin core toolchain
+        if: matrix.build_type == 'debug'
+        run: ./gradlew :core:android-build:packageKotlinToolchain --stacktrace
+
+      - name: Upload Kotlin core toolchain
+        if: matrix.build_type == 'debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidide-pro-kotlin-toolchain
+          path: core/android-build/build/toolchains/kotlin
+          if-no-files-found: error
+
       - name: Assemble ${{ matrix.build_type }} APK
         run: |
           build_type=${{ matrix.build_type }}

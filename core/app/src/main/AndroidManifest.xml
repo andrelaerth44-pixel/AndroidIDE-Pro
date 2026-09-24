@@ -81,6 +81,9 @@
     <activity
       android:exported="false"
       android:name=".activities.build.BuildCenterActivity" />
+    <activity
+      android:exported="false"
+      android:name=".activities.toolchain.ToolchainCenterActivity" />
 
     <provider
       android:authorities="com.itsaky.androidide.documents"

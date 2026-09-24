@@ -3,6 +3,8 @@ name: Build Core LLVM Toolchain
 on:
   workflow_dispatch:
   push:
+    branches:
+      - work/native-build-engine-v1
     tags:
       - "llvm-*"
 

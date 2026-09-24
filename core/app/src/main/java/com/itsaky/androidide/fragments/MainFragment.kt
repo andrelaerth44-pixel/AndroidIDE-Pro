@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.viewModels
@@ -12,11 +14,9 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.itsaky.androidide.activities.MainActivity
 import com.itsaky.androidide.activities.PreferencesActivity
 import com.itsaky.androidide.activities.TerminalActivity
-import com.itsaky.androidide.adapters.MainActionsListAdapter
 import com.itsaky.androidide.app.BaseApplication
 import com.itsaky.androidide.app.BaseIDEActivity
 import com.itsaky.androidide.common.databinding.LayoutDialogProgressBinding
-import com.itsaky.androidide.databinding.FragmentMainBinding
 import com.itsaky.androidide.models.MainScreenAction
 import com.itsaky.androidide.preferences.databinding.LayoutDialogTextInputBinding
 import com.itsaky.androidide.resources.R.string
@@ -25,6 +25,7 @@ import com.itsaky.androidide.utils.DialogUtils
 import com.itsaky.androidide.utils.Environment
 import com.itsaky.androidide.utils.flashError
 import com.itsaky.androidide.utils.flashSuccess
+import com.itsaky.androidide.ui.pro.ProHomeScreen
 import com.itsaky.androidide.viewmodel.MainViewModel
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY
 import kotlinx.coroutines.Dispatchers
@@ -40,59 +41,39 @@ class MainFragment : BaseFragment() {
 
   private val viewModel by viewModels<MainViewModel>(
     ownerProducer = { requireActivity() })
-  private var binding: FragmentMainBinding? = null
 
   companion object {
 
     private val log = LoggerFactory.getLogger(MainFragment::class.java)
   }
 
-  override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+  override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
     savedInstanceState: Bundle?
   ): View {
-    binding = FragmentMainBinding.inflate(inflater, container, false)
-    return binding!!.root
-  }
+    return ComposeView(requireContext()).apply {
+      setViewCompositionStrategy(
+        ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+      )
 
-  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-    super.onViewCreated(view, savedInstanceState)
+      setContent {
+        val actions = MainScreenAction.all()
 
-    val actions = MainScreenAction.all().also { actions ->
-      val onClick = { action: MainScreenAction, _: View ->
-        when (action.id) {
-          MainScreenAction.ACTION_CREATE_PROJECT -> showCreateProject()
-          MainScreenAction.ACTION_OPEN_PROJECT -> pickDirectory()
-          MainScreenAction.ACTION_CLONE_REPO -> cloneGitRepo()
-          MainScreenAction.ACTION_OPEN_TERMINAL -> startActivity(
-            Intent(requireActivity(), TerminalActivity::class.java))
-
-          MainScreenAction.ACTION_PREFERENCES -> gotoPreferences()
-          MainScreenAction.ACTION_DONATE -> BaseApplication.getBaseInstance().openDonationsPage()
-          MainScreenAction.ACTION_DOCS -> BaseApplication.getBaseInstance().openDocs()
-        }
-      }
-
-      actions.forEach { action ->
-        action.onClick = onClick
-
-        if (action.id == MainScreenAction.ACTION_OPEN_TERMINAL) {
-          action.onLongClick = { _: MainScreenAction, _: View ->
-            val intent = Intent(requireActivity(), TerminalActivity::class.java).apply {
-              putExtra(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, true)
-            }
-            startActivity(intent)
-            true
+        ProHomeScreen(
+          actions = actions,
+          onAction = { action ->
+            handleAction(action)
           }
-        }
+        )
       }
     }
-
-    binding!!.actions.adapter = MainActionsListAdapter(actions)
   }
 
-  override fun onDestroyView() {
-    super.onDestroyView()
-    binding = null
+  private fun handleAction(action: MainScreenAction) {
+    val view = view ?: return
+
+    action.onClick?.invoke(action, view)
   }
 
   private fun pickDirectory() {

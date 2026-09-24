@@ -36,6 +36,7 @@ data class AndroidApplicationBuildInputs(
   val variant: String,
   val resDirs: List<Path>,
   val javaSourceRoots: List<Path>,
+  val javaClasspath: List<Path> = emptyList(),
   val manifest: Path,
   val androidJar: Path,
   val packageName: String,
@@ -48,6 +49,7 @@ data class AndroidApplicationBuildInputs(
   val dexer: Dexer? = null,
   val dexThreads: Int = 1,
   val signing: ApkSigningInputs? = null,
+  val extraResourcePackages: List<String> = emptyList(),
 )
 
 class AndroidApplicationBuildPlan(
@@ -106,7 +108,7 @@ class AndroidApplicationBuildPlan(
     val java = JavaCompileTask(
       id = javaId,
       sourceRoots = input.javaSourceRoots + generatedR,
-      classpath = emptyList(),
+      classpath = input.javaClasspath,
       outputDir = javaOutput,
       bootClasspath = input.javacBootClasspath,
       sourceLevel = input.javaSourceLevel,

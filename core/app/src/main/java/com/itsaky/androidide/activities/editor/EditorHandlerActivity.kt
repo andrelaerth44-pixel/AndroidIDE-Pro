@@ -32,6 +32,7 @@ import androidx.core.view.GravityCompat
 import com.blankj.utilcode.util.ImageUtils
 import com.itsaky.androidide.R.string
 import com.itsaky.androidide.actions.ActionData
+import com.itsaky.androidide.actions.NativeBuildAction
 import com.itsaky.androidide.actions.ActionItem.Location.EDITOR_TOOLBAR
 import com.itsaky.androidide.actions.ActionsRegistry.Companion.getInstance
 import com.itsaky.androidide.actions.FillMenuParams
@@ -101,6 +102,9 @@ open class EditorHandlerActivity : ProjectHandlerActivity(), IEditorHandler {
   override fun onCreate(savedInstanceState: Bundle?) {
     mBuildEventListener.setActivity(this)
     super.onCreate(savedInstanceState)
+
+    getInstance().findAction(EDITOR_TOOLBAR, NativeBuildAction.ID)
+      ?: getInstance().registerAction(NativeBuildAction())
 
     editorViewModel._displayedFile.observe(
       this) { this.content.editorContainer.displayedChild = it }

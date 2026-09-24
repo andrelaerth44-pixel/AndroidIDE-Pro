@@ -197,8 +197,8 @@ configure_android_tools() {
     -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384" \
     -DCMAKE_MODULE_LINKER_FLAGS="-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384"
 
-  log "Building Android clang/lld/llvm-driver"
-  "$NINJA" -C "$ANDROID_BUILD" -j "$JOBS" clang lld llvm-driver
+  log "Building Android clang/lld"
+  "$NINJA" -C "$ANDROID_BUILD" -j "$JOBS" clang lld
 }
 
 copy_first() {
@@ -222,39 +222,43 @@ copy_first() {
 
 package_toolchain() {
   rm -rf "$OUT"
-  mkdir -p "$OUT/jniLibs/arm64-v8a" "$OUT/assets/toolchain"
+  mkdir -p "$OUT/assets/toolchain/bin" "$OUT/assets/toolchain/lib"
 
-  local driver="$ANDROID_BUILD/bin/llvm"
-  [[ -x "$driver" ]] || die "llvm-driver output is missing: $driver"
+  local clang="$ANDROID_BUILD/bin/clang"
+  local lld="$ANDROID_BUILD/bin/lld"
+  [[ -x "$clang" ]] || die "clang output is missing: $clang"
+  [[ -x "$lld" ]] || die "lld output is missing: $lld"
 
-  cp "$driver" "$OUT/jniLibs/arm64-v8a/libllvmtools.so"
-  cp "$driver" "$OUT/jniLibs/arm64-v8a/libld-gnu-lld.so"
-
-  copy_first "$OUT/jniLibs/arm64-v8a/libLLVM.so" \
-    "$ANDROID_BUILD/lib/libLLVM.so" \
-    "$ANDROID_BUILD/lib/libLLVM.so.*"
-
-  copy_first "$OUT/jniLibs/arm64-v8a/libclang-cpp.so" \
-    "$ANDROID_BUILD/lib/libclang-cpp.so" \
-    "$ANDROID_BUILD/lib/libclang-cpp.so.*"
+  cp "$clang" "$OUT/assets/toolchain/bin/clang"
+  cp "$clang" "$OUT/assets/toolchain/bin/clang++"
+  cp "$lld" "$OUT/assets/toolchain/bin/ld.lld"
 
   local ndk_prebuilt
   ndk_prebuilt="$NDK_ROOT/toolchains/llvm/prebuilt/$(ls "$NDK_ROOT/toolchains/llvm/prebuilt" | head -1)"
-  copy_first "$OUT/jniLibs/arm64-v8a/libc++_shared.so" \
-    "$(find "$ndk_prebuilt" -path '*/aarch64/libc++_shared.so' -print -quit)"
+
+  log "Collecting LLVM shared libraries"
+  copy_first "$OUT/assets/toolchain/lib/libLLVM.so"     "$ANDROID_BUILD/lib/libLLVM.so"     "$ANDROID_BUILD/lib/libLLVM.so.*"
+
+  copy_first "$OUT/assets/toolchain/lib/libclang-cpp.so"     "$ANDROID_BUILD/lib/libclang-cpp.so"     "$ANDROID_BUILD/lib/libclang-cpp.so.*"
+
+  copy_first "$OUT/assets/toolchain/lib/libc++_shared.so"     "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -path '*/aarch64-v8a/*' -print -quit)"     "$(find "$ndk_prebuilt" -name 'libc++_shared.so' -print -quit)"
 
   log "Collecting clang resource directory"
   cp -R "$ANDROID_BUILD/lib/clang" "$OUT/assets/toolchain/lib-clang"
 
-  local ndk_clang_runtime="$ndk_prebuilt/lib/clang/${LLVM_VERSION%%.*}/lib/linux"
-  local runtime_out="$OUT/assets/toolchain/lib-clang/${LLVM_VERSION%%.*}/lib/linux/aarch64"
-  mkdir -p "$runtime_out"
+  local clang_version="18"
+  log "Collecting compiler runtime"
+  local builtins
+  builtins="$(find "$ndk_prebuilt/lib/clang" -name 'libclang_rt.builtins-aarch64-android.a' -print -quit)"
+  [[ -f "$builtins" ]] || die "AArch64 clang runtime builtins were not found"
+  mkdir -p "$OUT/assets/toolchain/lib-clang/$clang_version/lib/linux/aarch64"
+  cp "$builtins" "$OUT/assets/toolchain/lib-clang/$clang_version/lib/linux/aarch64/"
 
-  copy_first "$OUT/assets/toolchain/lib-clang/${LLVM_VERSION%%.*}/lib/linux/libclang_rt.builtins-aarch64-android.a" \
-    "$ndk_clang_runtime/libclang_rt.builtins-aarch64-android.a"
-
-  copy_first "$runtime_out/libunwind.a" \
-    "$ndk_clang_runtime/aarch64/libunwind.a"
+  local unwind
+  unwind="$(find "$ndk_prebuilt/lib/clang" -name 'libunwind.a' -path '*/aarch64/*' -print -quit)"
+  if [[ -n "$unwind" && -f "$unwind" ]]; then
+    cp "$unwind" "$OUT/assets/toolchain/lib-clang/$clang_version/lib/linux/aarch64/"
+  fi
 
   log "Collecting arm64 sysroot"
   local ndk_sysroot="$ndk_prebuilt/sysroot"
@@ -263,33 +267,36 @@ package_toolchain() {
 
   local target_lib_dir="$OUT/assets/toolchain/sysroot/usr/lib/aarch64-linux-android"
   mkdir -p "$target_lib_dir/$ANDROID_API"
-  cp -R "$ndk_sysroot/usr/lib/aarch64-linux-android/$ANDROID_API/." "$target_lib_dir/$ANDROID_API/"
-  find "$ndk_sysroot/usr/lib/aarch64-linux-android" -maxdepth 1 -type f \
-    \( -name '*.a' -o -name '*.so' \) -exec cp {} "$target_lib_dir/" \;
+  if [[ -d "$ndk_sysroot/usr/lib/aarch64-linux-android/$ANDROID_API" ]]; then
+    cp -R "$ndk_sysroot/usr/lib/aarch64-linux-android/$ANDROID_API/." "$target_lib_dir/$ANDROID_API/"
+  fi
+
+  if [[ -d "$ndk_sysroot/usr/lib/aarch64-linux-android" ]]; then
+    find "$ndk_sysroot/usr/lib/aarch64-linux-android" -maxdepth 1 -type f       \( -name '*.a' -o -name '*.so' \)       -exec cp {} "$target_lib_dir/" \;
+  fi
 
   local glue="$NDK_ROOT/sources/android/native_app_glue"
   if [[ -d "$glue" ]]; then
     mkdir -p "$OUT/assets/toolchain/native_app_glue"
-    cp "$glue/android_native_app_glue.c" \
-       "$glue/android_native_app_glue.h" \
-       "$glue/NOTICE" \
-       "$OUT/assets/toolchain/native_app_glue/"
+    cp "$glue/android_native_app_glue.c"        "$glue/android_native_app_glue.h"        "$OUT/assets/toolchain/native_app_glue/"
   fi
 
-  # APKs cannot preserve arbitrary symlink trees in the way a desktop LLVM
-  # install expects, so the AndroidIDE Pro runtime uses two copies of the
-  # same multicall driver under deterministic names.
-  chmod 0755 "$OUT/jniLibs/arm64-v8a/libllvmtools.so"
-  chmod 0755 "$OUT/jniLibs/arm64-v8a/libld-gnu-lld.so"
-
+  log "Stripping shared libraries"
   local strip="$ndk_prebuilt/bin/llvm-strip"
-  for lib in "$OUT"/jniLibs/arm64-v8a/*.so; do
-    "$strip" --strip-all "$lib" || true
-  done
+  if [[ -x "$strip" ]]; then
+    for lib in "$OUT/assets/toolchain/lib"/*.so; do
+      "$strip" --strip-unneeded "$lib" || true
+    done
+  fi
+
+  chmod 0755 "$OUT/assets/toolchain/bin/clang"
+  chmod 0755 "$OUT/assets/toolchain/bin/clang++"
+  chmod 0755 "$OUT/assets/toolchain/bin/ld.lld"
 
   log "LLVM toolchain pack created"
-  du -sh "$OUT/jniLibs" "$OUT/assets"
-  find "$OUT/jniLibs/arm64-v8a" -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
+  du -sh "$OUT/assets"
+  find "$OUT/assets/toolchain/bin" -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
+  find "$OUT/assets/toolchain/lib" -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
 }
 
 case "${1:-all}" in

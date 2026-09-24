@@ -126,11 +126,13 @@ class CoreToolchainManager(
       ?: error("Invalid LLVM toolchain root: " + root)
 
     parent.createDirectories()
+
     val temp = parent.resolve("." + root.fileName + ".tmp")
+    val archiveFile = parent.resolve("." + root.fileName + ".zip")
+
     temp.deleteRecursively()
     temp.createDirectories()
 
-    val archiveFile = parent.resolve("." + root.fileName + ".zip")
     try {
       packageContext.assets.open(ARCHIVE_FILE).use { input ->
         val digest = MessageDigest.getInstance("SHA-256")
@@ -147,6 +149,7 @@ class CoreToolchainManager(
 
         val actualStamp = digest.digest()
           .joinToString("") { "%02x".format(it) }
+
         check(expectedStamp.isBlank() || actualStamp == expectedStamp) {
           "Core LLVM Toolchain checksum mismatch"
         }
@@ -156,11 +159,12 @@ class CoreToolchainManager(
         BufferedInputStream(Files.newInputStream(archiveFile))
       ).use { zip ->
         var entry: ZipEntry? = zip.nextEntry
-        while (entry != null) {
-          val name = entry!!.name
-          val target = safeResolve(temp, name)
 
-          if (entry!!.isDirectory) {
+        while (entry != null) {
+          val current = entry!!
+          val target = safeResolve(temp, current.name)
+
+          if (current.isDirectory) {
             target.createDirectories()
           } else {
             target.parent?.createDirectories()
@@ -173,12 +177,12 @@ class CoreToolchainManager(
           entry = zip.nextEntry
         }
       }
-    }
 
       root.deleteRecursively()
       Files.move(temp, root)
     } finally {
       Files.deleteIfExists(archiveFile)
+      temp.deleteRecursively()
     }
 
     root.resolve(".installed").also {

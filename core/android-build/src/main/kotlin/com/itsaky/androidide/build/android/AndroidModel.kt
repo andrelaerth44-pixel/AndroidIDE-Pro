@@ -1,5 +1,6 @@
 package com.itsaky.androidide.build.android
 
+import java.nio.file.Files
 import java.nio.file.Path
 
 data class AndroidNativeToolchain(
@@ -55,7 +56,9 @@ data class AndroidModule(
   val cLanguageStandard: String = "c17",
   val cppLanguageStandard: String = "c++20",
   val kotlinCompilerClassLoader: ClassLoader? = null,
-  val kotlinCompilerPluginClasspaths: List<Path> = emptyList()
+  val kotlinCompilerPluginClasspaths: List<Path> = emptyList(),
+  val nativeBuildConfiguration: NativeBuildConfiguration =
+    NativeBuildConfiguration.load(rootDir)
 ) {
   val manifest: Path get() = rootDir.resolve("src/main/AndroidManifest.xml")
   val sourceDir: Path get() = rootDir.resolve("src/main/java")
@@ -79,4 +82,24 @@ data class AndroidModule(
   val alignedApk: Path get() = buildDir.resolve("outputs/app-debug-aligned.apk")
   val signedApk: Path get() =
     rootDir.resolve("build/outputs/apk/debug/" + name + "-debug.apk")
+
+  val nativeLibraryName: String
+    get() = nativeBuildConfiguration.libraryName
+      ?: if (manifestContainsNativeActivity()) "main" else "appnative"
+
+  val nativeActivityFunctionName: String
+    get() = manifestMetadata("android.app.func_name") ?: "ANativeActivity_onCreate"
+
+  fun manifestContainsNativeActivity(): Boolean =
+    runCatching {
+      Files.readString(manifest).contains("android.app.NativeActivity")
+    }.getOrDefault(false)
+
+  private fun manifestMetadata(name: String): String? =
+    runCatching {
+      val text = Files.readString(manifest)
+      Regex(
+        """android:name\s*=\s*["']$name["'][^>]*android:value\s*=\s*["']([^"']+)["']"""
+      ).find(text)?.groupValues?.getOrNull(1)
+    }.getOrNull()
 }

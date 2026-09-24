@@ -100,8 +100,9 @@ class CompileNativeTask(
 
       if (hasSourcesOrNativeActivity()) {
         add(output)
+        add(module.compileCommandsFile)
       }
-    }
+    
 
   override fun execute(context: BuildContext): TaskResult = runCatching {
     module.nativeLibDir.createDirectories()
@@ -129,6 +130,8 @@ class CompileNativeTask(
 
     val objectDir = module.nativeLibDir.resolve("obj")
     objectDir.createDirectories()
+
+    val compilationDatabaseEntries = mutableListOf<String>()
 
     val objects = sources.map { source ->
       val object = objectDir.resolve(objectName(source))
@@ -202,8 +205,16 @@ class CompileNativeTask(
         add(object.toString())
       }
 
+      val compiler = compilerFor(toolchain, isCpp(source))
+
+      compilationDatabaseEntries += compilationDatabaseEntry(
+        directory = module.rootDir,
+        file = source,
+        arguments = listOf(compiler.toString()) + compilerArgs
+      )
+
       ProcessTools.run(
-        executable = compilerFor(toolchain, isCpp(source)),
+        executable = compiler,
         args = compilerArgs,
         environment = environment,
         logger = context::log
@@ -293,9 +304,19 @@ class CompileNativeTask(
       }
     }
 
+    module.compileCommandsFile.parent?.createDirectories()
     Files.writeString(
-      marker,
+      module.compileCommandsFile,
       buildString {
+        appendLine("[")
+        append(compilationDatabaseEntries.joinToString(",\n"))
+        appendLine()
+        appendLine("]")
+      }
+    )
+
+    Files.writeString(
+      marker,      buildString {
         appendLine("abi=arm64-v8a")
         appendLine("toolchain=" + toolchain.version)
         appendLine("library=" + module.nativeLibraryName)
@@ -328,6 +349,40 @@ class CompileNativeTask(
     )
   }
 
+  private fun compilationDatabaseEntry(
+    directory: Path,
+    file: Path,
+    arguments: List<String>
+  ): String =
+    buildString {
+      append("  {\n")
+      append("    \"directory\": \"")
+      append(jsonEscape(directory.toAbsolutePath().normalize().toString()))
+      append("\",\n")
+      append("    \"file\": \"")
+      append(jsonEscape(file.toAbsolutePath().normalize().toString()))
+      append("\",\n")
+      append("    \"arguments\": [")
+      append(arguments.joinToString(", ") { "\"" + jsonEscape(it) + "\"" })
+      append("]\n")
+      append("  }")
+    }
+
+  private fun jsonEscape(value: String): String =
+    buildString {
+      value.forEach { ch ->
+        when (ch) {
+          '\\' -> append("\\\\")
+          '"' -> append("\\\"")
+          '\n' -> append("\\n")
+          '\r' -> append("\\r")
+          '\t' -> append("\\t")
+          '\b' -> append("\\b")
+          '\u000C' -> append("\\f")
+          else -> append(ch)
+        }
+      }
+    }
   private fun validateToolchain(
     toolchain: AndroidNativeToolchain,
     sources: List<Path>

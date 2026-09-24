@@ -149,7 +149,8 @@ class NativeBuildCoordinator(
         .mapNotNull { it.androidLibraryData?.resFolder?.toPath() }
         .filter { Files.exists(it) },
       javaSourceLevel = module.compilerSettings.getJavaSourceVersion(),
-      javaBytecodeLevel = module.compilerSettings.getJavaBytecodeVersion()
+      javaBytecodeLevel = module.compilerSettings.getJavaBytecodeVersion(),
+      kotlinCompilerClassLoader = kotlinCompilerClassLoader
     )
 
     val keystore = ensureDebugKeystore()

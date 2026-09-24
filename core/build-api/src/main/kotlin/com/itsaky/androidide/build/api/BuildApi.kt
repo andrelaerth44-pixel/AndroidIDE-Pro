@@ -26,6 +26,9 @@ interface BuildTask {
 }
 
 interface BuildContext {
+  val cacheRoot: Path?
+    get() = null
+
   fun log(message: String)
   fun fail(message: String): Nothing {
     throw BuildFailureException(message)

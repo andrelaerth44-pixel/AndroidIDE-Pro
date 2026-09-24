@@ -240,7 +240,8 @@ O tablet será tratado como uma experiência própria, aproveitando espaço para
 - [x] zipalign
 - [x] debug signing
 - [x] primeira superfície Compose
-- [ ] integrar build engine ao Workspace real
+- [x] adapter Workspace → Native Build Engine
+- [ ] conectar build engine à UI do Workspace/Editor
 - [ ] gerar e instalar Hello World no dispositivo
 
 ### Fase 2 — Workspace Pro

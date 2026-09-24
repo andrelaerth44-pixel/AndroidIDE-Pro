@@ -5,6 +5,7 @@ import com.itsaky.androidide.build.api.BuildResult
 import com.itsaky.androidide.build.api.BuildSystem
 import com.itsaky.androidide.build.engine.DefaultBuildContext
 import com.itsaky.androidide.build.engine.TaskGraph
+import com.itsaky.androidide.language.NativeLanguageScanner
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -26,6 +27,21 @@ class NativeAndroidBuildSystem(
       "NativeAndroidBuildSystem currently supports only debug"
     }
 
+    val sourceReport = NativeLanguageScanner.scan(
+      listOf(module.sourceDir, module.kotlinSourceDir, module.nativeSourceDir)
+    )
+
+    logger("BUILT-IN LANGUAGES: " +
+      sourceReport.filesByLanguage.keys.joinToString { it.displayName })
+
+    if (sourceReport.unknownFiles.isNotEmpty()) {
+      return BuildResult(
+        success = false,
+        message = "Unsupported source files in native build: " +
+          sourceReport.unknownFiles.joinToString { it.toString() }
+      )
+    }
+
     validateToolchain()
 
     val merge = MergeResourcesTask(module)
@@ -33,6 +49,8 @@ class NativeAndroidBuildSystem(
     val link = Aapt2LinkTask(module)
     val buildConfig = GenerateBuildConfigTask(module)
     val javac = CompileJavaTask(module)
+    val kotlinc = KotlinCompileTask(module)
+    val native = CompileNativeTask(module)
     val dex = DexBuilderTask(module)
     val packageApk = PackageApkTask(module)
     val align = ZipalignTask(module)
@@ -50,6 +68,8 @@ class NativeAndroidBuildSystem(
       .add(link)
       .add(buildConfig)
       .add(javac)
+      .add(kotlinc)
+      .add(native)
       .add(dex)
       .add(packageApk)
       .add(align)
@@ -58,9 +78,13 @@ class NativeAndroidBuildSystem(
       .dependsOn(link.id, compileRes.id)
       .dependsOn(javac.id, link.id)
       .dependsOn(javac.id, buildConfig.id)
+      .dependsOn(kotlinc.id, javac.id)
+      .dependsOn(native.id, link.id)
       .dependsOn(dex.id, javac.id)
+      .dependsOn(dex.id, kotlinc.id)
       .dependsOn(packageApk.id, link.id)
       .dependsOn(packageApk.id, dex.id)
+      .dependsOn(packageApk.id, native.id)
       .dependsOn(align.id, packageApk.id)
       .dependsOn(sign.id, align.id)
 
@@ -75,7 +99,7 @@ class NativeAndroidBuildSystem(
       BuildResult(
         success = true,
         outputApk = module.signedApk,
-        message = "assembleDebug completed"
+        message = "assembleDebug completed with built-in language pipeline"
       )
     } else {
       BuildResult(

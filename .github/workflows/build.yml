@@ -91,6 +91,23 @@ jobs:
           path: core/android-build/build/toolchains/kotlin
           if-no-files-found: error
 
+      - name: Inspect Kotlin core toolchain size
+        if: matrix.build_type == 'debug'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/toolchain-size
+          du -sh core/android-build/build/toolchains/kotlin | tee build/toolchain-size/kotlin.txt
+
+      - name: Upload Kotlin core toolchain size report
+        if: matrix.build_type == 'debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidide-pro-kotlin-toolchain-size
+          path: build/toolchain-size/kotlin.txt
+          if-no-files-found: error
+
+
       - name: Assemble ${{ matrix.build_type }} APK
         run: |
           build_type=${{ matrix.build_type }}

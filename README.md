@@ -259,8 +259,9 @@ Esta ponte foi projetada para reutilizar o modelo de projeto existente do Androi
 - [x] debug signing
 - [x] primeira superfície Compose
 - [x] adapter Workspace → Native Build Engine
+- [x] Native-first BuildRouter com Gradle fallback
 - [x] ação Build nativa no editor
-- [ ] Build Center com progresso e logs estruturados
+- [x] Build Center com progresso e logs estruturados
 - [ ] gerar e instalar Hello World no dispositivo
 
 ### Fase 2 — Workspace Pro

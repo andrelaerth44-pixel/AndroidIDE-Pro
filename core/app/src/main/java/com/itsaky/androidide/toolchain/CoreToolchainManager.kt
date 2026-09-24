@@ -1,6 +1,7 @@
 package com.itsaky.androidide.toolchain
 
 import android.content.Context
+import android.system.Os
 import com.itsaky.androidide.build.android.AndroidNativeToolchain
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -218,21 +219,8 @@ class CoreToolchainManager(
     Files.list(binDir).use { stream ->
       stream
         .filter { Files.isRegularFile(it) }
-        .forEach {
-          runCatching {
-            java.nio.file.attribute.PosixFilePermission.entries
-              .filter {
-                it.name.contains("OWNER_EXECUTE") ||
-                  it.name.contains("GROUP_EXECUTE") ||
-                  it.name.contains("OTHERS_EXECUTE")
-              }
-              .let { permissions ->
-                val current =
-                  Files.getPosixFilePermissions(it).toMutableSet()
-                current.addAll(permissions)
-                Files.setPosixFilePermissions(it, current)
-              }
-          }
+        .forEach { file ->
+          Os.chmod(file.toString(), 0x1ED)
         }
     }
   }

@@ -3,4 +3,6 @@ plugins {
   id("org.jetbrains.kotlin.jvm")
 }
 
+testImplementation(libs.tests.junit)
+
 description = "AndroidIDE Pro language backend contracts"

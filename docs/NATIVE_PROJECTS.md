@@ -3,6 +3,43 @@
 
 Este documento define os três formatos oficiais de projeto C/C++ do AndroidIDE Pro.
 
+## Criação sem Gradle
+
+O AndroidIDE Pro possui um descritor próprio:
+
+~~~
+androidide-project.properties
+~~~
+
+Ele registra namespace, applicationId, SDK, minSdk, targetSdk, versão e tipo de NativeActivity.
+
+O scaffolder nativo já conhece:
+
+~~~text
+PURE_C
+PURE_CPP
+JAVA_C
+JAVA_CPP
+KOTLIN_C
+KOTLIN_CPP
+~~~
+
+Esses projetos não precisam de build.gradle para o caminho de compilação nativo do Pro.
+
+O projeto gerado contém:
+
+~~~text
+androidide-project.properties
+src/main/AndroidManifest.xml
+src/main/res/
+src/main/cpp/
+src/main/jniLibs/
+src/main/java/    quando necessário
+src/main/kotlin/  quando necessário
+~~~
+
+O Build Router consegue abrir um diretório com esse descritor diretamente pelo Build Center, sem depender do Workspace Gradle.
+
 ## 1. Aplicativo somente C
 
 Estrutura:

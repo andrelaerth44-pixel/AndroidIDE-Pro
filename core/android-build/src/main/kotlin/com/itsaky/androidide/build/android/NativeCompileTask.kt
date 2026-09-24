@@ -57,6 +57,7 @@ class CompileNativeTask(
       add(module.nativeSourceDir)
       module.localNativeLibDir?.let(::add)
       module.localNativeIncludeDir?.let(::add)
+      add(module.generatedJniHeadersDir)
       add(
         module.rootDir
           .resolve("src/main/cpp/androidide-native.properties")
@@ -146,6 +147,11 @@ class CompileNativeTask(
         module.localNativeIncludeDir?.let {
           add("-I")
           add(it.toString())
+        }
+
+        if (Files.isDirectory(module.generatedJniHeadersDir)) {
+          add("-I")
+          add(module.generatedJniHeadersDir.toString())
         }
 
         module.nativeBuildConfiguration.includeDirs.forEach {

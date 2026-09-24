@@ -4,11 +4,10 @@ import com.itsaky.androidide.build.api.BuildContext
 import com.itsaky.androidide.build.api.BuildTask
 import com.itsaky.androidide.build.api.TaskResult
 import java.io.File
+import java.lang.reflect.Proxy
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import java.lang.reflect.Proxy
-import java.nio.charset.StandardCharsets
 import java.nio.file.StandardCopyOption
 import java.util.Locale
 import java.util.zip.ZipOutputStream
@@ -561,6 +560,9 @@ class PackageApkTask(
       add(module.resourcesApk)
       add(module.dexDir)
       add(module.nativeLibDir)
+      module.localNativeLibDir?.let(::add)
+      module.dependencyNativeLibDirs.forEach(::add)
+      module.dependencyAssetDirs.forEach(::add)
       module.sdk.nativeToolchain?.runtimeSharedLibrary?.let(::add)
     }
 
@@ -614,6 +616,35 @@ class PackageApkTask(
                   } else {
                     "lib/" + relative
                   }
+                  if (!seen.add(name)) return@forEach
+
+                  output.putNextEntry(java.util.zip.ZipEntry(name))
+                  library.inputStream().use { it.copyTo(output) }
+                  output.closeEntry()
+                }
+            }
+          }
+
+        module.localNativeLibDir
+          ?.takeIf { Files.isDirectory(it) }
+          ?.let { localJni ->
+            Files.walk(localJni).use { stream ->
+              stream
+                .filter {
+                  Files.isRegularFile(it) &&
+                    it.fileName.toString().endsWith(".so")
+                }
+                .sorted { a, b -> a.toString().compareTo(b.toString()) }
+                .forEach { library ->
+                  val relative = localJni.relativize(library)
+                    .toString()
+                    .replace('\\', '/')
+                  val name = if (relative.startsWith("lib/")) {
+                    relative
+                  } else {
+                    "lib/" + relative
+                  }
+
                   if (!seen.add(name)) return@forEach
 
                   output.putNextEntry(java.util.zip.ZipEntry(name))

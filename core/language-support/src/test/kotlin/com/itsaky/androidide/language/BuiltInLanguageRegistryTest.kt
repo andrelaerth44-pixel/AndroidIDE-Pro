@@ -15,6 +15,26 @@ class BuiltInLanguageRegistryTest {
   }
 
   @Test
+  fun nativeBuildStatesAreExplicit() {
+    assertEquals(
+      BuiltInLanguageSupport.NATIVE_BUILD_READY,
+      BuiltInLanguage.JAVA.support
+    )
+    assertEquals(
+      BuiltInLanguageSupport.NATIVE_BUILD_READY,
+      BuiltInLanguage.KOTLIN.support
+    )
+    assertEquals(
+      BuiltInLanguageSupport.NATIVE_BUILD_REQUIRES_CORE_TOOLCHAIN,
+      BuiltInLanguage.C.support
+    )
+    assertEquals(
+      BuiltInLanguageSupport.NATIVE_BUILD_REQUIRES_CORE_TOOLCHAIN,
+      BuiltInLanguage.CPP.support
+    )
+  }
+
+  @Test
   fun compilerLanguagesAreBuiltIn() {
     assertSame(
       BuiltInLanguage.KOTLIN,

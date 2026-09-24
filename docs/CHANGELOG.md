@@ -20,6 +20,9 @@
 - LLVM pack com sysroot, libc++, runtime e glue.
 - biblioteca nativa configurável por projeto.
 - link de bibliotecas Android e bibliotecas nativas próprias.
+- descritor androidide-project.properties para projetos sem Workspace Gradle.
+- Build Router direto por diretório de projeto nativo.
+- scaffolder de projetos C/C++ puros e híbridos Java/Kotlin.
 
 ### Build Engine
 

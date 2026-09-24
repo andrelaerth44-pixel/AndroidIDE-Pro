@@ -67,6 +67,28 @@ class AndroidApplicationBuildPlanTest {
         }
       }
 
+      val fakeDexer = object : Dexer {
+        override fun dexArchive(inputs: List<Path>, classpath: List<Path>, androidJar: Path, minApi: Int, release: Boolean, outDir: Path, threads: Int): AndroidToolResult {
+          Files.createDirectories(outDir)
+          Files.writeString(outDir.resolve("MainActivity.dex"), "archive")
+          return AndroidToolResult(true)
+        }
+
+        override fun dex(inputs: List<Path>, androidJar: Path, minApi: Int, release: Boolean, outDir: Path, threads: Int): AndroidToolResult {
+          Files.createDirectories(outDir)
+          Files.writeString(outDir.resolve("classes.dex"), "merged")
+          return AndroidToolResult(true)
+        }
+      }
+
+      val keystore = root.resolve("debug.keystore")
+      Files.writeString(keystore, "debug")
+
+      val fakeSigner = ApkSigner { request ->
+        Files.copy(request.inputApk, request.signedApk)
+        AndroidToolResult(true)
+      }
+
       val graph = AndroidApplicationBuildPlan(
         AndroidApplicationBuildInputs(
           variant = "debug",
@@ -78,12 +100,25 @@ class AndroidApplicationBuildPlanTest {
           minSdk = 24,
           targetSdk = 35,
           buildDir = build,
+          dexer = fakeDexer,
+          signing = ApkSigningInputs(keystore, "pass", "androiddebugkey", "pass"),
         ),
         fakeAapt2,
+        fakeSigner,
       ).graph()
 
       assertEquals(
-        listOf("mergeResourcesDebug", "aapt2CompileDebug", "aapt2LinkDebug", "compileJavaDebug"),
+        listOf(
+          "mergeResourcesDebug",
+          "aapt2CompileDebug",
+          "aapt2LinkDebug",
+          "compileJavaDebug",
+          "dexBuilderDebug",
+          "mergeProjectDexDebug",
+          "packageApkDebug",
+          "signDebug",
+          "assembleDebug",
+        ),
         graph.topologicalOrder().map { it.id },
       )
 
@@ -102,6 +137,8 @@ class AndroidApplicationBuildPlanTest {
       assertEquals(BuildResult.State.SUCCESS, result.state)
       assertTrue(Files.exists(build.resolve("intermediates/javac/debug/com/example/app/MainActivity.class")))
       assertTrue(Files.exists(build.resolve("intermediates/resources/debug/resources.ap_")))
+      assertTrue(Files.exists(build.resolve("outputs/apk/debug/app-unsigned.apk")))
+      assertTrue(Files.exists(build.resolve("outputs/apk/debug/app.apk")))
       assertTrue(diagnostics.none { it.severity == BuildDiagnostic.Severity.ERROR })
     } finally {
       deleteRecursively(root)

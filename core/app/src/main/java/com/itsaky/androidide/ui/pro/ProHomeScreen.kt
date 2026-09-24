@@ -52,7 +52,7 @@ fun ProHomeScreen(
           Brush.verticalGradient(
             listOf(
               MaterialTheme.colorScheme.surface,
-              MaterialTheme.colorScheme.surfaceContainerLowest,
+              MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
               MaterialTheme.colorScheme.background
             )
           )
@@ -211,7 +211,7 @@ private fun SecondaryActionCard(
     colors = CardDefaults.cardColors(
       containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f)
     ),
-    border = CardDefaults.outlinedCardBorder()
+    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
   ) {
     Column(
       modifier = Modifier.padding(16.dp),

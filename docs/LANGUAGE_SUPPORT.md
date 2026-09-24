@@ -1,11 +1,16 @@
-
 # AndroidIDE Pro — Native Language Core
 
 ## Regra principal
 
-Java, Kotlin, C e C++ fazem parte do núcleo do AndroidIDE Pro.
+Java, Kotlin, C e C++ pertencem ao núcleo do AndroidIDE Pro.
 
-Não existe linguagem de programação como plugin, nem ativação/desativação de linguagem. Uma linguagem só é declarada suportada quando seu editor/language services e seu caminho de build/run fazem parte do próprio IDE.
+Não existe LanguagePlugin.
+
+Não existe toggle de linguagem.
+
+Não existe fallback silencioso para Gradle.
+
+A linguagem é parte do produto quando o editor, os serviços de linguagem e o caminho de build/run fazem parte do núcleo.
 
 ## Arquitetura
 
@@ -22,76 +27,80 @@ Language services
   └── refactoring
   ↓
 Native Build Engine
-  ├── Java compiler
-  ├── Kotlin compiler
-  └── Android-hosted LLVM
-      ├── C
-      └── C++
+  ├── Java
+  ├── Kotlin + Core Kotlin Toolchain
+  └── C/C++ + Core LLVM Toolchain
 ~~~
-
-core/language-support é uma camada interna do produto; não é um mecanismo de plugins.
-
-## Estados de suporte
-
-- `NATIVE_BUILD_READY`: editor + análise + compilação nativa disponíveis no núcleo.
-- `NATIVE_BUILD_REQUIRES_CORE_TOOLCHAIN`: backend nativo integrado, mas o pack executável ainda precisa ser instalado/fornecido pelo Core Toolchain Manager.
-- `EDITOR_AND_ANALYSIS_ONLY`: linguagem/documento incorporado para edição e análise, sem compilação Android.
 
 ## Linguagens incorporadas
 
-| Linguagem | Editor | Build nativo |
+| Linguagem | Editor | Build |
 |---|---:|---:|
 | Java | sim | sim |
-| Kotlin | sim | sim, compiler em processo |
-| C | em evolução | backend nativo + pack LLVM pendente |
-| C++ | em evolução | backend nativo + pack LLVM pendente |
+| Kotlin | sim | sim, Core Kotlin Toolchain |
+| C | sim | sim, Core LLVM Toolchain |
+| C++ | sim | sim, Core LLVM Toolchain |
 | XML | sim | sim, AAPT2 |
-| JSON | sim | infraestrutura |
-| Markdown | sim | infraestrutura |
+| JSON | sim | edição/análise |
+| Markdown | sim | edição/análise |
 
-A validação física de todos os caminhos em aparelho ainda precisa ser concluída.
+Os packs de toolchain não mudam a classificação das linguagens: continuam sendo linguagens built-in.
+
+## Status de toolchain
+
+NATIVE_BUILD_READY significa que o caminho central está disponível diretamente no núcleo.
+
+NATIVE_BUILD_REQUIRES_CORE_TOOLCHAIN significa que o backend faz parte do IDE, mas o binário pesado é distribuído pelo Core Toolchain Manager.
+
+Hoje C/C++ usam esse estado para o LLVM. Kotlin também possui pack separado para manter o APK-base menor.
+
+## C/C++
+
+~~~text
+.c / .h
+.cc / .cpp / .cxx / .hh / .hpp / .hxx
+    ↓
+CompileNativeTask
+    ↓
+Android-hosted LLVM
+~~~
+
+Padrões atuais:
+
+- C17;
+- C++20;
+- arm64-v8a;
+- alinhamento de 16 KiB no linker.
 
 ## Kotlin
 
 ~~~text
 .kt
- ↓
-K2JVMCompiler embutido
- ↓
+  ↓
+Core Kotlin Toolchain classloader
+  ↓
+K2JVMCompiler
+  ↓
 classes.jar
- ↓
+  ↓
 D8
- ↓
-classes.dex
 ~~~
 
-Não existe daemon Kotlin no caminho do Native Build Engine.
-
-## C / C++
-
-~~~text
-<AndroidIDE Pro>/toolchains/llvm/
-└── arm64-v8a/
-    ├── bin/
-    │   ├── clang
-    │   └── clang++
-    └── sysroot/
-~~~
-
-Essa toolchain será distribuída e gerenciada pelo próprio AndroidIDE Pro. Não será instalada como plugin.
+Não existe Kotlin daemon no build nativo.
 
 ## Regra para novas linguagens
 
-Para adicionar uma linguagem:
+Uma nova linguagem só entra no core quando houver:
 
-1. implementar editor/language services;
-2. implementar compiler/runtime on-device;
-3. registrar em BuiltInLanguageRegistry;
-4. integrar ao build graph;
-5. documentar e testar.
+1. editor/language services;
+2. compiler/runtime on-device;
+3. integração com Build Engine;
+4. testes;
+5. documentação;
+6. validação build/run.
 
 Não se cria LanguagePlugin.
 
-## Regra de build
+## Quando algo ainda não estiver pronto
 
-Quando uma linguagem ainda não possui implementação nativa completa, o build retorna um diagnóstico explícito. Ele não muda silenciosamente para Gradle.
+O build retorna diagnóstico explícito. Ele não muda silenciosamente para Gradle.

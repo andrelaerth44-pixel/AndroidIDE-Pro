@@ -4,6 +4,7 @@ import android.content.Context
 import com.android.builder.model.v2.ide.LibraryType.ANDROID_LIBRARY
 import com.itsaky.androidide.build.android.AndroidSdk
 import com.itsaky.androidide.build.android.NativeAndroidBuildSystem
+import com.itsaky.androidide.build.android.NativeProjectDescriptor
 import com.itsaky.androidide.build.android.AndroidModule as NativeAndroidModule
 import com.itsaky.androidide.build.api.BuildRequest
 import com.itsaky.androidide.build.api.BuildResult
@@ -49,6 +50,118 @@ class NativeBuildCoordinator(
       )
 
     return assembleDebug(module, logger)
+  }
+
+  fun assembleStandaloneDebug(
+    projectRoot: Path,
+    logger: (String) -> Unit = ::println
+  ): BuildResult {
+    val descriptor = runCatching {
+      NativeProjectDescriptor.load(projectRoot)
+    }.getOrElse {
+      return BuildResult(
+        success = false,
+        message = it.message ?: "Invalid standalone native project descriptor"
+      )
+    }
+
+    val buildToolsVersion = findBuildToolsVersion(
+      descriptor.sdkRoot.resolve("build-tools")
+    ) ?: return BuildResult(
+      success = false,
+      message = "No Android Build Tools installation was found under " +
+        descriptor.sdkRoot
+    )
+
+    val nativeSourceDir = descriptor.rootDir.resolve("src/main/cpp")
+    val kotlinSourceDir = descriptor.rootDir.resolve("src/main/kotlin")
+    val hasNativeSources = hasNativeSources(nativeSourceDir)
+    val hasKotlinSources = hasKotlinSources(kotlinSourceDir)
+
+    val llvmToolchain =
+      if (hasNativeSources) coreToolchainManager.resolveLlvm() else null
+
+    val kotlinCompilerClassLoader =
+      if (hasKotlinSources) {
+        coreKotlinToolchainManager.resolveClassLoader()
+      } else {
+        null
+      }
+
+    val kotlinCompilerPluginClasspaths =
+      if (hasKotlinSources) {
+        listOfNotNull(
+          coreKotlinToolchainManager.resolveComposeCompilerPlugin()
+        )
+      } else {
+        emptyList()
+      }
+
+    if (hasNativeSources) {
+      logger(coreToolchainManager.describe())
+    }
+
+    if (hasNativeSources && llvmToolchain == null) {
+      return BuildResult(
+        success = false,
+        message = "C/C++ sources require the Core LLVM Toolchain Pack."
+      )
+    }
+
+    if (hasKotlinSources && kotlinCompilerClassLoader == null) {
+      return BuildResult(
+        success = false,
+        message = "Kotlin sources require the Core Kotlin Toolchain Pack."
+      )
+    }
+
+    val sdk = AndroidSdk(
+      root = descriptor.sdkRoot,
+      buildToolsVersion = buildToolsVersion,
+      compileSdk = descriptor.compileSdk,
+      nativeToolchain = llvmToolchain
+    )
+
+    val nativeModule = NativeAndroidModule(
+      name = descriptor.rootDir.fileName.toString(),
+      rootDir = descriptor.rootDir,
+      namespace = descriptor.namespace,
+      applicationId = descriptor.applicationId,
+      compileSdk = descriptor.compileSdk,
+      minSdk = descriptor.minSdk,
+      targetSdk = descriptor.targetSdk,
+      sdk = sdk,
+      compileClasspath = emptyList(),
+      dependencyResourceDirs = emptyList(),
+      dependencyNativeLibDirs = emptyList(),
+      dependencyAssetDirs = emptyList(),
+      localNativeLibDir = descriptor.rootDir
+        .resolve("src/main/jniLibs")
+        .takeIf { Files.isDirectory(it) },
+      localNativeIncludeDir = nativeSourceDir
+        .takeIf { Files.isDirectory(it) },
+      javaSourceLevel = "11",
+      javaBytecodeLevel = "11",
+      kotlinCompilerClassLoader = kotlinCompilerClassLoader,
+      kotlinCompilerPluginClasspaths = kotlinCompilerPluginClasspaths
+    )
+
+    val keystore = ensureDebugKeystore()
+      ?: return BuildResult(
+        success = false,
+        message = "Unable to provision the AndroidIDE Pro debug keystore"
+      )
+
+    return NativeAndroidBuildSystem(
+      module = nativeModule,
+      debugKeystore = keystore,
+      logger = logger
+    ).assemble(
+      BuildRequest(
+        moduleName = nativeModule.name,
+        variant = "debug"
+      )
+    )
   }
 
   fun assembleDebug(

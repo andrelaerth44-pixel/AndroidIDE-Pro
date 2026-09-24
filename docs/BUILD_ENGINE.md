@@ -59,8 +59,7 @@ A referência detalhada está em `docs/CODEASSIST_BUILD_PIPELINE.md`.
 
 O app não deve precisar saber se uma operação específica veio do backend nativo ou do fallback.
 
-A seleção futura deve preferir o engine nativo para cada tarefa suportada e recorrer ao adapter Gradle
-somente quando a cobertura nativa for insuficiente.
+assemble já tenta o engine nativo primeiro quando o Workspace oferece uma aplicação Android compatível com o conjunto de limitações atual. Quando a capacidade não existe, o fluxo cai para o adapter Gradle.
 
 ## API implementada
 
@@ -223,12 +222,38 @@ A política existente mantém:
 
 As opções são suportadas pelas interfaces de linha de comando/configuração do Gradle. [Gradle CLI](https://docs.gradle.org/current/userguide/command_line_interface.html) e [Gradle Build Environment](https://docs.gradle.org/current/userguide/build_environment.html)
 
-## Primeira operação migrada
+## Operações migradas
 
-O root task `clean` já usa o engine leve. `GradleBuildService.executeTasks("clean")` intercepta esse
-caso e remove os diretórios `build/` conhecidos pelo Workspace sem iniciar o Tooling API server.
+O root task `clean` usa o engine leve sem iniciar Gradle.
 
-`assemble`, compilação, recursos, dex e assinatura ainda não estão migrados.
+Além disso, `GradleBuildService.executeTasks("assemble...")` já tenta um DAG nativo completo para o primeiro conjunto controlado:
+
+```text
+mergeResources
+  -> aapt2Compile
+  -> aapt2Link / R.java
+  -> compileJava
+  -> dexBuilder
+  -> mergeProjectDex
+  -> packageApk
+  -> sign
+  -> assemble
+```
+
+O primeiro caminho nativo usa apenas um módulo Android application, sem dependências externas ou módulos de projeto, e usa assinatura debug local. Projetos mais complexos continuam no fallback Gradle.
+
+## Limitações atuais
+
+O primeiro adapter do Workspace ainda recusa:
+
+- múltiplos módulos de projeto;
+- dependências locais entre módulos;
+- bibliotecas AAR/JAR externas;
+- Kotlin/KSP/Compose;
+- manifest merger avançado;
+- checkAarMetadata, mergeNativeLibs, mergeJavaResource, generateSources e injectAppLogProvider.
+
+Essas recusas são intencionais: o native backend não inventa semântica de dependências que ainda não possui.
 
 ## Próxima sequência
 
@@ -258,6 +283,5 @@ sem Gradle, reutilizando os módulos de javac e AAPT já existentes.
 
 ## Validação
 
-Ainda não foi executado o build Gradle completo do repositório nem um APK completo pelo novo engine.
-O estado atual deve ser tratado como fundação arquitetural + primeira operação nativa validada
-estruturalmente.
+Ainda não foi executado o build Gradle completo do repositório, CI ou um APK real pelo novo engine.
+Existem testes com toolchains falsos para o DAG e as tarefas, e a integração do serviço está conectada estruturalmente. A validação real no Android é o próximo passo.

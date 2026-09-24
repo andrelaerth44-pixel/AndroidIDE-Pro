@@ -1,5 +1,6 @@
 [versions]
 agp = "8.5.0"
+r8 = "8.13.19"
 agp-tooling = "8.5.0"
 gradle-tooling = "8.6"
 junit-jupiter = "5.10.2"

@@ -260,6 +260,7 @@ class CompileJavaTask(
     module.classesDir.createDirectories()
 
     if (!hasJvmSources(module)) {
+      Files.writeString(module.classesDir.resolve(".jvm-stamp"), "no-jvm-sources\n")
       return@runCatching TaskResult(true, "No Java/Kotlin sources")
     }
 
@@ -340,6 +341,7 @@ class CompileJavaTask(
       fileManager.close()
     }
 
+    Files.writeString(module.classesDir.resolve(".jvm-stamp"), "compiled-java\n")
     TaskResult(true)
   }.getOrElse { TaskResult(false, it.message ?: "javac failed") }
 }
@@ -438,8 +440,11 @@ class DexBuilderTask(
 
     if (!hasProgramBytecode) {
       context.log("D8: no Java/Kotlin bytecode; skipping dex")
+      Files.writeString(module.dexDir.resolve(".dex-stamp"), "no-jvm-bytecode\n")
       return@runCatching TaskResult(true, "No JVM bytecode")
     }
+
+    Files.deleteIfExists(module.dexDir.resolve(".dex-stamp"))
 
     ProcessTools.run(
       module.sdk.d8,
@@ -453,6 +458,7 @@ class DexBuilderTask(
       logger = context::log
     )
 
+    Files.writeString(module.dexDir.resolve(".dex-stamp"), "d8-complete\n")
     TaskResult(true)
   }.getOrElse { TaskResult(false, it.message ?: "D8 failed") }
 }

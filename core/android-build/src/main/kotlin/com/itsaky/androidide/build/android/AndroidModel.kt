@@ -45,6 +45,8 @@ data class AndroidModule(
   val sdk: AndroidSdk,
   val compileClasspath: List<Path> = emptyList(),
   val dependencyResourceDirs: List<Path> = emptyList(),
+  val dependencyNativeLibDirs: List<Path> = emptyList(),
+  val dependencyAssetDirs: List<Path> = emptyList(),
   val javaSourceLevel: String = "11",
   val javaBytecodeLevel: String = "11",
   val cLanguageStandard: String = "c17",

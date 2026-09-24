@@ -24,7 +24,7 @@ Legend:
 [ ] structured task events  
 [ ] fingerprint cache  
 [ ] persistent cache  
-[ ] AAR/JAR resolver  
+[~] AAR/JAR classpath + Android library resources  
 [x] Kotlin build — compiler embutido  
 [ ] R8  
 [ ] AAB  
@@ -56,10 +56,18 @@ Legend:
 [ ] Carbon repository  
 [ ] Asset Center  
 
+## Toolchains
+
+[x] Core Toolchain API  
+[x] Kotlin toolchain pack generation  
+[x] Kotlin toolchain CI artifact  
+[ ] Kotlin runtime classloader  
+[ ] LLVM Android arm64 pack  
+
 ## Native
 
 [~] Android-hosted LLVM toolchain manager  
-[~] C/C++ source discovery  
+[~] C/C++ source discovery + native packaging  
 [ ] clangd integration  
 [ ] CMake build  
 [ ] JNI Wizard  

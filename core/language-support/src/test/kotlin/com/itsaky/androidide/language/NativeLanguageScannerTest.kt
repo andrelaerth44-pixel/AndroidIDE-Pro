@@ -30,6 +30,20 @@ class NativeLanguageScannerTest {
   }
 
   @Test
+  fun ignoresNativeBuildMetadataAndPrebuiltArtifacts() {
+    val root = Files.createTempDirectory("androidide-native-artifacts")
+    Files.writeString(root.resolve("androidide-native.properties"), "libraryName=main")
+    Files.write(root.resolve("libengine.a"), byteArrayOf())
+    Files.write(root.resolve("libengine.so"), byteArrayOf())
+    Files.writeString(root.resolve("notes.txt"), "unsupported")
+
+    val report = NativeLanguageScanner.scan(listOf(root))
+
+    assertEquals(1, report.unknownFiles.size)
+    assertTrue(report.unknownFiles.single().fileName.toString() == "notes.txt")
+  }
+
+  @Test
   fun detectsCppFamily() {
     val root = Files.createTempDirectory("androidide-cpp-scanner")
     listOf("a.cc", "b.cpp", "c.cxx", "d.hh", "e.hpp", "f.hxx").forEach {

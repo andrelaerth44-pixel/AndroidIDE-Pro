@@ -128,7 +128,7 @@ class CompileNativeTask(
       }
 
       ProcessTools.run(
-        executable = toolchain.compiler,
+        executable = compilerFor(toolchain, isCpp(source)),
         args = compilerArgs,
         environment = environment,
         logger = context::log
@@ -165,7 +165,7 @@ class CompileNativeTask(
     }
 
     ProcessTools.run(
-      executable = toolchain.compiler,
+      executable = compilerFor(toolchain, hasCpp),
       args = linkArgs,
       environment = environment,
       logger = context::log

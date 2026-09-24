@@ -6,14 +6,23 @@ import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 import java.util.Properties
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
 
+/**
+ * Resolves the first-party LLVM toolchain that executes ON Android arm64.
+ *
+ * Unlike a desktop NDK, the toolchain binaries are Android executables
+ * extracted to app-private storage. Shared compiler libraries live next to
+ * them and are exposed through LD_LIBRARY_PATH.
+ */
 class CoreToolchainManager(
   private val context: Context
 ) {
@@ -39,12 +48,6 @@ class CoreToolchainManager(
     val llvmMajor = properties.getProperty("llvmMajor")?.trim().orEmpty()
     if (version.isBlank() || llvmMajor.isBlank()) return null
 
-    val appInfo = runCatching {
-      context.packageManager.getApplicationInfo(LLVM_PACKAGE, 0)
-    }.getOrNull() ?: return null
-
-    val nativeLibraryDir = Path.of(appInfo.nativeLibraryDir)
-
     val root = context.filesDir.toPath()
       .resolve("toolchains")
       .resolve("llvm")
@@ -66,42 +69,26 @@ class CoreToolchainManager(
           expectedStamp = archiveStamp
         )
       }.isSuccess
+
       if (!installed) return null
     }
-
-    val compilerNative = nativeLibraryDir.resolve("libclang.so")
-    val cppCompilerNative = nativeLibraryDir.resolve("libclang++.so")
-    val linkerNative = nativeLibraryDir.resolve("libld.lld.so")
-    val runtime = nativeLibraryDir.resolve("libc++_shared.so")
-
-    if (!compilerNative.isRegularFile() ||
-      !cppCompilerNative.isRegularFile() ||
-      !linkerNative.isRegularFile() ||
-      !runtime.isRegularFile()
-    ) {
-      return null
-    }
-
-    val linksReady = runCatching {
-      ensureDriverLinks(
-        root = root,
-        compiler = compilerNative,
-        cppCompiler = cppCompilerNative,
-        linker = linkerNative
-      )
-    }.isSuccess
-
-    if (!linksReady) return null
 
     val compiler = root.resolve("bin/clang")
     val cppCompiler = root.resolve("bin/clang++")
     val linker = root.resolve("bin/ld.lld")
+    val runtimeLibraryDir = root.resolve("lib")
+    val runtimeSharedLibrary = runtimeLibraryDir
+      .resolve("libc++_shared.so")
     val sysroot = root.resolve("sysroot")
-    val resourceDir = root.resolve("lib-clang").resolve(llvmMajor)
+    val resourceDir = root
+      .resolve("lib-clang")
+      .resolve(llvmMajor)
 
     if (!compiler.isRegularFile() ||
       !cppCompiler.isRegularFile() ||
       !linker.isRegularFile() ||
+      !runtimeSharedLibrary.isRegularFile() ||
+      !Files.isDirectory(runtimeLibraryDir) ||
       !Files.isDirectory(sysroot) ||
       !Files.isDirectory(resourceDir)
     ) {
@@ -115,8 +102,8 @@ class CoreToolchainManager(
       linker = linker,
       sysroot = sysroot,
       resourceDir = resourceDir,
-      runtimeLibraryDir = nativeLibraryDir,
-      runtimeSharedLibrary = runtime,
+      runtimeLibraryDir = runtimeLibraryDir,
+      runtimeSharedLibrary = runtimeSharedLibrary,
       includeDirs = buildList {
         add(root.resolve("sysroot/usr/include"))
         add(root.resolve("sysroot/usr/include/c++/v1"))
@@ -161,7 +148,9 @@ class CoreToolchainManager(
         val digest = MessageDigest.getInstance("SHA-256")
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
 
-        BufferedOutputStream(Files.newOutputStream(archiveFile)).use { output ->
+        BufferedOutputStream(
+          Files.newOutputStream(archiveFile)
+        ).use { output ->
           while (true) {
             val count = input.read(buffer)
             if (count < 0) break
@@ -173,13 +162,18 @@ class CoreToolchainManager(
         val actualStamp = digest.digest()
           .joinToString("") { "%02x".format(it) }
 
-        check(expectedStamp.isBlank() || actualStamp == expectedStamp) {
+        check(
+          expectedStamp.isBlank() ||
+            actualStamp == expectedStamp
+        ) {
           "Core LLVM Toolchain checksum mismatch"
         }
       }
 
       ZipInputStream(
-        BufferedInputStream(Files.newInputStream(archiveFile))
+        BufferedInputStream(
+          Files.newInputStream(archiveFile)
+        )
       ).use { zip ->
         var entry: ZipEntry? = zip.nextEntry
 
@@ -201,6 +195,8 @@ class CoreToolchainManager(
         }
       }
 
+      makeExecutables(temp.resolve("bin"))
+
       root.deleteRecursively()
       Files.move(temp, root)
     } finally {
@@ -216,67 +212,72 @@ class CoreToolchainManager(
     cleanupOldVersions(root.parent, root.fileName.toString())
   }
 
-  private fun ensureDriverLinks(
-    root: Path,
-    compiler: Path,
-    cppCompiler: Path,
-    linker: Path
-  ) {
-    val bin = root.resolve("bin")
-    bin.createDirectories()
+  private fun makeExecutables(binDir: Path) {
+    if (!Files.isDirectory(binDir)) return
 
-    fun link(name: String, target: Path) {
-      val link = bin.resolve(name)
-      val currentTarget = runCatching { Files.readSymbolicLink(link) }.getOrNull()
-
-      if (currentTarget != null && linkTargetMatches(currentTarget, target)) {
-        return
-      }
-
-      Files.deleteIfExists(link)
-      runCatching {
-        Files.createSymbolicLink(
-          link,
-          target
-        )
-      }.getOrElse {
-        throw IllegalStateException(
-          "Unable to create LLVM driver link " + link + " -> " + target,
-          it
-        )
-      }
+    Files.list(binDir).use { stream ->
+      stream
+        .filter { Files.isRegularFile(it) }
+        .forEach {
+          runCatching {
+            java.nio.file.attribute.PosixFilePermission.entries
+              .filter {
+                it.name.contains("OWNER_EXECUTE") ||
+                  it.name.contains("GROUP_EXECUTE") ||
+                  it.name.contains("OTHERS_EXECUTE")
+              }
+              .let { permissions ->
+                val current =
+                  Files.getPosixFilePermissions(it).toMutableSet()
+                current.addAll(permissions)
+                Files.setPosixFilePermissions(it, current)
+              }
+          }
+        }
     }
-
-    link("clang", compiler)
-    link("clang++", cppCompiler)
-    link("ld.lld", linker)
   }
 
-  private fun linkTargetMatches(current: Path, expected: Path): Boolean =
-    current.toAbsolutePath().normalize() == expected.toAbsolutePath().normalize()
-
-  private fun cleanupOldVersions(parent: Path, keepVersion: String) {
+  private fun cleanupOldVersions(
+    parent: Path,
+    keepVersion: String
+  ) {
     if (!Files.isDirectory(parent)) return
+
     Files.list(parent).use { stream ->
       stream
         .filter { Files.isDirectory(it) }
         .filter { it.fileName.toString() != keepVersion }
-        .forEach { old -> runCatching { old.deleteRecursively() } }
+        .forEach { old ->
+          runCatching { old.deleteRecursively() }
+        }
     }
   }
 
-  private fun safeResolve(root: Path, entryName: String): Path {
-    val normalized = root.resolve(entryName).normalize()
-    check(normalized.startsWith(root.normalize())) {
+  private fun safeResolve(
+    root: Path,
+    entryName: String
+  ): Path {
+    val normalized = root
+      .resolve(entryName)
+      .normalize()
+
+    check(
+      normalized.startsWith(root.normalize())
+    ) {
       "Unsafe toolchain archive entry: " + entryName
     }
+
     return normalized
   }
 
   companion object {
-    const val LLVM_PACKAGE = "com.itsaky.androidide.toolchain.llvm"
-    const val PROPERTIES_FILE = "toolchain.properties"
-    const val ARCHIVE_FILE = "toolchain.zip"
+    const val LLVM_PACKAGE =
+      "com.itsaky.androidide.toolchain.llvm"
 
+    const val PROPERTIES_FILE =
+      "toolchain.properties"
+
+    const val ARCHIVE_FILE =
+      "toolchain.zip"
   }
 }

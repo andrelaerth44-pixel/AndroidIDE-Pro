@@ -1,128 +1,58 @@
 # AndroidIDE Pro — Core Toolchains
 
-## Princípio
+## Regra
 
-Java, Kotlin, C e C++ são linguagens nativas do AndroidIDE Pro. Os compiladores e runtimes pesados podem ser distribuídos como **Core Toolchain Packs**, mas continuam sendo componentes oficiais do produto.
+Java, Kotlin, C e C++ são linguagens built-in.
 
-Core Toolchain Pack **não é plugin de linguagem**.
-
-Não existe ativação/desativação de linguagem, instalação de linguagem como plugin ou fallback de compilação para Gradle.
-
-## Estrutura
-
-~~~text
-AndroidIDE Pro
-  ↓
-Core Toolchain Manager
-  ├── Kotlin Toolchain APK
-  │     ↓
-  │   package classloader
-  │     ↓
-  │   K2JVMCompiler
-  │
-  └── LLVM Toolchain APK
-        ↓
-      Android arm64 native libraries
-        ↓
-      clang / clang++ / lld
-~~~
-
-Os arquivos auxiliares extraídos ficam em filesDir/toolchains por versão.
+Core Toolchain Packs são componentes oficiais do produto. Não são plugins de linguagem e não criam toggles.
 
 ## Kotlin
 
-O módulo core/toolchain-kotlin produz o APK com o compilador Kotlin 1.9.24.
+core/toolchain-kotlin fornece Kotlin compiler 1.9.24 e Compose compiler hosted 1.5.14.
 
-O AndroidIDE Pro resolve o pacote pela API de package context com inclusão de código e usa o classloader do pacote.
+O AndroidIDE Pro carrega o compilador pelo classloader do pacote e não coloca o compilador no APK-base.
 
-O Build Engine não depende mais de kotlin-compiler-embeddable no APK principal.
+## LLVM
 
-A tarefa Kotlin carrega K2JVMCompiler por reflexão e executa o compilador no processo do Build Engine. Não existe daemon Kotlin para builds de projeto.
-
-## LLVM C/C++
-
-O módulo core/toolchain-llvm produz o APK do compilador nativo Android arm64.
-
-Alvo atual:
+core/toolchain-llvm fornece um LLVM executável no próprio Android:
 
 ~~~text
-host: Android arm64
-target: aarch64-linux-android
-ABI do app: arm64-v8a
-C: C17
-C++: C++20
+assets/toolchain/bin/
+├── clang
+├── clang++
+├── clangd
+└── ld.lld
+
+assets/toolchain/lib/
+├── libLLVM.so
+├── libclang-cpp.so
+└── libc++_shared.so
+
+assets/toolchain/
+├── sysroot/
+├── lib-clang/
+└── native_app_glue/
 ~~~
 
-O pack contém somente o necessário para compilar e linkar C/C++ no próprio Android:
+Depois da instalação, o Core LLVM fica em filesDir/toolchains/llvm/<version>/ e é executado dali.
 
-- driver LLVM/Clang;
-- LLD ELF;
-- libLLVM;
-- libclang-cpp;
-- libc++_shared;
-- clang resource directory;
-- runtimes de compilação;
-- sysroot AArch64 reduzido;
-- headers;
-- bibliotecas Android;
-- android_native_app_glue quando disponível.
+## Integridade
 
-Não distribuímos um NDK desktop inteiro dentro do APK.
+O pack possui versão, LLVM major, host ABI e SHA-256.
 
-## Build do pack LLVM
+O Core Toolchain Manager valida o checksum, rejeita path traversal, extrai em diretório temporário, aplica permissões executáveis e troca a versão ativa de forma transacional.
 
-~~~text
-tools/llvm-toolchain/build-android-llvm.sh
-        ↓
-host tablegen
-        ↓
-LLVM/Clang/LLD cross-build para Android arm64
-        ↓
-redução para ELF/AArch64
-        ↓
-sysroot + runtime + driver
-        ↓
-core/toolchain-llvm APK
-~~~
+## C/C++ e JNI
 
-O builder reduz o produto com MinSizeRel, backend AArch64, LLVM/Clang compartilhados, LLD somente ELF e remoção de componentes de desenvolvimento.
+O mesmo Core LLVM é usado para C17, C++20, NativeActivity, JNI, bibliotecas nativas, engines, apps puros nativos e apps híbridos.
 
-## Integridade e atualização
+## clangd
 
-Cada toolchain.zip gera SHA-256 e o valor fica em toolchain.properties.
+clangd já faz parte do Core LLVM Pack.
 
-O Core Toolchain Manager:
-
-- valida a versão;
-- extrai para diretório temporário;
-- rejeita ZIP path traversal;
-- troca o diretório de forma atômica;
-- remove versões antigas.
-
-O debug signing dos packs serve apenas para artefatos de desenvolvimento/CI. Release final usa assinatura de distribuição.
+A integração com o editor ainda é uma etapa separada.
 
 ## CI
 
-O workflow principal publica o Core Kotlin Toolchain separadamente.
+.github/workflows/build-llvm-toolchain.yml produz o APK do pack, relatório de tamanho, SHA-256 e uma validação estrutural do toolchain.zip.
 
-O workflow .github/workflows/build-llvm-toolchain.yml gera o Core LLVM Android arm64 e publica:
-
-- APK do pack;
-- relatório de tamanho;
-- SHA-256.
-
-## Estado
-
-- [x] Core Toolchain API
-- [x] armazenamento por versão/ABI
-- [x] Core Kotlin Toolchain APK
-- [x] Kotlin package classloader
-- [x] Core LLVM toolchain model
-- [x] Android arm64 LLVM builder
-- [x] Core LLVM Toolchain APK module
-- [x] Toolchain Center
-- [x] checksum metadata
-- [ ] validação física em aparelho Android arm64
-- [ ] atualização online autenticada
-- [ ] download resumível
-- [ ] múltiplos ABIs

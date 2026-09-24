@@ -29,19 +29,21 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [~] Matriz de riscos
 - [x] Criar `:build:api`
 - [x] Criar `:build:gradle-adapter`
+- [x] Registrar referência do pipeline real do CodeAssist
+- [x] Registrar IDs das 17 etapas observadas
 - [ ] Validar build/test completo dos novos módulos
 
 ## Fase 1 — Build Core
 
-- [ ] BuildRequest
-- [ ] BuildResult
-- [ ] BuildDiagnostic
-- [ ] BuildSystem SPI
-- [ ] Task
-- [ ] TaskContext
-- [ ] TaskGraph
-- [ ] executor
-- [ ] cancellation
+- [x] BuildRequest
+- [x] BuildResult
+- [x] BuildDiagnostic
+- [x] BuildSystem SPI
+- [x] Task
+- [x] TaskContext
+- [x] TaskGraph
+- [x] executor
+- [x] cancellation
 - [ ] fingerprints
 - [ ] persistent cache
 - [ ] dependency model
@@ -49,25 +51,33 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [x] bridge Gradle Adapter -> GradleBuildService
 - [x] ponto de criação do BuildSystem no GradleBuildService
 - [x] migrar `clean` para o engine leve sem Gradle
-- [ ] migrar `assembleDebug`/compilação para o engine próprio
-- [ ] implementar engine Android leve sem Gradle
-- [ ] tornar Gradle explicitamente fallback de compatibilidade
+- [ ] selecionar backend nativo antes do fallback Gradle
+- [ ] migrar `compileJava` para o engine próprio
+- [ ] migrar `assembleDebug` completo para o engine próprio
+- [ ] implementar engine Android leve completo
+- [x] tornar Gradle explicitamente fallback de compatibilidade em arquitetura/documentação
 - [ ] descoberta completa de tasks do projeto
 
 ## Fase 2 — Android pipeline
 
-- [ ] manifest
-- [ ] resources
-- [ ] AAPT2 compile
-- [ ] AAPT2 link
+- [ ] generateSources
+- [ ] mergeResources
+- [ ] checkAarMetadata
+- [ ] mergeNativeLibs
+- [ ] mergeJavaResource
+- [ ] aapt2Compile
+- [ ] processManifest
+- [ ] injectAppLogProvider
+- [ ] aapt2Link
 - [ ] R generation
 - [ ] Java
 - [ ] Kotlin
 - [ ] KSP
 - [ ] Compose
-- [ ] D8
-- [ ] R8
-- [ ] packaging
+- [ ] dexBuilder
+- [ ] mergeProjectDex
+- [ ] mergeExtDex
+- [ ] package APK
 - [ ] signing
 - [ ] APK verification
 - [ ] AAB

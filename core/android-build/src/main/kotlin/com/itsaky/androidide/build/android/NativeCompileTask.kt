@@ -237,10 +237,17 @@ class CompileNativeTask(
         add("-stdlib=libc++")
         add("-L")
         add(toolchain.runtimeLibraryDir.toString())
+      }
+
+      // Objects come before static/shared libraries so LLD can resolve
+      // symbols from the application into the libraries in one left-to-right pass.
+      objects.forEach(::add)
+
+      if (hasCpp) {
         add("-lc++_shared")
       }
 
-      if (nativeActivity) {
+      if (requiresNativeActivityGlue()) {
         add("-landroid")
         add("-llog")
 
@@ -248,12 +255,12 @@ class CompileNativeTask(
         add("-Wl,-u," + module.nativeActivityFunctionName)
       }
 
-      module.nativeBuildConfiguration.linkLibraries.forEach {
-        add("-l" + it)
-      }
-
       module.nativeBuildConfiguration.staticLibraries.forEach {
         add(it.toString())
+      }
+
+      module.nativeBuildConfiguration.linkLibraries.forEach {
+        add("-l" + it)
       }
 
       addAll(module.nativeBuildConfiguration.linkerFlags)
@@ -263,13 +270,9 @@ class CompileNativeTask(
       add("-Wl,-z,common-page-size=16384")
       add("-Wl,--gc-sections")
       add("-Wl,-soname,lib" + module.nativeLibraryName + ".so")
-
-      objects.forEach(::add)
-
       add("-o")
       add(output.toString())
     }
-
     ProcessTools.run(
       executable = compilerFor(toolchain, hasCpp),
       args = linkArgs,

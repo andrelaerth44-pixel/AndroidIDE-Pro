@@ -77,8 +77,14 @@ class LanguageBackendRegistry {
   fun unregister(id: String): LanguageBackend? =
     backends.remove(id)
 
-  fun findFor(language: LanguageId): List<LanguageBackend> =
-    backends.values.filter { language in it.languages }
+  fun findFor(
+    language: LanguageId,
+    requiredCapabilities: Set<BackendCapability> = emptySet()
+  ): List<LanguageBackend> =
+    backends.values.filter { backend ->
+      language in backend.languages &&
+        backend.capabilities.containsAll(requiredCapabilities)
+    }
 
   fun all(): List<LanguageBackend> =
     backends.values.toList()

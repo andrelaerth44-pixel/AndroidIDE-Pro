@@ -80,6 +80,21 @@ class Aapt2CompileTask(
       addAll(module.dependencyResourceDirs)
     }
 
+    val hasResources = resourceRoots.any { root ->
+      if (!root.exists()) {
+        false
+      } else {
+        Files.walk(root).use { stream ->
+          stream.anyMatch(Files::isRegularFile)
+        }
+      }
+    }
+
+    if (!hasResources) {
+      context.log("AAPT2: no resources to compile")
+      return@runCatching TaskResult(true, "No Android resources")
+    }
+
     resourceRoots.forEachIndexed { index, root ->
       if (!root.exists()) return@forEachIndexed
 

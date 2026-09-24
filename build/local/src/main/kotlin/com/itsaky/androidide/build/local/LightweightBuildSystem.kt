@@ -30,6 +30,9 @@ import com.itsaky.androidide.build.local.android.NativeAndroidToolchain
  */
 class LightweightBuildSystem(
   private val androidToolchain: NativeAndroidToolchain? = null,
+  private val androidInputsProvider: AndroidApplicationInputsProvider = AndroidApplicationInputsProvider { module, request, toolchain ->
+    ConventionalAndroidApplicationAdapter.createInputs(module, request, toolchain)
+  },
 ) : BuildSystem {
 
   override val id: String = "local"
@@ -45,14 +48,7 @@ class LightweightBuildSystem(
     if (request.requestedTasks == setOf("clean")) return true
 
     val task = request.requestedTasks.singleOrNull() ?: return false
-    if (!task.startsWith("assemble") &&
-      !task.startsWith("packageApk") &&
-      !task.startsWith("dexBuilder") &&
-      !task.startsWith("mergeProjectDex") &&
-      !task.startsWith("compileJava") &&
-      !task.startsWith("aapt2") &&
-      !task.startsWith("mergeResources")
-    ) return false
+    if (!task.startsWith("assemble")) return false
 
     val module = project.modules.singleOrNull { it.type == BuildModuleType.ANDROID_APPLICATION } ?: return false
     if (androidToolchain?.canCompile() != true) return false
@@ -72,7 +68,7 @@ class LightweightBuildSystem(
     val toolchain = requireNotNull(androidToolchain) { "Native Android toolchain is not configured" }
     val module = project.modules.singleOrNull { it.type == BuildModuleType.ANDROID_APPLICATION }
       ?: error("Native Android backend currently requires exactly one Android application module")
-    val inputs = ConventionalAndroidApplicationAdapter.createInputs(module, request, toolchain)
+    val inputs = androidInputsProvider.create(module, request, toolchain)
     val signer = if (toolchain.canSignDebug()) {
       ApkSignerSubprocess(
         zipalign = requireNotNull(toolchain.zipalign),

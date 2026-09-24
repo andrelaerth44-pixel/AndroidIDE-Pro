@@ -62,18 +62,38 @@ class MainFragment : BaseFragment() {
 
         ProHomeScreen(
           actions = actions,
-          onAction = { action ->
-            handleAction(action)
-          }
+          onAction = ::handleAction,
+          onLongAction = ::handleLongAction
         )
       }
     }
   }
 
   private fun handleAction(action: MainScreenAction) {
-    val view = view ?: return
+    when (action.id) {
+      MainScreenAction.ACTION_CREATE_PROJECT -> showCreateProject()
+      MainScreenAction.ACTION_OPEN_PROJECT -> pickDirectory()
+      MainScreenAction.ACTION_CLONE_REPO -> cloneGitRepo()
+      MainScreenAction.ACTION_OPEN_TERMINAL -> {
+        startActivity(Intent(requireActivity(), TerminalActivity::class.java))
+      }
+      MainScreenAction.ACTION_PREFERENCES -> gotoPreferences()
+      MainScreenAction.ACTION_DONATE ->
+        BaseApplication.getBaseInstance().openDonationsPage()
+      MainScreenAction.ACTION_DOCS ->
+        BaseApplication.getBaseInstance().openDocs()
+    }
+  }
 
-    action.onClick?.invoke(action, view)
+  private fun handleLongAction(action: MainScreenAction) {
+    if (action.id != MainScreenAction.ACTION_OPEN_TERMINAL) {
+      return
+    }
+
+    val intent = Intent(requireActivity(), TerminalActivity::class.java).apply {
+      putExtra(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, true)
+    }
+    startActivity(intent)
   }
 
   private fun pickDirectory() {

@@ -1,5 +1,4 @@
 import java.security.MessageDigest
-import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.bundling.ZipEntryCompression
 
@@ -12,7 +11,6 @@ val toolchainOut = providers.gradleProperty("llvm.toolchain.dir")
   .orElse(layout.projectDirectory.dir("toolchain-out").asFile)
 
 val toolchainAssets = toolchainOut.map { it.resolve("assets/toolchain") }
-val toolchainJni = toolchainOut.map { it.resolve("jniLibs") }
 val generatedAssetsDir = layout.buildDirectory.dir("generated/toolchain/assets")
 
 android {
@@ -31,10 +29,6 @@ android {
     buildConfig = false
   }
 
-  packaging {
-    jniLibs.useLegacyPackaging = true
-  }
-
   buildTypes {
     getByName("release") {
       signingConfig = signingConfigs.getByName("debug")
@@ -42,7 +36,6 @@ android {
   }
 
   sourceSets["main"].assets.srcDir(generatedAssetsDir)
-  sourceSets["main"].jniLibs.srcDir(toolchainJni)
 
 }
 
@@ -55,8 +48,11 @@ val packToolchainAssets = tasks.register<Zip>("packToolchainAssets") {
     check(toolchainAssets.get().isDirectory) {
       "Missing LLVM toolchain assets at " + toolchainAssets.get()
     }
-    check(toolchainLibs.get().resolve("arm64-v8a").isDirectory) {
-      "Missing arm64-v8a LLVM native libraries at " + toolchainLibs.get()
+    check(toolchainAssets.get().resolve("bin").isDirectory) {
+      "Missing Android LLVM executables at " + toolchainAssets.get().resolve("bin")
+    }
+    check(toolchainAssets.get().resolve("lib").isDirectory) {
+      "Missing Android LLVM runtime libraries at " + toolchainAssets.get().resolve("lib")
     }
   }
 }

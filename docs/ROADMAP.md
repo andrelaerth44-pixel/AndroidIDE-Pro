@@ -56,8 +56,8 @@
 ## Fase 4 — Kotlin e Android moderno
 
 [x] Kotlin compiler path
-[ ] Kotlin diagnostics
-[ ] AAR/JAR resolution
+[~] Kotlin diagnostics
+[~] AAR/JAR classpath
 [ ] Dependency cache
 [ ] Desugaring
 [ ] Compose project build
@@ -83,7 +83,7 @@
 [ ] Search/favorites
 [ ] AI Icon Match via user API
 
-## Fase 6 — NDK Suite
+## Fase 6 — Native Toolchains
 
 [~] Native toolchain manager
 [~] Android-hosted LLVM toolchain
@@ -120,3 +120,12 @@
 [ ] HTML/CSS/SCSS
 [ ] Flutter/Dart exploration
 [ ] KMP exploration
+
+## Fase 5.5 — Core Toolchains
+
+- [x] Core Toolchain API
+- [x] Kotlin toolchain pack generation
+- [x] Kotlin toolchain CI artifact
+- [ ] Kotlin runtime classloader
+- [ ] LLVM Android arm64 pack
+- [ ] checksum/signature verification

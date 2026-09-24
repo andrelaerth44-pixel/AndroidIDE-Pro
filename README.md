@@ -225,6 +225,24 @@ Toda feature nova deve considerar RAM, CPU, I/O, bateria, tempo de inicializaç�
 
 O tablet será tratado como uma experiência própria, aproveitando espaço para Explorer, Editor e Problems/Build simultaneamente, enquanto o telefone usa painéis e bottom sheets quando necessário.
 
+## Current implementation snapshot
+
+~~~text
+Editor toolbar
+    ↓
+NativeBuildAction
+    ↓
+NativeBuildCoordinator
+    ↓
+Existing IWorkspace / AndroidModule
+    ↓
+NativeAndroidBuildSystem
+    ↓
+AAPT2 → javac → D8 → package → zipalign → apksigner
+~~~
+
+Esta ponte foi projetada para reutilizar o modelo de projeto existente do AndroidIDE em vez de criar um segundo Workspace paralelo.
+
 ## Roadmap
 
 ### Fase 1 — Fundação
@@ -241,7 +259,8 @@ O tablet será tratado como uma experiência própria, aproveitando espaço para
 - [x] debug signing
 - [x] primeira superfície Compose
 - [x] adapter Workspace → Native Build Engine
-- [ ] conectar build engine à UI do Workspace/Editor
+- [x] ação Build nativa no editor
+- [ ] Build Center com progresso e logs estruturados
 - [ ] gerar e instalar Hello World no dispositivo
 
 ### Fase 2 — Workspace Pro

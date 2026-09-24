@@ -103,6 +103,7 @@ Validação:
 - [x] cabeçalhos GPLv3 dos arquivos novos conferidos;
 - [ ] compilação/testes completos via Gradle/CI;
 - [x] bridge `GradleTaskExecutor` -> `GradleBuildService` implementado;
+- [x] `SequentialBuildExecutor` adicionado com propagação de falha/cancelamento;
 - [x] ponto de criação `createBuildSystemAdapter()` adicionado sem alterar o caminho antigo;
 - [ ] integração do fluxo principal com o novo pipeline.
 
@@ -116,4 +117,4 @@ Ainda não implementado:
 
 ## Próximo item
 
-Validar os módulos em ambiente Gradle/CI e implementar a ponte do GradleTaskExecutor para o BuildService existente, mantendo o comportamento atual como fallback.
+Validar os módulos em ambiente Gradle/CI e migrar uma única operação de build controlada para `createBuildSystemAdapter()`, com teste de integração e rollback claro.

@@ -10,17 +10,9 @@
 package com.itsaky.androidide.services.builder
 
 import com.itsaky.androidide.build.api.BuildContext
-import com.itsaky.androidide.build.api.BuildTask
-import com.itsaky.androidide.build.api.BuildModule
-import com.itsaky.androidide.build.api.BuildModuleType
-import com.itsaky.androidide.build.api.BuildProject
 import com.itsaky.androidide.build.api.CancellationToken
 import com.itsaky.androidide.build.api.TaskContext
 import com.itsaky.androidide.build.api.TaskResult
-import com.itsaky.androidide.build.gradle.GradleTaskExecutor
-import com.itsaky.androidide.tooling.api.messages.InitializeProjectParams
-import com.itsaky.androidide.tooling.api.messages.result.BuildCancellationRequestResult
-import com.itsaky.androidide.tooling.api.messages.result.InitializeResult
 import com.itsaky.androidide.tooling.api.messages.result.TaskExecutionResult
 import com.itsaky.androidide.tooling.api.models.ToolingServerMetadata
 import io.mockk.every
@@ -84,6 +76,5 @@ class GradleBuildServiceTaskExecutorTest {
     val result = GradleBuildServiceTaskExecutor(service).execute("assemble", cancelledContext)
 
     assertEquals(TaskResult.State.CANCELLED, result.state)
-    every { service.executeTasks(any()) } returns CompletableFuture.completedFuture(TaskExecutionResult.SUCCESS)
   }
 }

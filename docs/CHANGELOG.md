@@ -1,6 +1,6 @@
 # Changelog de Engenharia
 
-## 2026-09-24 — Build execution bridge
+## 2026-09-24 — Sequential executor and build execution bridge
 
 ### Adicionado
 
@@ -39,7 +39,8 @@ O `GradleBuildService`, `ToolingServerRunner` e `ToolingApiServerImpl` continuam
 
 - descoberta completa do catálogo de tasks ainda não está conectada;
 - classificação Android application/library continua propositalmente UNKNOWN até existir uma fonte autoritativa no modelo AGP;
-- a ponte efetiva para `GradleBuildService` ainda não foi ligada.
+- o factory novo ainda não foi conectado ao fluxo principal de build;
+- build Gradle/CI dos módulos novos ainda não foi validado.
 
 ## 2026-09-24 — Build System API foundation
 

@@ -54,7 +54,12 @@ class CompileNativeTask(
     get() = module.nativeLibDir.resolve(".native-stamp")
 
   override val inputs: List<Path>
-    get() = listOf(module.nativeSourceDir)
+    get() = buildList {
+      add(module.nativeSourceDir)
+      module.sdk.nativeToolchainRoot
+        ?.resolve("arm64-v8a/.androidide-toolchain")
+        ?.let(::add)
+    }
 
   override val outputs: List<Path>
     get() = listOf(marker)

@@ -2,55 +2,62 @@
 
 ## Unreleased
 
-### Added
+### Native core
 
-- Core Toolchain Center.
-- Core Kotlin Toolchain APK.
-- Kotlin compiler package classloader.
-- Core LLVM Toolchain APK module.
-- Android-hosted LLVM/Clang/LLD builder para arm64.
-- LLVM sysroot/resource/runtime packaging.
-- C/C++ build task com C17/C++20.
-- native-only APK packaging quando não há Java/Kotlin.
-- output-aware TaskGraph fingerprints.
-- deterministic debug signing key seed.
-- checksum metadata para o LLVM toolchain.
-- workflow dedicado para construir o Core LLVM Toolchain.
+- C e C++ tratados como linguagens built-in de primeira classe.
+- suporte para projetos somente C.
+- suporte para projetos somente C++.
+- suporte para projetos mistos C + C++.
+- suporte para Java/Kotlin + C/C++ híbridos.
+- NativeActivity com android_native_app_glue.
+- JNI headers gerados automaticamente por javac.
+- src/main/cpp/androidide-native.properties.
+- include paths e library paths nativos.
+- static .a inputs.
+- prebuilt .so em src/main/jniLibs.
+- compile database compile_commands.json.
+- Core LLVM com clang, clang++, lld e clangd Android-hosted.
+- LLVM pack com sysroot, libc++, runtime e glue.
+- biblioteca nativa configurável por projeto.
+- link de bibliotecas Android e bibliotecas nativas próprias.
 
-### Changed
+### Build Engine
 
-- core/android-build não carrega mais kotlin-compiler-embeddable.
-- Kotlin usa Core Kotlin Toolchain.
-- C/C++ usa Core LLVM Toolchain.
-- Build Center mostra o estado do LLVM.
-- Build Router continua com uma única rota nativa.
-- D8 é pulado quando não existe bytecode Java/Kotlin.
-- debug keystore não depende de java.home/bin/keytool.
-- documentação de toolchains, linguagens, NDK e decisões foi sincronizada.
+- D8 é pulado para projetos sem bytecode Java/Kotlin.
+- BuildConfig é pulado para projetos puramente nativos.
+- Build Engine gera JNI headers antes da compilação nativa.
+- pacote APK inclui bibliotecas nativas locais e de AARs.
+- Build Result transporta applicationId para Install/Run.
+- TaskGraph invalida outputs ausentes.
+- Native Build Router continua sem Gradle fallback.
 
-### Still to validate
+### Kotlin
 
-- build/install/launch físico de Hello World;
-- C físico;
-- C++ físico;
-- Kotlin físico;
-- Java físico;
-- execução do workflow LLVM;
-- tamanho real dos APKs;
+- Core Kotlin Toolchain separado do APK-base.
+- Compose compiler hosted pack separado.
+- compiler plugin classpaths preparados no build nativo.
+
+### Ainda precisa de validação
+
+- GitHub Actions ainda não concluiu o build atual.
+- build/install/launch físico em Android arm64;
+- teste físico C;
+- teste físico C++;
+- teste físico Kotlin + C++ JNI;
+- teste físico Java;
+- Compose real end-to-end;
 - AAR/JAR edge cases;
 - desugaring;
-- Compose compiler;
 - R8;
 - AAB;
 - múltiplas ABIs;
-- CMake/JNI/clangd;
-- Run/Debug integrado.
+- integração clangd no editor;
+- LLDB/debug nativo.
 
 ## Foundation
 
 - Build API.
 - TaskGraph.
-- persistent fingerprints.
 - AAPT2.
 - JavacTool/nb-javac.
 - D8.

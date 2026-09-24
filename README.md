@@ -61,6 +61,7 @@ AndroidIDE Pro
     ├── AAPT2
     ├── Java / Kotlin
     ├── C / C++
+    ├── Core Toolchain Manager
     ├── D8 / R8
     ├── APK / AAB
     ├── Align
@@ -123,6 +124,7 @@ core/build-api/
 core/build-engine/
 core/android-build/
 core/language-support/
+core/toolchain-api/
 ~~~
 
 O primeiro grafo de compilação é:
@@ -222,6 +224,10 @@ O build deve terminar com uma ação clara:
 ~~~text
 Build → Verify → Install → Launch
 ~~~
+
+## Core Toolchains
+
+Linguagens são parte do núcleo. Toolchains pesados são armazenados pelo próprio IDE em `filesDir/toolchains/`, permitindo manter o APK-base sob controle sem transformar compiladores em plugins. O CI já produz o pack Kotlin separadamente.
 
 ## Performance
 

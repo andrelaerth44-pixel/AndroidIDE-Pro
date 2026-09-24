@@ -74,34 +74,46 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
+      - name: Validate built-in language core
+        if: matrix.build_type == 'debug'
+        run: |
+          ./gradlew :core:language-support:test :core:android-build:compileKotlin --stacktrace
+
       - name: Assemble ${{ matrix.build_type }} APK
         run: |
           build_type=${{ matrix.build_type }}
-          ./gradlew :core:app:assemble${build_type^}
-      - name: Copy ${{ matrix.build_type }} APK
+          ./gradlew :core:app:assemble${build_type^} --stacktrace
+
+      - name: Inspect ${{ matrix.build_type }} APK
+        shell: bash
         run: |
-          cp core/app/build/outputs/apk/${{ matrix.build_type }}/app-*.apk ./
-      - name: Upload arm64-v8a ${{ matrix.build_type }} APK
+          set -euo pipefail
+          shopt -s nullglob
+          apks=(core/app/build/outputs/apk/${{ matrix.build_type }}/*.apk)
+          if [ "${#apks[@]}" -eq 0 ]; then
+            echo "No ${{ matrix.build_type }} APK was generated."
+            exit 1
+          fi
+          mkdir -p build/apk-size
+          for apk in "${apks[@]}"; do
+            size=$(stat -c '%s' "$apk")
+            human=$(du -h "$apk" | cut -f1)
+            echo "$apk $size bytes ($human)" | tee -a "build/apk-size/${{ matrix.build_type }}.txt"
+          done
+
+      - name: Upload ${{ matrix.build_type }} APK
         uses: actions/upload-artifact@v4
         with:
-          name: apk-arm64-v8a-${{ matrix.build_type }}
-          path: app-arm64-v8a-${{ matrix.build_type }}.apk
-      - name: Upload armeabi-v7a ${{ matrix.build_type }} APK
+          name: androidide-pro-${{ matrix.build_type }}-apk
+          path: core/app/build/outputs/apk/${{ matrix.build_type }}/*.apk
+          if-no-files-found: error
+
+      - name: Upload ${{ matrix.build_type }} APK size report
         uses: actions/upload-artifact@v4
         with:
-          name: apk-armeabi-v7a-${{ matrix.build_type }}
-          path: app-armeabi-v7a-${{ matrix.build_type }}.apk
-      - name: Upload x86_64 ${{ matrix.build_type }} APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-x86_64-${{ matrix.build_type }}
-          path: app-x86_64-${{ matrix.build_type }}.apk
-      - name: Upload ${{ matrix.build_type }} mappings
-        if: ${{ always() && matrix.build_type == 'release' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-mappings
-          path: '**/build/outputs/mapping'
+          name: androidide-pro-${{ matrix.build_type }}-apk-size
+          path: build/apk-size/${{ matrix.build_type }}.txt
+          if-no-files-found: error
 
   run_unit_tests:
     name: Run unit tests

@@ -15,6 +15,20 @@ interface BuildSystem {
 
   fun supports(moduleType: BuildModuleType): Boolean
 
+  /**
+   * Capability check for a concrete project/request pair.
+   *
+   * Backends should override this when support depends on the task, variant, project layout or
+   * available toolchain. The default keeps legacy module-type semantics.
+   */
+  fun supports(
+    project: BuildProject,
+    request: BuildRequest,
+    context: BuildContext? = null,
+  ): Boolean {
+    return project.modules.all { supports(it.type) }
+  }
+
   fun createBuildGraph(
     project: BuildProject,
     request: BuildRequest,

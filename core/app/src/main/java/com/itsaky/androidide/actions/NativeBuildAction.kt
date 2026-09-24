@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import com.itsaky.androidide.R
 import com.itsaky.androidide.activities.build.BuildCenterActivity
+import com.itsaky.androidide.build.NativeProjectLocator
 import com.itsaky.androidide.projects.IProjectManager
 import com.itsaky.androidide.projects.android.AndroidModule
 import com.itsaky.androidide.actions.ActionItem.Location.EDITOR_TOOLBAR
@@ -29,7 +30,11 @@ class NativeBuildAction : ActionItem {
     icon = context.getDrawable(R.drawable.ic_build)
 
     enabled = runCatching {
-      IProjectManager.getInstance().getWorkspace()?.androidProjects()?.any { it.isApplication } == true
+      val workspace = IProjectManager.getInstance().getWorkspace()
+      val file = data.get(java.io.File::class.java)
+
+      workspace?.androidProjects()?.any { it.isApplication } == true ||
+        NativeProjectLocator.findRoot(file?.toPath()) != null
     }.getOrDefault(false)
   }
 
@@ -38,20 +43,38 @@ class NativeBuildAction : ActionItem {
 
   override suspend fun execAction(data: ActionData): Any {
     val context = data.get(Context::class.java) ?: return false
-    val workspace = IProjectManager.getInstance().getWorkspace() ?: return false
-
+    val workspace = IProjectManager.getInstance().getWorkspace()
     val file = data.get(java.io.File::class.java)
-    val module = if (file != null) {
+
+    val module = if (workspace != null && file != null) {
       workspace.findModuleForFile(file, false) as? AndroidModule
-    } else null
+    } else {
+      null
+    }
 
     val target = module?.takeIf { it.isApplication }
-      ?: workspace.androidProjects().firstOrNull { it.isApplication }
-      ?: return false
+      ?: workspace?.androidProjects()?.firstOrNull { it.isApplication }
+
+    val standaloneRoot = if (target == null) {
+      NativeProjectLocator.findRoot(file?.toPath())
+    } else {
+      null
+    }
+
+    if (target == null && standaloneRoot == null) {
+      return false
+    }
 
     context.startActivity(
       Intent(context, BuildCenterActivity::class.java).apply {
-        putExtra(BuildCenterActivity.EXTRA_MODULE_PATH, target.path)
+        if (target != null) {
+          putExtra(BuildCenterActivity.EXTRA_MODULE_PATH, target.path)
+        } else {
+          putExtra(
+            BuildCenterActivity.EXTRA_PROJECT_ROOT,
+            standaloneRoot.toString()
+          )
+        }
       }
     )
 

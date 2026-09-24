@@ -31,3 +31,24 @@ interface PluginContext {
     provider: Any
   )
 }
+
+
+class PluginRegistry {
+  private val plugins = linkedMapOf<String, IdePlugin>()
+
+  fun register(plugin: IdePlugin): Boolean {
+    val id = plugin.descriptor.id.value
+    if (plugins.containsKey(id)) return false
+    plugins[id] = plugin
+    return true
+  }
+
+  fun unregister(pluginId: PluginId): IdePlugin? =
+    plugins.remove(pluginId.value)
+
+  fun find(pluginId: PluginId): IdePlugin? =
+    plugins[pluginId.value]
+
+  fun all(): List<IdePlugin> =
+    plugins.values.toList()
+}

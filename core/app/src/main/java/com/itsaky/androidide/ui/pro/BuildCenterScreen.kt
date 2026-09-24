@@ -1,5 +1,8 @@
 package com.itsaky.androidide.ui.pro
 
+import android.content.Intent
+import androidx.core.content.FileProvider
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -165,11 +168,48 @@ fun BuildCenterScreen(
             }
           }
 
-          Button(
-            onClick = onClose,
-            modifier = Modifier.fillMaxWidth()
-          ) {
-            Text(stringResource(R.string.build_center_close))
+          current.outputApk?.let { apk ->
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+              Button(
+                onClick = {
+                  val uri = FileProvider.getUriForFile(
+                    context,
+                    context.packageName + ".providers.fileprovider",
+                    apk.toFile()
+                  )
+
+                  context.startActivity(
+                    Intent(Intent.ACTION_VIEW).apply {
+                      setDataAndType(
+                        uri,
+                        "application/vnd.android.package-archive"
+                      )
+                      addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                  )
+                },
+                modifier = Modifier.weight(1f)
+              ) {
+                Text(stringResource(R.string.build_center_install))
+              }
+
+              Button(
+                onClick = onClose,
+                modifier = Modifier.weight(1f)
+              ) {
+                Text(stringResource(R.string.build_center_close))
+              }
+            }
+          } ?: run {
+            Button(
+              onClick = onClose,
+              modifier = Modifier.fillMaxWidth()
+            ) {
+              Text(stringResource(R.string.build_center_close))
+            }
           }
         }
 

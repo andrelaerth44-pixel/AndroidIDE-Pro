@@ -55,6 +55,15 @@ object JdtJavaCompiler {
     val sources = request.sources.filter(Files::isRegularFile)
     if (sources.isEmpty()) return Result(true, emptyList(), emptyList())
 
+    if (request.bootClasspath.isNotEmpty() && complianceAtLeast9(request.sourceLevel)) {
+      return ImageFreeJavaCompiler.compile(
+        sources = sources,
+        libraries = request.bootClasspath + request.classpath,
+        outputDir = request.outputDir,
+        sourceLevel = request.sourceLevel,
+      )
+    }
+
     val out = StringWriter()
     val err = StringWriter()
     val main = RecordingMain(PrintWriter(out), PrintWriter(err))
@@ -78,6 +87,11 @@ object JdtJavaCompiler {
       .toList()
     val diagnostics = main.problems.ifEmpty { parseTextDiagnostics(transcript) }
     return Result(ok && diagnostics.none(Diagnostic::error), diagnostics, transcript)
+  }
+
+  private fun complianceAtLeast9(level: String): Boolean {
+    val number = level.removePrefix("1.").takeWhile(Char::isDigit).toIntOrNull() ?: return false
+    return number >= 9
   }
 
   private class RecordingMain(out: PrintWriter, err: PrintWriter) : Main(out, err, false) {

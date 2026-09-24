@@ -86,7 +86,7 @@ fun BuildCenterScreen(
       context.packageManager.getLaunchIntentForPackage(appId) != null
   }
 
-  LaunchedEffect(modulePath) {
+  LaunchedEffect(modulePath, projectRoot) {
     if (started) return@LaunchedEffect
     started = true
 

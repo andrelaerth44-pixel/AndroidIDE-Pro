@@ -3,6 +3,7 @@ package com.itsaky.androidide.build
 import android.content.Context
 import com.itsaky.androidide.projects.IWorkspace
 import com.itsaky.androidide.projects.android.AndroidModule
+import com.android.builder.model.v2.ide.LibraryType.ANDROID_LIBRARY
 import com.itsaky.androidide.build.api.BuildRequest
 import com.itsaky.androidide.build.api.BuildResult
 import com.itsaky.androidide.build.android.AndroidSdk
@@ -101,7 +102,11 @@ class NativeBuildCoordinator(
           it.toAbsolutePath().normalize().startsWith(
             module.projectDir.toPath().toAbsolutePath().normalize()
           )
-        }
+        },
+      dependencyResourceDirs = module.libraryMap.values
+        .filter { it.type == ANDROID_LIBRARY }
+        .mapNotNull { it.androidLibraryData?.resFolder?.toPath() }
+        .filter { Files.exists(it) }
     )
 
     val keystore = ensureDebugKeystore()

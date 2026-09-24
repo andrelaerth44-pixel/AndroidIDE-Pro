@@ -65,27 +65,25 @@ interface LanguageBackend {
   fun createCompiler(context: CompilationContext): SourceCompiler?
 }
 
-class LanguageBackendRegistry {
-  private val backends = linkedMapOf<String, LanguageBackend>()
-
-  fun register(backend: LanguageBackend): Boolean {
-    if (backends.containsKey(backend.id)) return false
-    backends[backend.id] = backend
-    return true
-  }
-
-  fun unregister(id: String): LanguageBackend? =
-    backends.remove(id)
+/**
+ * Immutable lookup table for language backends shipped by AndroidIDE Pro.
+ *
+ * There is intentionally no register/unregister API here. Language backends
+ * are assembled by the application itself and are not dynamically installed.
+ */
+class BuiltInLanguageBackendRegistry(
+  backends: Iterable<LanguageBackend>
+) {
+  private val builtIns: List<LanguageBackend> = backends.toList()
 
   fun findFor(
     language: LanguageId,
     requiredCapabilities: Set<BackendCapability> = emptySet()
   ): List<LanguageBackend> =
-    backends.values.filter { backend ->
+    builtIns.filter { backend ->
       language in backend.languages &&
         backend.capabilities.containsAll(requiredCapabilities)
     }
 
-  fun all(): List<LanguageBackend> =
-    backends.values.toList()
+  fun all(): List<LanguageBackend> = builtIns
 }

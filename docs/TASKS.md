@@ -23,11 +23,11 @@ Legenda: `[ ]` não iniciado · `[~]` em andamento · `[x]` concluído · `[-]` 
 - [~] Mapear Editor/Sora/Tree-sitter
 - [~] Mapear Termux/Environment
 - [~] Mapear UI
-- [ ] Mapear UI Designer
-- [ ] Mapear recursos/XML pipeline
-- [ ] Mapear build fixtures/testes
-- [ ] Matriz de riscos
-- [ ] Validar build local
+- [x] Mapear UI Designer
+- [x] Mapear recursos/XML pipeline
+- [x] Mapear build fixtures/testes/CI
+- [~] Matriz de riscos
+- [ ] Validar build/test do novo módulo
 
 ## Fase 1 — Build Core
 

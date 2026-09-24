@@ -82,12 +82,16 @@ class CoreToolchainManager(
       return null
     }
 
-    ensureDriverLinks(
-      root = root,
-      compiler = compilerNative,
-      cppCompiler = cppCompilerNative,
-      linker = linkerNative
-    )
+    val linksReady = runCatching {
+      ensureDriverLinks(
+        root = root,
+        compiler = compilerNative,
+        cppCompiler = cppCompilerNative,
+        linker = linkerNative
+      )
+    }.isSuccess
+
+    if (!linksReady) return null
 
     val compiler = root.resolve("bin/clang")
     val cppCompiler = root.resolve("bin/clang++")

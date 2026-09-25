@@ -87,7 +87,7 @@ Implemented in the current branch:
 - File breadcrumbs derived from the active project path.
 - Status bar data for language, device ABI, Git branch, cursor position and editor state.
 - Command Palette with grouped actions, search, keywords and shortcut labels.
-- Build Center UI with pipeline state, progress, problems and log models.
+- Build Center UI with pipeline state, live status/progress, structured Problems and logs.
 - Shared Compose icon set and glass surface primitives.
 
 The visible editor-tab presentation is now Compose-driven, while the legacy `TabLayout` remains internally available so existing selection and editor lifecycle code continues to work.
@@ -96,19 +96,19 @@ The visible editor-tab presentation is now Compose-driven, while the legacy `Tab
 
 AndroidIDE Pro is moving toward a native on-device build pipeline inspired by CodeAssist, with explicit stages for resource processing, Java/Kotlin compilation, native compilation, dexing, packaging, alignment, signing and installation.
 
-The native build engine/NDK work present in the branch is still experimental foundation work. It is **not** considered the completed NDK product and remains behind the Workspace V2 UI sprint.
+The current branch does **not** yet contain a completed Toolchain Manager/Clangd/NDK product. The existing AndroidIDE tool extraction layer remains useful infrastructure, while the native toolchain will be introduced as a separate AndroidIDE Pro build stack.
 
 The project must not regress into making Gradle the planned primary build backend for the AndroidIDE Pro architecture.
 
 ### Immediate next work
 
 1. Validate the latest GitHub Actions build and fix any compile errors.
-2. Polish Explorer context interactions and preserve existing file-action flows.
-3. Bridge Build Center state to real build events and output streams.
-4. Make Command Palette execute real file, build and navigation actions.
-5. Finish Workspace V2 cleanup before Toolchain Manager and C/C++ tooling.
-6. Add Clang/Clangd, C/C++ templates, JNI and NativeActivity tooling.
-7. Return to the full NDK/toolchain implementation, then debugger and profiler work.
+2. Polish Explorer interactions and workspace spacing.
+3. Finish Command Palette coverage for real project/editor actions.
+4. Finish Workspace V2 cleanup before the Toolchain Manager sprint.
+5. Build the Toolchain Manager foundation and real tool discovery.
+6. Add C/C++ templates, Clang/Clangd, JNI and NativeActivity support.
+7. Implement the native compiler/NDK pipeline, then debugger and profiler work.
 
 ### Continuity rule
 

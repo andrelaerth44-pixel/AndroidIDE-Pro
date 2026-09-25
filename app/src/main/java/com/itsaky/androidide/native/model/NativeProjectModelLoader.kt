@@ -24,6 +24,7 @@ object NativeProjectModelLoader {
       return null
     }
 
+    val config = NativeProjectConfigStore.load(moduleRoot)
     val target =
       NativeTarget(
         name = moduleRoot.name,
@@ -37,6 +38,7 @@ object NativeProjectModelLoader {
     return NativeModule(
       moduleName = moduleRoot.name,
       targets = listOf(target),
+      androidApiLevel = config?.androidApiLevel ?: 28,
     )
   }
 }

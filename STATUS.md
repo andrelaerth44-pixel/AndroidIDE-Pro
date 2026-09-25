@@ -61,8 +61,12 @@ The Compose workspace, Build Center, Command Palette and Toolchain Manager found
 - Persistent clangd process session with stderr capture and lifecycle control.
 - JSON-RPC framing transport using UTF-8 and `Content-Length`.
 - Core initialize, document open/change/close, completion, shutdown and exit message generation.
+- `publishDiagnostics` mapping to `DiagnosticResult`.
+- LSP completion mapping to AndroidIDE `CompletionResult`.
+- Native `ILanguageServer` registration through `LspHandler`.
+- Workspace lifecycle synchronization so asynchronous editor events do not create duplicate clangd sessions.
 
-The next step is to connect this transport to AndroidIDE Pro's existing language-server registry and editor client rather than building a second editor protocol.
+The clangd transport is now connected to AndroidIDE Pro's existing language-server registry. The adapter consumes C/C++ document events, routes diagnostics to the existing language client, and exposes completion through the existing `CompletionResult` model.
 
 #### NativeActivity
 - Standalone NativeActivity template generator.
@@ -82,10 +86,9 @@ GitHub Actions for the newest commits are currently queued. No successful or fai
 
 ## Next work
 
-1. Connect the persistent clangd session and JSON-RPC lifecycle to `ILanguageServer` and `ILanguageClient`.
-2. Implement clangd initialize, document open/change, publishDiagnostics and completion requests.
-3. Integrate NativeActivity template into the existing project-template wizard.
-4. Build the unsigned APK packaging pipeline around resource compilation, Java/Dex outputs and native-library merge.
+1. Add clangd request cancellation plus formatting, definition and references support.
+2. Integrate JNI and NativeActivity generators into the project-template wizard.
+3. Build the unsigned APK packaging pipeline around resource compilation, Java/Dex outputs and native-library merge.
 5. Add zip alignment and APK signing as explicit stages after native merge.
 6. Promote the native backend to the primary AndroidIDE Pro build path; keep Gradle only as compatibility infrastructure.
 7. Add additional ABIs, then LLDB/debugger and profiler support.

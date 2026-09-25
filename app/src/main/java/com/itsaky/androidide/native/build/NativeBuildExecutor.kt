@@ -35,7 +35,7 @@ class NativeBuildExecutor(
     moduleRoot: File,
     buildDirectory: File = File(
       moduleRoot,
-      ".androidide/native/" + request.variant.name.lowercase() + "/" + request.abi.name.lowercase(),
+      ".androidide/native/" + request.variant.name.lowercase() + "/" + request.abi.androidAbiName,
     ),
     onTaskState: (NativeBuildTask, NativeBuildTaskState) -> Unit = { _, _ -> },
     onOutput: (String) -> Unit = {},
@@ -247,17 +247,10 @@ class NativeBuildExecutor(
         ".a"
       }
 
-    val prefix =
-      if (type == NativeLibraryType.SHARED) {
-        "lib"
-      } else {
-        "lib"
-      }
-
     return File(
       buildDirectory,
-      "libs/" + request.abi.androidAbiName + "/" +
-        prefix + request.module.moduleName + extension,
+      "libs/" + request.abi.androidAbiName + "/lib" +
+        request.module.moduleName + extension,
     )
   }
 }

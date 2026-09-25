@@ -2,7 +2,6 @@ package com.itsaky.androidide.native.lsp
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import com.google.gson.JsonPrimitive
 
 object ClangdProtocolMessageFactory {
 
@@ -77,7 +76,7 @@ object ClangdProtocolMessageFactory {
     return request(id, "textDocument/completion", params)
   }
 
-  fun shutdown(id: Int): String = request(id, "shutdown", JsonPrimitive(null))
+  fun shutdown(id: Int): String = request(id, "shutdown", null)
 
   fun exit(): String = notification("exit", null)
 

@@ -60,7 +60,7 @@ class MainFragment : BaseFragment() {
               MainScreenAction(string.msg_preferences, IdeIcons.Settings) {
                 gotoPreferences()
               },
-              MainScreenAction(string.btn_docs, Icons.Outlined.Description) {
+              MainScreenAction(string.btn_docs, IdeIcons.File) {
                 requireActivity().let { activity ->
                   (activity.application as com.itsaky.androidide.app.BaseApplication).openDocs()
                 }

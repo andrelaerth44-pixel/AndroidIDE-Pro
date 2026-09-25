@@ -63,6 +63,55 @@ object ClangdProtocolMessageFactory {
       },
     )
 
+
+  fun definition(id: Int, file: java.io.File, line: Int, character: Int): String =
+    positionRequest(id, "textDocument/definition", file, line, character)
+
+  fun references(
+    id: Int,
+    file: java.io.File,
+    line: Int,
+    character: Int,
+    includeDeclaration: Boolean,
+  ): String =
+    JsonObject().apply {
+      addProperty("jsonrpc", "2.0")
+      addProperty("id", id)
+      addProperty("method", "textDocument/references")
+      add("params", JsonObject().apply {
+        add("textDocument", JsonObject().apply {
+          addProperty("uri", file.toURI().toString())
+        })
+        add("position", JsonObject().apply {
+          addProperty("line", line)
+          addProperty("character", character)
+        })
+        add("context", JsonObject().apply {
+          addProperty("includeDeclaration", includeDeclaration)
+        })
+      })
+    }.toString()
+
+  private fun positionRequest(
+    id: Int,
+    method: String,
+    file: java.io.File,
+    line: Int,
+    character: Int,
+  ): String =
+    request(
+      id,
+      method,
+      JsonObject().apply {
+        add("textDocument", JsonObject().apply {
+          addProperty("uri", file.toURI().toString())
+        })
+        add("position", JsonObject().apply {
+          addProperty("line", line)
+          addProperty("character", character)
+        })
+      },
+    )
   fun completion(id: Int, file: java.io.File, line: Int, character: Int): String {
     val params = JsonObject().apply {
       add("textDocument", JsonObject().apply {

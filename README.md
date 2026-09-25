@@ -93,17 +93,17 @@ Implemented in the current branch:
 - Native Build Graph with dependency validation, cycle detection, semantic topological ordering and ready-task calculation.
 - Native source scanning and deterministic C/C++ object planning.
 - Native command generation for C17/C++20, Android ARM64 targeting, libc++, LLD and llvm-ar.
-- Native build executor with asynchronous service, real process cancellation and Build Center integration.
+- Native build executor with asynchronous service, real process cancellation, incremental command caching and Build Center integration.
 - Clangd `compile_commands.json` generation from the same compiler commands.
 - Clangd launch planning, persistent process sessions and JSON-RPC `Content-Length` transport foundation.
-- Clangd `ILanguageServer` adapter with C/C++ document synchronization, diagnostics and completion mapping.
+- Clangd `ILanguageServer` adapter with C/C++ document synchronization, diagnostics, completion, definition and references mapping.
 - Real JNI `javac -h` header-generation stage with explicit JDK/javac validation.
 - Reusable JNI project template generator with a C++ JNI bridge.
 - Reusable NativeActivity project template with native entrypoint and manifest.
 - Gradle-free `.androidide/native.json` project configuration with automatic discovery fallback.
 - Native toolchain discovery for Clang, Clang++, Clangd, LLD, LLDB, llvm-ar and libc++.
 - Toolchain Manager connected to real filesystem discovery instead of hard-coded readiness.
-- AAPT2 resource compile/link planning and a native APK package executor that merges `lib/arm64-v8a/*.so` into an unsigned APK.
+- AAPT2 resource compile/link, Java/Kotlin compilation, D8, DEX merge, native-library/runtime merge, assets, zipalign and APK signing through the native Android pipeline.
 - NativeActivity and JNI project wizards registered in the existing template provider.
 - Native clangd language-server adapter registered through the existing LSP registry.
 
@@ -121,12 +121,12 @@ The project must not regress into making Gradle the planned primary build backen
 
 1. Let the queued GitHub Actions validation run and fix any compile errors it reports.
 2. Reconcile the two native backends: app/native/build and subprojects/build-engine.
-3. Connect clangd request cancellation, formatting, definition and references to the existing editor contracts.
-4. Extend the native APK graph with Java/Kotlin compilation and DEX.
-5. Add zip alignment and v2/v3 signing as explicit native stages.
-6. Make Native Build the primary Build Center path while keeping Gradle only as compatibility infrastructure.
-7. Package and provision the complete AndroidIDE Pro LLVM/NDK toolchain.
-8. Expand the toolchain to remaining ABIs, then debugger and profiler work.
+3. Harden Java/Kotlin dependency and resource handling for broader Android projects.
+4. Connect clangd request cancellation, formatting, and richer editor features.
+5. Package and provision the complete AndroidIDE Pro LLVM/NDK toolchain.
+6. Expand native APK integration tests and real-device smoke validation.
+7. Add LLDB/debugger and profiler support.
+8. Remove the remaining Gradle dependency from the AndroidIDE Pro user-project path once compatibility requirements are covered.
 
 ### Continuity rule
 

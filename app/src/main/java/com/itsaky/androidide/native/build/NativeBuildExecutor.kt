@@ -121,7 +121,7 @@ class NativeBuildExecutor(
               factory = factory,
             )
           ClangdCompilationDatabase.write(
-            outputDirectory = buildDirectory,
+            outputDirectory = moduleRoot,
             commands = allCommands.cCommands + allCommands.cppCommands,
           )
           val result = executeCommands(task.id, commands, executed, onOutput, processController)

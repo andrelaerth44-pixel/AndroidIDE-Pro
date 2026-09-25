@@ -99,7 +99,7 @@ class NativeBuildExecutor(
               factory = factory,
             )
 
-          val result = executeCommands(commands, executed, onOutput)
+          val result = executeCommands(task.id, commands, executed, onOutput)
           if (result != null) {
             onTaskState(task, NativeBuildTaskState.FAILED)
             return result
@@ -181,6 +181,7 @@ class NativeBuildExecutor(
   }
 
   private fun executeCommands(
+    taskId: String,
     commands: List<NativeCommandSpec>,
     executed: MutableList<String>,
     onOutput: (String) -> Unit,
@@ -194,11 +195,10 @@ class NativeBuildExecutor(
 
       val result = commandExecutor(command, onOutput)
       if (!result.success) {
-        onTaskState(task, NativeBuildTaskState.FAILED)
         return NativeBuildResult(
           success = false,
           executedTasks = executed,
-          failedTaskId = "compile",
+          failedTaskId = taskId,
           message = "Native compile command failed with exit code " + result.exitCode,
         )
       }

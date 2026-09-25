@@ -31,7 +31,10 @@ class NativeActivityTemplateTest {
         ).isFile
       )
       assertTrue(project.resolve("src/main/cpp/native_activity.cpp").isFile)
+      assertTrue(project.resolve("src/main/res").isDirectory)
       assertTrue(project.resolve("src/main/AndroidManifest.xml").isFile)
+      assertTrue(project.resolve("src/main/AndroidManifest.xml").readText().contains("android.app.lib_name"))
+      assertTrue(project.resolve("src/main/AndroidManifest.xml").readText().contains("native_demo"))
       assertTrue(project.resolve(".androidide/native.json").isFile)
       assertTrue(!project.resolve("build.gradle").exists())
       assertTrue(!project.resolve("settings.gradle").exists())

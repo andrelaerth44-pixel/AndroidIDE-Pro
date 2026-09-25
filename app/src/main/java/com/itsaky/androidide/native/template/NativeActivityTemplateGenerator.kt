@@ -2,6 +2,7 @@ package com.itsaky.androidide.native.template
 
 import com.itsaky.androidide.native.model.NativeLibraryType
 import com.itsaky.androidide.native.model.NativeProjectConfigStore
+import com.itsaky.androidide.utils.NativeLibraryNaming
 import java.io.File
 
 data class NativeActivityTemplateSpec(

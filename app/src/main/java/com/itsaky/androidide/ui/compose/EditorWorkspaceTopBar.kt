@@ -1,5 +1,7 @@
 package com.itsaky.androidide.ui.compose
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,11 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -33,6 +39,10 @@ fun EditorWorkspaceTopBar(
   selectedTab: Int,
   commands: List<CommandPaletteItem>,
   onTabSelected: (Int) -> Unit,
+  onTabClosed: (Int) -> Unit,
+  onSave: () -> Unit,
+  breadcrumbs: List<EditorBreadcrumb>,
+  statusBarState: IdeStatusBarState,
   onExplorer: () -> Unit,
   onBuild: () -> Unit,
   onMore: () -> Unit,
@@ -63,7 +73,7 @@ fun EditorWorkspaceTopBar(
             maxLines = 1,
           )
           Text(
-            text = tabs.size.toString() + " open file(s)",
+            text = if (tabs.isEmpty()) "No open files" else "${tabs.size} open file(s)",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
@@ -74,6 +84,9 @@ fun EditorWorkspaceTopBar(
         }
         IconButton(onClick = { paletteOpen = true }) {
           Icon(IdeIcons.Search, contentDescription = "Search")
+        }
+        IconButton(onClick = onSave) {
+          Icon(IdeIcons.Save, contentDescription = "Save")
         }
         IconButton(onClick = onBuild) {
           Icon(IdeIcons.Build, contentDescription = "Build")
@@ -87,7 +100,7 @@ fun EditorWorkspaceTopBar(
         ScrollableTabRow(
           selectedTabIndex = selectedTab.coerceIn(0, tabs.lastIndex),
           edgePadding = 6.dp,
-          containerColor = androidx.compose.ui.graphics.Color.Transparent,
+          containerColor = Color.Transparent,
           divider = {},
         ) {
           tabs.forEachIndexed { index, tab ->
@@ -97,20 +110,25 @@ fun EditorWorkspaceTopBar(
               text = {
                 Row(
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(5.dp),
+                  horizontalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                   Text(text = tab.title, maxLines = 1)
                   if (tab.modified) {
-                    Box(
+                    Surface(
                       modifier = Modifier.size(6.dp),
-                    ) {
-                      Spacer(
-                        modifier =
-                          Modifier
-                            .size(6.dp)
-                            .padding(0.dp),
-                      )
-                    }
+                      shape = MaterialTheme.shapes.small,
+                      color = MaterialTheme.colorScheme.primary,
+                    ) {}
+                  }
+                  IconButton(
+                    onClick = { onTabClosed(index) },
+                    modifier = Modifier.size(30.dp),
+                  ) {
+                    Icon(
+                      imageVector = Icons.Outlined.Close,
+                      contentDescription = "Close ${tab.title}",
+                      modifier = Modifier.size(17.dp),
+                    )
                   }
                 }
               },
@@ -118,6 +136,49 @@ fun EditorWorkspaceTopBar(
           }
         }
       }
+
+      if (breadcrumbs.isNotEmpty()) {
+        Row(
+          modifier =
+            Modifier
+              .fillMaxWidth()
+              .height(32.dp)
+              .horizontalScroll(rememberScrollState())
+              .padding(horizontal = 12.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+          breadcrumbs.forEachIndexed { index, breadcrumb ->
+            val onClick = breadcrumb.onClick
+            Text(
+              text = breadcrumb.label,
+              style = MaterialTheme.typography.labelSmall,
+              color =
+                if (onClick == null) {
+                  MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                  MaterialTheme.colorScheme.onSurface
+                },
+              modifier =
+                Modifier.then(
+                  if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
+                ).padding(vertical = 4.dp),
+            )
+            if (index < breadcrumbs.lastIndex) {
+              Text(
+                text = "/",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+              )
+            }
+          }
+        }
+      }
+
+      IdeStatusBar(
+        state = statusBarState,
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+      )
     }
   }
 

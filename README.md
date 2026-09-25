@@ -103,7 +103,9 @@ Implemented in the current branch:
 - Gradle-free `.androidide/native.json` project configuration with automatic discovery fallback.
 - Native toolchain discovery for Clang, Clang++, Clangd, LLD, LLDB, llvm-ar and libc++.
 - Toolchain Manager connected to real filesystem discovery instead of hard-coded readiness.
-- arm64-v8a native library packaging stage that merges `lib/arm64-v8a/*.so` into an unsigned APK.
+- AAPT2 resource compile/link planning and a native APK package executor that merges `lib/arm64-v8a/*.so` into an unsigned APK.
+- NativeActivity and JNI project wizards registered in the existing template provider.
+- Native clangd language-server adapter registered through the existing LSP registry.
 
 The visible editor-tab presentation is now Compose-driven, while the legacy `TabLayout` remains internally available so existing selection and editor lifecycle code continues to work.
 
@@ -118,11 +120,12 @@ The project must not regress into making Gradle the planned primary build backen
 ### Immediate next work
 
 1. Let the queued GitHub Actions validation run and fix any compile errors it reports.
-2. Connect clangd request cancellation, formatting, definition and references to the existing editor contracts.
-3. Integrate the NativeActivity and JNI generators into the existing project-template wizard.
-4. Turn the native APK library merge stage into a complete unsigned-package pipeline with resource/APK merge.
-6. Add zip alignment and signing as explicit post-package stages.
-7. Make the native pipeline the primary path while keeping Gradle only as compatibility infrastructure.
+2. Reconcile the two native backends: app/native/build and subprojects/build-engine.
+3. Connect clangd request cancellation, formatting, definition and references to the existing editor contracts.
+4. Extend the native APK graph with Java/Kotlin compilation and DEX.
+5. Add zip alignment and v2/v3 signing as explicit native stages.
+6. Make Native Build the primary Build Center path while keeping Gradle only as compatibility infrastructure.
+7. Package and provision the complete AndroidIDE Pro LLVM/NDK toolchain.
 8. Expand the toolchain to remaining ABIs, then debugger and profiler work.
 
 ### Continuity rule

@@ -28,6 +28,7 @@ fun BuildCenterDialog(
       AndroidIDEProBuildCenter(
         steps = state.steps,
         isBuilding = state.isBuilding,
+        status = state.status,
         onBuild = onBuild,
         onStop = onStop,
         canStopBuild = true,

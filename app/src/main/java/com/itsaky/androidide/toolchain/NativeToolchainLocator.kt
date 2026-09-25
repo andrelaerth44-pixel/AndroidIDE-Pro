@@ -37,10 +37,20 @@ object NativeToolchainLocator {
         expectedRoot?.let { File(it, "lib/clang") },
       ).firstOrNull { it.exists() }
 
+    val libcxx =
+      listOfNotNull(
+        sysroot?.let { File(it, "usr/include/c++/v1") },
+        expectedRoot?.let { File(it, "include/c++/v1") },
+      ).firstOrNull { it.exists() }
+
     return NativeToolchain(
       root = expectedRoot?.takeIf { it.exists() },
       sysroot = sysroot,
-      tools = tools,
+      tools = tools + NativeTool(
+        id = NativeToolId.LIBCXX,
+        displayName = "libc++",
+        path = libcxx,
+      ),
     )
   }
 

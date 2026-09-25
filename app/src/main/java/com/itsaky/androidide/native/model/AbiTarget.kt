@@ -19,5 +19,10 @@ enum class AbiTarget(
   X86_64(
     androidTriplePrefix = "x86_64-linux-android",
     androidAbiName = "x86_64",
-  ),
+  );
+
+  companion object {
+    fun fromAndroidAbi(name: String): AbiTarget? =
+      values().firstOrNull { it.androidAbiName == name }
+  }
 }

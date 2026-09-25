@@ -17,11 +17,13 @@ class NativeBuildExecutor(
   private val androidApiLevel: Int,
   private val commandExecutor: (
     command: NativeCommandSpec,
+    controller: NativeProcessController?,
     onOutput: (String) -> Unit,
-  ) -> NativeProcessResult = { command, onOutput ->
+  ) -> NativeProcessResult = { command, controller, onOutput ->
     NativeCommandExecutor.execute(
       command = command,
       environment = Environment.getEnvironment(),
+      controller = controller,
       onOutput = onOutput,
     )
   },
@@ -36,6 +38,7 @@ class NativeBuildExecutor(
     ),
     onTaskState: (NativeBuildTask, NativeBuildTaskState) -> Unit = { _, _ -> },
     onOutput: (String) -> Unit = {},
+    processController: NativeProcessController? = null,
   ): NativeBuildResult {
     val target =
       requireNotNull(
@@ -127,7 +130,7 @@ class NativeBuildExecutor(
           val output = nativeOutputFile(buildDirectory, request, NativeLibraryType.STATIC)
           output.parentFile?.mkdirs()
           val command = factory.archiveObjects(objectFiles, output)
-          val result = commandExecutor(command, onOutput)
+          val result = commandExecutor(command, processController, onOutput)
           if (!result.success) {
             return fail(task, "Static archive failed", result)
           }

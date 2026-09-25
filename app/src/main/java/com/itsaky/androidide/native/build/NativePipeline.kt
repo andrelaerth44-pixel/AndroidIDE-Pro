@@ -43,45 +43,36 @@ object NativePipeline {
       compileCpp,
     )
 
-    val staticTarget = request.module.targets.any {
-      it.libraryType == NativeLibraryType.STATIC
+    val sharedTarget = request.module.targets.any {
+      it.libraryType == NativeLibraryType.SHARED
     }
 
-    val linkDependencies =
-      if (staticTarget) {
-        val archive =
-          task(
-            prefix = prefix,
-            kind = NativeBuildTask.Kind.ARCHIVE_OBJECTS,
-            dependencies = listOf(compileC.id, compileCpp.id),
-          )
-        tasks += archive
-        listOf(archive.id)
+    val finalTask =
+      if (sharedTarget) {
+        task(
+          prefix = prefix,
+          kind = NativeBuildTask.Kind.LINK_NATIVE,
+          dependencies = listOf(compileC.id, compileCpp.id),
+          description = "Link shared native library",
+        )
       } else {
-        listOf(compileC.id, compileCpp.id)
+        task(
+          prefix = prefix,
+          kind = NativeBuildTask.Kind.ARCHIVE_OBJECTS,
+          dependencies = listOf(compileC.id, compileCpp.id),
+          description = "Archive static native library",
+        )
       }
 
-    val link =
-      task(
-        prefix = prefix,
-        kind = NativeBuildTask.Kind.LINK_NATIVE,
-        dependencies = linkDependencies,
-        description =
-          if (staticTarget) {
-            "Link native static output"
-          } else {
-            "Link shared native library"
-          },
-      )
+    tasks += finalTask
 
     val packageLibraries =
       task(
         prefix = prefix,
         kind = NativeBuildTask.Kind.PACKAGE_NATIVE_LIBS,
-        dependencies = listOf(link.id),
+        dependencies = listOf(finalTask.id),
       )
 
-    tasks += link
     tasks += packageLibraries
 
     return NativeBuildGraph(tasks)

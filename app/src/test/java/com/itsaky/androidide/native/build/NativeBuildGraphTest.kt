@@ -98,7 +98,6 @@ class NativeBuildGraphTest {
         NativeBuildTask.Kind.GENERATE_JNI_HEADERS,
         NativeBuildTask.Kind.COMPILE_C,
         NativeBuildTask.Kind.COMPILE_CPP,
-        NativeBuildTask.Kind.ARCHIVE_OBJECTS,
         NativeBuildTask.Kind.LINK_NATIVE,
         NativeBuildTask.Kind.PACKAGE_NATIVE_LIBS,
       ),

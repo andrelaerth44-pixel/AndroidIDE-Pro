@@ -29,6 +29,7 @@ object NativeToolchainLocator {
         nativeTool(NativeToolId.CLANGD, "Clangd", "clangd", roots),
         nativeTool(NativeToolId.LLD, "LLD", "ld.lld", roots),
         nativeTool(NativeToolId.LLDB, "LLDB", "lldb", roots),
+        nativeTool(NativeToolId.LLVM_AR, "LLVM ar", "llvm-ar", roots),
       )
 
     val sysroot =

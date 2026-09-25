@@ -30,7 +30,7 @@ import com.itsaky.androidide.eventbus.events.filetree.FileLongClickEvent
 import com.itsaky.androidide.events.ExpandTreeNodeRequestEvent
 import com.itsaky.androidide.events.FileContextMenuItemClickEvent
 import com.itsaky.androidide.events.ListProjectFilesRequestEvent
-import com.itsaky.androidide.fragments.sheets.OptionsListFragment
+import com.itsaky.androidide.fragments.sheets.ComposeFileOptionsSheet
 import com.itsaky.androidide.models.SheetOption
 import com.itsaky.androidide.utils.ApkInstaller
 import com.itsaky.androidide.utils.InstallationResultHandler
@@ -104,8 +104,8 @@ class FileTreeActionHandler : BaseEventHandler() {
   private fun createFileOptionsFragment(
     context: EditorHandlerActivity,
     file: File
-  ): OptionsListFragment {
-    val fragment = OptionsListFragment()
+  ): ComposeFileOptionsSheet {
+    val fragment = ComposeFileOptionsSheet()
     val registry = ActionsRegistry.getInstance()
     val actions = registry.getActions(EDITOR_FILE_TREE)
     val data = ActionData()

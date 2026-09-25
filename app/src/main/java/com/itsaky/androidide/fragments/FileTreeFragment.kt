@@ -32,6 +32,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -281,19 +283,76 @@ class FileTreeFragment :
                     key = { it.node.path },
                   ) { item ->
                     val file = item.node.value
-                    FileTreeRow(
-                      node = item.node,
-                      depth = item.depth,
-                      selected = selectedPath == file.absolutePath,
-                      onClick = {
-                        selectedPath = file.absolutePath
-                        onClick(item.node, file)
-                      },
-                      onLongClick = {
-                        selectedPath = file.absolutePath
-                        onLongClick(item.node, file)
-                      },
-                    )
+                    var menuExpanded by rememberSaveable(file.absolutePath) { mutableStateOf(false) }
+
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                      FileTreeRow(
+                        node = item.node,
+                        depth = item.depth,
+                        selected = selectedPath == file.absolutePath,
+                        onClick = {
+                          menuExpanded = false
+                          selectedPath = file.absolutePath
+                          onClick(item.node, file)
+                        },
+                        onLongClick = {
+                          selectedPath = file.absolutePath
+                          menuExpanded = true
+                        },
+                      )
+
+                      DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                      ) {
+                        DropdownMenuItem(
+                          text = { Text("Open") },
+                          leadingIcon = {
+                            Icon(IdeIcons.FileOpen, contentDescription = null)
+                          },
+                          onClick = {
+                            menuExpanded = false
+                            selectedPath = file.absolutePath
+                            onClick(item.node, file)
+                          },
+                        )
+                        DropdownMenuItem(
+                          text = { Text("Copy path") },
+                          leadingIcon = {
+                            Icon(IdeIcons.Copy, contentDescription = null)
+                          },
+                          onClick = {
+                            val clipboard =
+                              requireContext().getSystemService(Context.CLIPBOARD_SERVICE)
+                                as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(
+                              android.content.ClipData.newPlainText("Path", file.absolutePath),
+                            )
+                            menuExpanded = false
+                          },
+                        )
+                        DropdownMenuItem(
+                          text = { Text("Refresh project") },
+                          leadingIcon = {
+                            Icon(IdeIcons.Refresh, contentDescription = null)
+                          },
+                          onClick = {
+                            menuExpanded = false
+                            listProjectFiles()
+                          },
+                        )
+                        DropdownMenuItem(
+                          text = { Text("More actions") },
+                          leadingIcon = {
+                            Icon(IdeIcons.More, contentDescription = null)
+                          },
+                          onClick = {
+                            menuExpanded = false
+                            onLongClick(item.node, file)
+                          },
+                        )
+                      }
+                    }
                   }
                 }
               }

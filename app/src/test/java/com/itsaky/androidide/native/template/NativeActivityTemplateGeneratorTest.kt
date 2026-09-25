@@ -25,16 +25,22 @@ class NativeActivityTemplateGeneratorTest {
       val cppFile = root.resolve("src/main/cpp/native_activity.cpp")
       val manifestFile = root.resolve("src/main/AndroidManifest.xml")
       val configFile = root.resolve(".androidide/native.json")
+      val resourceDirectory = root.resolve("src/main/res")
 
       assertTrue(javaFile.isFile)
       assertTrue(cppFile.isFile)
       assertTrue(manifestFile.isFile)
       assertTrue(configFile.isFile)
+      assertTrue(resourceDirectory.isDirectory)
 
       assertTrue(javaFile.readText().contains("extends android.app.NativeActivity"))
       assertTrue(cppFile.readText().contains("ANativeActivity_onCreate"))
       assertTrue(manifestFile.readText().contains("android.app.lib_name"))
-      assertTrue(manifestFile.readText().contains(root.name))
+      assertTrue(
+        manifestFile.readText().contains(
+          com.itsaky.androidide.utils.NativeLibraryNaming.sanitize(root.name)
+        )
+      )
     } finally {
       root.deleteRecursively()
     }

@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -87,8 +90,8 @@ fun AndroidIDEProShell(
               verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
               GlassIconButton(IdeIcons.Folder, "Explorer")
-              GlassIconButton(Icons.Outlined.Code, "Editor")
-              GlassIconButton(Icons.Outlined.Build, "Build")
+              GlassIconButton(IdeIcons.Code, "Editor")
+              GlassIconButton(IdeIcons.Build, "Build")
               Spacer(Modifier.weight(1f))
             }
           }

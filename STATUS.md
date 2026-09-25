@@ -54,6 +54,7 @@ The implementation is wired to Build Center, but the newest GitHub Actions runs 
 - LLD.
 - llvm-ar.
 - Process streaming and cancellation.
+- Incremental native command cache with header-aware fingerprints.
 - JNI `javac -h`.
 - `compile_commands.json`.
 - libc++ shared-runtime discovery/packaging.

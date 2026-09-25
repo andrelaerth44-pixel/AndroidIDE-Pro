@@ -15,15 +15,18 @@ class ClangdProcessSession(
   private val environment: Map<String, String> = Environment.getEnvironment(),
   private val processController: NativeProcessController = NativeProcessController(),
   private val onStderrLine: (String) -> Unit = {},
-  private val onNotification: (String) -> Unit = {},
+  onNotification: (String) -> Unit = {},
 ) : Closeable {
 
   private var process: Process? = null
   private var transport: ClangdJsonRpcTransport? = null
   private var readerThread: Thread? = null
   private val nextRequestId = AtomicInteger(1)
+  @Volatile
+  private var notificationHandler: (String) -> Unit = onNotification
+
   private val responseRouter =
-    ClangdJsonRpcResponseRouter(onNotification)
+    ClangdJsonRpcResponseRouter { notificationHandler(it) }
 
   val isRunning: Boolean
     get() = process?.isAlive == true
@@ -68,6 +71,10 @@ class ClangdProcessSession(
       isDaemon = true
       start()
     }
+  }
+
+  fun setNotificationHandler(handler: (String) -> Unit) {
+    notificationHandler = handler
   }
 
   fun send(json: String) {

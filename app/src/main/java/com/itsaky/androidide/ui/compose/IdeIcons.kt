@@ -5,6 +5,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.ContentCopy
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
@@ -34,6 +36,7 @@ object IdeIcons {
   val Build = Icons.Outlined.Build
   val Check = Icons.Outlined.CheckCircle
   val Code = Icons.Outlined.Code
+  val Close = Icons.Outlined.Close
   val ChevronRight = Icons.Outlined.ChevronRight
   val ExpandMore = Icons.Outlined.ExpandMore
   val Copy = Icons.Outlined.ContentCopy
@@ -52,6 +55,7 @@ object IdeIcons {
   val More = Icons.Outlined.MoreVert
   val Play = Icons.Outlined.PlayArrow
   val Refresh = Icons.Outlined.Refresh
+  val Save = Icons.Outlined.Save
   val Search = Icons.Outlined.Search
   val Settings = Icons.Outlined.Settings
   val Share = Icons.Outlined.Share

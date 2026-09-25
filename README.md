@@ -93,7 +93,7 @@ Implemented in the current branch:
 - Native Build Graph with dependency validation, cycle detection, semantic topological ordering and ready-task calculation.
 - Native source scanning and deterministic C/C++ object planning.
 - Native command generation for C17/C++20, Android ARM64 targeting, libc++, LLD and llvm-ar.
-- Native build executor with asynchronous service and real process cancellation.
+- Native build executor with asynchronous service, real process cancellation and Build Center integration.
 - Clangd compile_commands.json generation from the same compiler commands.
 - Gradle-free native.json project configuration with automatic discovery fallback.
 - Native toolchain discovery for Clang, Clang++, Clangd, LLD, LLDB, llvm-ar and libc++.
@@ -117,7 +117,8 @@ The project must not regress into making Gradle the planned primary build backen
 4. Integrate generated compile_commands.json with Clangd diagnostics/completion.
 5. Add NativeActivity project generation.
 6. Complete arm64-v8a native APK packaging and resource merge.
-7. Expand the toolchain to remaining ABIs, then debugger and profiler work.
+7. Implement real JNI header generation and C/C++ language-server integration.
+8. Expand the toolchain to remaining ABIs, then debugger and profiler work.
 
 ### Continuity rule
 

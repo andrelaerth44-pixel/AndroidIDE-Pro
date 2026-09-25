@@ -462,6 +462,85 @@ abstract class BaseEditorActivity :
     return null
   }
 
+  internal fun startBuildCenterBuild() {
+    val buildService = Lookup.getDefault().lookup(BuildService.KEY_BUILD_SERVICE)
+    if (buildService == null) {
+      flashError("Build service is unavailable")
+      return
+    }
+    if (!buildService.isToolingServerStarted()) {
+      flashError(string.msg_tooling_server_unavailable)
+      return
+    }
+
+    doSaveAll()
+    showBuildCenter()
+
+    try {
+      buildService.executeTasks("assembleDebug").whenComplete { _, error ->
+        if (error != null) {
+          ThreadUtils.runOnUiThread {
+            viewModel.isBuildInProgress = false
+            finishBuildCenter(success = false, tasks = listOf("assembleDebug"))
+            appendBuildCenterOutput("Build failed to start: \${error.message ?: error.javaClass.simpleName}")
+          }
+        }
+      }
+    } catch (error: Throwable) {
+      viewModel.isBuildInProgress = false
+      finishBuildCenter(success = false, tasks = listOf("assembleDebug"))
+      appendBuildCenterOutput("Build failed to start: \${error.message ?: error.javaClass.simpleName}")
+    }
+  }
+
+  internal fun stopBuildCenterBuild() {
+    val buildService = Lookup.getDefault().lookup(BuildService.KEY_BUILD_SERVICE)
+    if (buildService == null) {
+      hideBuildCenter()
+      return
+    }
+
+    buildCenterState = buildCenterState.copy(status = "Cancelling build…")
+    buildService.cancelCurrentBuild().whenComplete { result, error ->
+      if (error != null || result?.wasEnqueued != true) {
+        ThreadUtils.runOnUiThread {
+          appendBuildCenterOutput(
+            "Unable to cancel build\${error?.let { ": \${it.message}" } ?: "."}"
+          )
+        }
+      }
+    }
+  }
+
+  internal fun openBuildIssue(issue: BuildIssueUi) {
+    val rawPath = issue.file?.trim().orEmpty()
+    if (rawPath.isBlank()) return
+
+    val projectRoot = runCatching { File(getProjectDirPath()).canonicalFile }.getOrNull()
+    val rawFile = File(rawPath)
+    val candidates =
+      buildList {
+        add(rawFile)
+        if (projectRoot != null && !rawFile.isAbsolute) {
+          add(File(projectRoot, rawPath))
+        }
+      }
+
+    val target =
+      candidates
+        .asSequence()
+        .map { runCatching { it.canonicalFile }.getOrNull() }
+        .filterNotNull()
+        .firstOrNull { it.exists() && it.isFile }
+        ?: return
+
+    val line = ((issue.line ?: 1) - 1).coerceAtLeast(0)
+    val column = ((issue.column ?: 1) - 1).coerceAtLeast(0)
+    val position = com.itsaky.androidide.models.Position(line, column)
+    doOpenFile(target, Range(position, position))
+    hideBuildCenter()
+  }
+
   internal fun finishBuildCenter(success: Boolean, tasks: List<String>) {
     val finalState =
       buildCenterState.steps.map { step ->
@@ -753,12 +832,10 @@ abstract class BaseEditorActivity :
         if (buildCenterOpen) {
           BuildCenterDialog(
             state = buildCenterState,
-            onBuild = {
-              hideBuildCenter()
-              binding.editorToolbar.showOverflowMenu()
-            },
-            onStop = { hideBuildCenter() },
+            onBuild = { startBuildCenterBuild() },
+            onStop = { stopBuildCenterBuild() },
             onRefresh = { refreshWorkspaceStatus() },
+            onIssueClick = { openBuildIssue(it) },
             onDismiss = { hideBuildCenter() },
           )
         }

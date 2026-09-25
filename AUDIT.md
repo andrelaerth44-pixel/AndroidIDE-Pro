@@ -64,6 +64,7 @@ Implemented:
 - Race-safe native cancellation.
 - Async NativeBuildService.
 - Build Center task/output integration.
+- Incremental native command cache with source/header/compiler fingerprints.
 - libc++ shared-runtime discovery and packaging when provisioned.
 
 ## JNI
@@ -155,6 +156,7 @@ Implemented in code:
 
 Important validation distinction:
 - The pipeline is implemented and wired.
+- Native compiler stages now reuse unchanged object/link outputs through the persistent native build cache.
 - The current branch has not yet received a successful GitHub Actions/device validation for the latest commits; the newest runs are still queued.
 
 ## Secondary NDK/build-engine backend

@@ -34,11 +34,26 @@ object AndroidProjectModelLoader {
 
     if (!manifest.isFile || !res.isDirectory) return null
 
+    val manifestText = manifest.readText()
     val applicationId =
-      PACKAGE_PATTERN.matcher(manifest.readText()).run {
+      PACKAGE_PATTERN.matcher(manifestText).run {
         if (!find()) return null
         group(1)
       }
+
+    val nativeConfig = NativeProjectConfigStore.load(moduleRoot)
+    val minSdk =
+      nativeConfig?.minSdk
+        ?: SDK_PATTERN.matcher(manifestText).run {
+          if (find()) group(1).toIntOrNull() else null
+        }
+        ?: 28
+    val targetSdk =
+      nativeConfig?.targetSdk
+        ?: TARGET_SDK_PATTERN.matcher(manifestText).run {
+          if (find()) group(1).toIntOrNull() else null
+        }
+        ?: minSdk
 
     val javaRoot = File(main, "java")
     val kotlinRoot = File(main, "kotlin")

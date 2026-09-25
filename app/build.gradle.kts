@@ -80,6 +80,10 @@ android {
 
 kapt { arguments { arg("eventBusIndex", "${BuildConfig.packageName}.events.AppEventsIndex") } }
 
+configurations.configureEach {
+  exclude(group = "io.github.itsaky", module = "android-tree-sitter")
+}
+
 dependencies {
   debugImplementation(libs.common.leakcanary)
 

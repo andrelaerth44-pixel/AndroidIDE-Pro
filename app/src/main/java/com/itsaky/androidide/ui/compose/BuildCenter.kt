@@ -26,8 +26,20 @@ enum class BuildStepState {
   PENDING,
   RUNNING,
   SUCCESS,
+  UP_TO_DATE,
   FAILED,
+  BLOCKED,
 }
+
+fun buildStepStateLabel(state: BuildStepState): String =
+  when (state) {
+    BuildStepState.PENDING -> "Pending"
+    BuildStepState.RUNNING -> "Running"
+    BuildStepState.SUCCESS -> "Success"
+    BuildStepState.UP_TO_DATE -> "Up to date"
+    BuildStepState.FAILED -> "Failed"
+    BuildStepState.BLOCKED -> "Blocked"
+  }
 
 data class BuildStepUi(
   val id: String,
@@ -135,17 +147,29 @@ private fun BuildStepRow(step: BuildStepUi) {
           BuildStepState.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
           BuildStepState.RUNNING -> MaterialTheme.colorScheme.primary
           BuildStepState.SUCCESS -> MaterialTheme.colorScheme.primary
+          BuildStepState.UP_TO_DATE -> MaterialTheme.colorScheme.primary
           BuildStepState.FAILED -> MaterialTheme.colorScheme.error
+          BuildStepState.BLOCKED -> MaterialTheme.colorScheme.error
         },
     )
 
     Column(
       modifier = Modifier.weight(1f).padding(start = 12.dp),
     ) {
-      Text(
-        text = step.title,
-        style = MaterialTheme.typography.bodyLarge,
-      )
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          text = step.title,
+          style = MaterialTheme.typography.bodyLarge,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+          text = buildStepStateLabel(step.state),
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
       if (!step.detail.isNullOrBlank()) {
         Text(
           text = step.detail!!,
@@ -163,5 +187,7 @@ private fun stepStateIcon(state: BuildStepState): ImageVector =
     BuildStepState.PENDING -> IdeIcons.Pending
     BuildStepState.RUNNING -> IdeIcons.Play
     BuildStepState.SUCCESS -> IdeIcons.Check
+    BuildStepState.UP_TO_DATE -> IdeIcons.Check
     BuildStepState.FAILED -> IdeIcons.Error
+    BuildStepState.BLOCKED -> IdeIcons.Error
   }

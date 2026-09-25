@@ -119,7 +119,7 @@ class NativeBuildExecutor(
               factory = factory,
             )
 
-          val result = executeCommands(commands, executed, onOutput)
+          val result = executeCommands(task.id, commands, executed, onOutput)
           if (result != null) {
             onTaskState(task, NativeBuildTaskState.FAILED)
             return result
@@ -141,7 +141,7 @@ class NativeBuildExecutor(
           val output = nativeOutputFile(buildDirectory, request, NativeLibraryType.SHARED)
           output.parentFile?.mkdirs()
           val command = factory.linkShared(request.abi, objectFiles, output)
-          val result = commandExecutor(command, onOutput)
+          val result = commandExecutor(command, processController, onOutput)
           if (!result.success) {
             return fail(task, "Shared library link failed", result)
           }

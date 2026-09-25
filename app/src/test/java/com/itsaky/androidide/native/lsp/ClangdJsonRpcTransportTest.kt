@@ -20,7 +20,7 @@ class ClangdJsonRpcTransportTest {
 
     val frame = output.toString(Charsets.UTF_8.name())
     assertEquals(
-      "Content-Length: 59\r\nContent-Type: application/vscode-jsonrpc; charset=utf-8\r\n\r\n{" +
+      "Content-Length: 58\r\nContent-Type: application/vscode-jsonrpc; charset=utf-8\r\n\r\n{" +
         "\"method\":\"initialize\",\"params\":{\"name\":\"AndroidIDE Pro\"}}",
       frame,
     )

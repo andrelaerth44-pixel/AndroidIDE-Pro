@@ -80,7 +80,7 @@ fun AndroidIDEProHome(
             modifier = Modifier.weight(1f),
           )
           Text(
-            text = "⌘K",
+            text = "Ctrl K",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
@@ -117,18 +117,19 @@ fun AndroidIDEProHome(
     }
   }
 
-  if (paletteOpen) {
-    val paletteItems =
-      actions.map { action ->
-        CommandPaletteItem(
-          title = androidx.compose.ui.res.stringResource(action.titleRes),
-          icon = action.icon,
-          onClick = action.onClick,
+      if (paletteOpen) {
+        val paletteItems =
+          actions.map { action ->
+            CommandPaletteItem(
+              title = androidx.compose.ui.res.stringResource(action.titleRes),
+              icon = action.icon,
+              onClick = action.onClick,
+            )
+          }
+        CommandPalette(
+          items = paletteItems,
+          onDismiss = { paletteOpen = false },
         )
       }
-    CommandPalette(
-      items = paletteItems,
-      onDismiss = { paletteOpen = false },
-    )
-  }
+    }
 }

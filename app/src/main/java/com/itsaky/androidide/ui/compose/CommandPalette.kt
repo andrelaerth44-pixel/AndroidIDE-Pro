@@ -117,7 +117,7 @@ fun CommandPalette(
               modifier = Modifier.weight(1f),
             )
             Text(
-              text = "Esc to close",
+              text = "Tap outside to close",
               style = MaterialTheme.typography.labelSmall,
               color = MaterialTheme.colorScheme.outline,
             )

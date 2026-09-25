@@ -83,6 +83,10 @@ open class EditorHandlerActivity : ProjectHandlerActivity(), IEditorHandler {
     return saveAll()
   }
 
+  override fun closeWorkspaceTab(index: Int) {
+    closeFile(index)
+  }
+
   override fun provideCurrentEditor(): CodeEditorView? {
     return getCurrentEditor()
   }
@@ -380,6 +384,7 @@ open class EditorHandlerActivity : ProjectHandlerActivity(), IEditorHandler {
     val finalModified = modified
     ThreadUtils.runOnUiThread {
       viewModel.setFilesModified(finalModified)
+      syncWorkspaceTabs()
 
       // set tab as unmodified
       val tab = binding.tabs.getTabAt(index) ?: return@runOnUiThread

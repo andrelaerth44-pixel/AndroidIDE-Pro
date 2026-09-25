@@ -22,6 +22,7 @@ import android.content.pm.PackageInstaller.SessionCallback
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.StrictMode
+import android.os.Build
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.TextUtils
@@ -36,6 +37,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -93,8 +95,10 @@ import com.itsaky.androidide.services.log.LogReceiverServiceConnection
 import com.itsaky.androidide.services.log.lookupLogService
 import com.itsaky.androidide.ui.compose.AndroidIDETheme
 import com.itsaky.androidide.ui.compose.CommandPaletteItem
+import com.itsaky.androidide.ui.compose.EditorBreadcrumb
 import com.itsaky.androidide.ui.compose.EditorWorkspaceTopBar
 import com.itsaky.androidide.ui.compose.IdeIcons
+import com.itsaky.androidide.ui.compose.IdeStatusBarState
 import com.itsaky.androidide.ui.compose.WorkspaceTab
 import com.itsaky.androidide.ui.editor.CodeEditorView
 import com.itsaky.androidide.uidesigner.UIDesignerActivity
@@ -115,6 +119,7 @@ import com.itsaky.androidide.xml.versions.ApiVersionsRegistry
 import com.itsaky.androidide.xml.widgets.WidgetTableRegistry
 import java.io.File
 import java.util.Objects
+import org.eclipse.jgit.api.Git
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode.MAIN
 
@@ -149,7 +154,9 @@ abstract class BaseEditorActivity :
     protected set
 
   private val workspaceTabs = mutableStateListOf<WorkspaceTab>()
+  private val workspaceBreadcrumbs = mutableStateListOf<EditorBreadcrumb>()
   private var workspaceSelectedTab by mutableIntStateOf(-1)
+  private var workspaceStatus by mutableStateOf(IdeStatusBarState())
   private var workspaceComposeView: ComposeView? = null
 
   private val onBackPressedCallback: OnBackPressedCallback =
@@ -322,7 +329,63 @@ abstract class BaseEditorActivity :
 
     viewModel.setCurrentFile(position, editorView.file)
     refreshSymbolInput(editorView)
+    syncWorkspaceStatus(position)
     invalidateOptionsMenu()
+  }
+
+  protected open fun closeWorkspaceTab(index: Int) {}
+
+  private fun syncWorkspaceStatus(index: Int = workspaceSelectedTab) {
+    val editorView = provideEditorAt(index) ?: run {
+      workspaceBreadcrumbs.clear()
+      workspaceStatus = workspaceStatus.copy(message = "Ready", line = 1, column = 1)
+      return
+    }
+
+    val file = editorView.file
+    val extension = file.extension.lowercase()
+    val language =
+      when (extension) {
+        "kt", "kts" -> "Kotlin"
+        "java" -> "Java"
+        "c", "h" -> "C"
+        "cc", "cpp", "cxx", "hpp", "hh" -> "C++"
+        "xml" -> "XML"
+        "json" -> "JSON"
+        "gradle", "groovy" -> "Gradle"
+        else -> extension.ifBlank { "Text" }.uppercase()
+      }
+
+    val position = runCatching { editorView.editor.cursorLSPPosition }.getOrNull()
+    val root = runCatching { File(getProjectDirPath()).canonicalFile }.getOrNull()
+    val target = runCatching { file.canonicalFile }.getOrNull()
+    val relative =
+      if (root != null && target != null) {
+        target.path.removePrefix(root.path).trimStart(File.separatorChar)
+      } else {
+        file.name
+      }
+
+    workspaceBreadcrumbs.clear()
+    relative
+      .split(File.separatorChar)
+      .filter { it.isNotBlank() }
+      .forEach { segment -> workspaceBreadcrumbs += EditorBreadcrumb(segment) }
+
+    val branch =
+      runCatching {
+        Git.open(File(getProjectDirPath())).use { git -> git.repository.branch }
+      }.getOrDefault("-")
+
+    workspaceStatus =
+      IdeStatusBarState(
+        language = language,
+        abi = Build.SUPPORTED_ABIS.firstOrNull() ?: "-",
+        branch = branch,
+        line = (position?.line ?: 0) + 1,
+        column = (position?.column ?: 0) + 1,
+        message = if (editorView.isModified) "Modified" else "Ready",
+      )
   }
 
   override fun onTabUnselected(tab: Tab) {}
@@ -547,7 +610,11 @@ abstract class BaseEditorActivity :
                 },
               ),
             ),
+          breadcrumbs = workspaceBreadcrumbs,
+          statusBarState = workspaceStatus,
           onTabSelected = { index -> binding.tabs.getTabAt(index)?.select() },
+          onTabClosed = { index -> closeWorkspaceTab(index) },
+          onSave = { doSaveAll() },
           onExplorer = { binding.root.openDrawer(GravityCompat.END) },
           onBuild = { editorBottomSheet?.state = BottomSheetBehavior.STATE_EXPANDED },
           onMore = { binding.editorToolbar.showOverflowMenu() },
@@ -578,6 +645,7 @@ abstract class BaseEditorActivity :
         )
     }
     workspaceSelectedTab = viewModel.getCurrentFileIndex()
+    syncWorkspaceStatus(workspaceSelectedTab)
   }
 
   private fun setupViews() {

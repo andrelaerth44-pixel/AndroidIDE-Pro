@@ -70,9 +70,15 @@ The clangd transport is now connected to AndroidIDE Pro's existing language-serv
 
 #### NativeActivity
 - Standalone NativeActivity template generator.
+- NativeActivity project is available in the existing project wizard.
 - Java NativeActivity host.
 - Minimal `ANativeActivity_onCreate` native entry point.
 - Manifest metadata for the generated native shared library.
+
+#### JNI project wizard
+- JNI App project is available in the existing project wizard.
+- Generates `NativeBridge.java`, `MainActivity.java` and `native_bridge.cpp`.
+- Generates a launcher manifest and Gradle-free `.androidide/native.json`.
 
 #### APK native packaging
 - Native shared-library merge stage for unsigned APKs.

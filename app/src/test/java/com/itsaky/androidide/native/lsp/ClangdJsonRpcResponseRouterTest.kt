@@ -33,6 +33,22 @@ class ClangdJsonRpcResponseRouterTest {
   }
 
   @Test
+  fun failOnlyCompletesTheRequestedFuture() {
+    val router = ClangdJsonRpcResponseRouter()
+    val first = router.register(1)
+    val second = router.register(2)
+
+    router.fail(1, IllegalStateException("request failed"))
+
+    assertTrue(first.isCompletedExceptionally)
+    assertEquals(1, router.pendingCount())
+
+    router.route("{"jsonrpc":"2.0","id":2,"result":{}}")
+    assertEquals(0, router.pendingCount())
+    assertTrue(second.isDone)
+  }
+
+  @Test
   fun failingRouterCompletesPendingRequestsExceptionally() {
     val router = ClangdJsonRpcResponseRouter()
     val response = router.register(3)

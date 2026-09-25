@@ -87,12 +87,23 @@ import com.itsaky.androidide.models.LogLine
 import com.itsaky.androidide.models.OpenedFile
 import com.itsaky.androidide.models.Range
 import com.itsaky.androidide.models.SearchResult
+import com.itsaky.androidide.native.build.DefaultNativeBuildService
+import com.itsaky.androidide.native.build.NativeBuildExecutor
+import com.itsaky.androidide.native.build.NativeBuildService
+import com.itsaky.androidide.native.build.NativeBuildTaskState
+import com.itsaky.androidide.native.build.NativePipeline
+import com.itsaky.androidide.native.model.AbiTarget
+import com.itsaky.androidide.native.model.BuildVariant
+import com.itsaky.androidide.native.model.NativeBuildRequest
+import com.itsaky.androidide.native.model.NativeProjectModelLoader
 import com.itsaky.androidide.projects.ProjectManager.getProjectDirPath
 import com.itsaky.androidide.projects.ProjectManager.projectPath
 import com.itsaky.androidide.projects.builder.BuildService
 import com.itsaky.androidide.services.log.LogReceiverService
 import com.itsaky.androidide.services.log.LogReceiverServiceConnection
 import com.itsaky.androidide.services.log.lookupLogService
+import com.itsaky.androidide.toolchain.NativeToolId
+import com.itsaky.androidide.toolchain.NativeToolchainLocator
 import com.itsaky.androidide.toolchain.ToolchainManager
 import com.itsaky.androidide.toolchain.ToolchainSnapshot
 import com.itsaky.androidide.ui.compose.AndroidIDETheme
@@ -169,6 +180,7 @@ abstract class BaseEditorActivity :
   private var workspaceStatus by mutableStateOf(IdeStatusBarState())
   private var buildCenterState by mutableStateOf(BuildCenterUiState())
   private var buildCenterOpen by mutableStateOf(false)
+  private var nativeBuildService: NativeBuildService? = null
   private var toolchainManagerSnapshot by mutableStateOf(ToolchainManager.inspect())
   private var toolchainManagerOpen by mutableStateOf(false)
   private var workspaceComposeView: ComposeView? = null
@@ -374,6 +386,50 @@ abstract class BaseEditorActivity :
     toolchainManagerSnapshot = ToolchainManager.inspect()
   }
 
+  internal fun beginBuildCenterSteps(steps: List<BuildStepUi>, status: String = "Preparing build…") {
+    buildCenterState =
+      BuildCenterUiState(
+        isBuilding = true,
+        status = status,
+        steps = steps,
+      )
+  }
+
+  internal fun updateBuildCenterTask(
+    taskId: String,
+    state: NativeBuildTaskState,
+    detail: String? = null,
+  ) {
+    val current = buildCenterState
+    val updated =
+      current.steps.map { step ->
+        if (step.id != taskId) {
+          step
+        } else {
+          step.copy(
+            state =
+              when (state) {
+                NativeBuildTaskState.RUNNING -> BuildStepState.RUNNING
+                NativeBuildTaskState.SUCCESS -> BuildStepState.SUCCESS
+                NativeBuildTaskState.FAILED -> BuildStepState.FAILED
+              },
+            detail = detail ?: step.detail,
+          )
+        }
+      }
+    val completed = updated.count { it.state == BuildStepState.SUCCESS }
+    val progress =
+      if (updated.isEmpty()) null else completed.toFloat() / updated.size.toFloat()
+
+    buildCenterState =
+      current.copy(
+        isBuilding = current.isBuilding,
+        status = detail ?: current.status,
+        progress = progress,
+        steps = updated,
+      )
+  }
+
   internal fun beginBuildCenter(tasks: List<String>) {
     val steps =
       tasks.mapIndexed { index, task ->
@@ -480,6 +536,143 @@ abstract class BaseEditorActivity :
     return null
   }
 
+  internal fun startNativeBuild() {
+    val projectRoot =
+      runCatching { File(getProjectDirPath()).canonicalFile }.getOrNull()
+        ?: run {
+          flashError("Project root is unavailable")
+          return
+        }
+
+    val moduleRoot =
+      File(projectRoot, "app").takeIf { it.isDirectory }
+        ?: projectRoot
+
+    val module =
+      runCatching {
+        NativeProjectModelLoader.load(
+          moduleRoot = moduleRoot,
+          abi = AbiTarget.ARM64_V8A,
+          variant = BuildVariant.DEBUG,
+        )
+      }.getOrNull()
+
+    if (module == null) {
+      flashError("No native C/C++ sources were found")
+      return
+    }
+
+    val toolchain = NativeToolchainLocator.locate()
+    val requiresClang = module.targets.any {
+      it.sourceSet.cSources.isNotEmpty()
+    }
+    val requiresClangCpp = module.targets.any {
+      it.sourceSet.cppSources.isNotEmpty()
+    }
+
+    val missingTool =
+      when {
+        requiresClang && toolchain.tool(NativeToolId.CLANG)?.path == null -> "Clang"
+        requiresClangCpp && toolchain.tool(NativeToolId.CLANGXX)?.path == null -> "Clang++"
+        module.targets.any { it.libraryType == com.itsaky.androidide.native.model.NativeLibraryType.SHARED } &&
+          toolchain.tool(NativeToolId.CLANGXX)?.path == null -> "Clang++"
+        module.targets.any { it.libraryType == com.itsaky.androidide.native.model.NativeLibraryType.STATIC } &&
+          toolchain.tool(NativeToolId.LLVM_AR)?.path == null -> "LLVM ar"
+        else -> null
+      }
+
+    if (missingTool != null) {
+      appendBuildCenterOutput("Native toolchain is missing: $missingTool")
+      showToolchainManager()
+      return
+    }
+
+    val request =
+      NativeBuildRequest(
+        module = module,
+        abi = AbiTarget.ARM64_V8A,
+        variant = BuildVariant.DEBUG,
+      )
+
+    val graph = NativePipeline.createGraph(request)
+    beginBuildCenterSteps(
+      graph.tasks.map {
+        BuildStepUi(
+          id = it.id,
+          title = it.description,
+          state = BuildStepState.PENDING,
+        )
+      },
+      status = "Preparing native build…",
+    )
+    showBuildCenter()
+
+    doSaveAll()
+
+    val service =
+      DefaultNativeBuildService(
+        executor =
+          NativeBuildExecutor(
+            toolchain = toolchain,
+            androidApiLevel = module.androidApiLevel,
+          )
+      )
+
+    nativeBuildService = service
+
+    service.execute(
+      request = request,
+      moduleRoot = moduleRoot,
+      onTaskState = { task, state ->
+        ThreadUtils.runOnUiThread {
+          updateBuildCenterTask(task.id, state, task.description)
+        }
+      },
+      onOutput = { line ->
+        ThreadUtils.runOnUiThread {
+          appendBuildCenterOutput(line)
+        }
+      },
+    ).whenComplete { result, error ->
+      ThreadUtils.runOnUiThread {
+        when {
+          error != null -> {
+            finishBuildCenter(
+              success = false,
+              tasks = graph.tasks.map { it.description },
+            )
+            appendBuildCenterOutput(
+              "Native build failed: " +
+                (error.message ?: error.javaClass.simpleName)
+            )
+          }
+
+          result?.success == true -> {
+            finishBuildCenter(
+              success = true,
+              tasks = graph.tasks.map { it.description },
+            )
+            result.outputFile?.let {
+              appendBuildCenterOutput("Native output: " + it.absolutePath)
+            }
+          }
+
+          else -> {
+            finishBuildCenter(
+              success = false,
+              tasks = graph.tasks.map { it.description },
+            )
+            appendBuildCenterOutput(
+              result?.message ?: "Native build failed"
+            )
+          }
+        }
+
+        nativeBuildService = null
+      }
+    }
+  }
+
   internal fun startBuildCenterBuild() {
     val buildService = Lookup.getDefault().lookup(BuildService.KEY_BUILD_SERVICE)
     if (buildService == null) {
@@ -513,6 +706,16 @@ abstract class BaseEditorActivity :
   }
 
   internal fun stopBuildCenterBuild() {
+    nativeBuildService?.let { nativeService ->
+      if (nativeService.isBuildInProgress) {
+        buildCenterState = buildCenterState.copy(status = "Cancelling native build…")
+        if (!nativeService.cancelCurrentBuild()) {
+          appendBuildCenterOutput("Unable to cancel native build.")
+        }
+        return
+      }
+    }
+
     val buildService = Lookup.getDefault().lookup(BuildService.KEY_BUILD_SERVICE)
     if (buildService == null) {
       hideBuildCenter()
@@ -912,6 +1115,16 @@ abstract class BaseEditorActivity :
         category = "Toolchain",
         keywords = listOf("sdk", "jdk", "clang", "clangd", "ndk", "toolchain"),
         onClick = { showToolchainManager() },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Native Build",
+        subtitle = "Build the detected C/C++ module with the native toolchain",
+        icon = IdeIcons.Code,
+        category = "Build",
+        keywords = listOf("native", "c", "c++", "clang", "ndk", "jni"),
+        onClick = { startNativeBuild() },
       )
 
     commands +=

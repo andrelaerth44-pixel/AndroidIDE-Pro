@@ -4,7 +4,7 @@
 
 <h2 align="center"><b>AndroidIDE</b></h2>
 <p align="center">
-  An IDE to develop real, Gradle-based Android applications on Android devices.
+  An on-device Android IDE track focused on a lightweight native build backend, CodeAssist-inspired workflow, and a simple modern workspace.
 <p><br>
 
 <p align="center">
@@ -94,10 +94,15 @@ Implemented in the current branch:
 - Native source scanning and deterministic C/C++ object planning.
 - Native command generation for C17/C++20, Android ARM64 targeting, libc++, LLD and llvm-ar.
 - Native build executor with asynchronous service, real process cancellation and Build Center integration.
-- Clangd compile_commands.json generation from the same compiler commands.
-- Gradle-free native.json project configuration with automatic discovery fallback.
+- Clangd `compile_commands.json` generation from the same compiler commands.
+- Clangd launch planning and JSON-RPC `Content-Length` transport foundation.
+- Real JNI `javac -h` header-generation stage with explicit JDK/javac validation.
+- Reusable JNI project template generator with a C++ JNI bridge.
+- Reusable NativeActivity project template with native entrypoint and manifest.
+- Gradle-free `.androidide/native.json` project configuration with automatic discovery fallback.
 - Native toolchain discovery for Clang, Clang++, Clangd, LLD, LLDB, llvm-ar and libc++.
 - Toolchain Manager connected to real filesystem discovery instead of hard-coded readiness.
+- arm64-v8a native library packaging stage that merges `lib/arm64-v8a/*.so` into an unsigned APK.
 
 The visible editor-tab presentation is now Compose-driven, while the legacy `TabLayout` remains internally available so existing selection and editor lifecycle code continues to work.
 
@@ -111,13 +116,13 @@ The project must not regress into making Gradle the planned primary build backen
 
 ### Immediate next work
 
-1. Validate the latest GitHub Actions build and fix any compile errors.
-2. Connect NativeBuildService to the Build Center without replacing the existing Gradle compatibility path yet.
-3. Add JNI header generation and a real JNI project template.
-4. Integrate generated compile_commands.json with Clangd diagnostics/completion.
-5. Add NativeActivity project generation.
-6. Complete arm64-v8a native APK packaging and resource merge.
-7. Implement real JNI header generation and C/C++ language-server integration.
+1. Let the queued GitHub Actions validation run and fix any compile errors it reports.
+2. Connect the clangd JSON-RPC transport to the existing `ILanguageServer` / editor lifecycle.
+3. Add clangd `initialize`, document sync, diagnostics, completion and shutdown handling.
+4. Add NativeActivity template integration to the existing project-template wizard.
+5. Turn the native APK library merge stage into a complete unsigned-package pipeline with resource/APK merge.
+6. Add zip alignment and signing as explicit post-package stages.
+7. Make the native pipeline the primary path while keeping Gradle only as compatibility infrastructure.
 8. Expand the toolchain to remaining ABIs, then debugger and profiler work.
 
 ### Continuity rule

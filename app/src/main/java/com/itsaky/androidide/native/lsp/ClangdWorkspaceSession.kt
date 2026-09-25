@@ -16,6 +16,10 @@ class ClangdWorkspaceSession(
 
   private val nextRequestId = AtomicInteger(2)
 
+  init {
+    processSession.setNotificationHandler(::handleNotification)
+  }
+
   fun start(
     workspaceRoot: File,
     initializeRequestId: Int = 1,
@@ -76,6 +80,7 @@ class ClangdWorkspaceSession(
 
   fun stop() {
     if (!processSession.isRunning) return
+
     runCatching {
       val requestId = nextRequestId.getAndIncrement()
       val response =
@@ -83,11 +88,16 @@ class ClangdWorkspaceSession(
           json = ClangdProtocolMessageFactory.shutdown(requestId),
           requestId = requestId,
         )
-      response.thenRun { processSession.send(ClangdProtocolMessageFactory.exit()) }
+      response.whenComplete { _, _ ->
+        runCatching {
+          processSession.send(ClangdProtocolMessageFactory.exit())
+        }
+        processSession.stop()
+      }
     }.onFailure {
-      processSession.send(ClangdProtocolMessageFactory.exit())
+      runCatching { processSession.send(ClangdProtocolMessageFactory.exit()) }
+      processSession.stop()
     }
-    processSession.stop()
   }
 
   override fun close() {

@@ -32,6 +32,8 @@ object IdeIcons {
   val Build = Icons.Outlined.Build
   val Check = Icons.Outlined.CheckCircle
   val Code = Icons.Outlined.Code
+  val ChevronRight = Icons.Outlined.ChevronRight
+  val ExpandMore = Icons.Outlined.ExpandMore
   val Copy = Icons.Outlined.ContentCopy
   val CreateFolder = Icons.Outlined.CreateNewFolder
   val Delete = Icons.Outlined.Delete

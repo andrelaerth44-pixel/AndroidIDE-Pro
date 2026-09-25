@@ -693,37 +693,7 @@ abstract class BaseEditorActivity :
           projectName = File(getProjectDirPath()).name.ifBlank { "Project" },
           tabs = workspaceTabs,
           selectedTab = workspaceSelectedTab,
-          commands =
-            listOf(
-              CommandPaletteItem(
-                title = "Project Explorer",
-                subtitle = "Open files and folders",
-                icon = IdeIcons.FolderOpen,
-                onClick = { binding.root.openDrawer(GravityCompat.END) },
-              ),
-              CommandPaletteItem(
-                title = "Build Project",
-                subtitle = "Open the build panel",
-                icon = IdeIcons.Build,
-                onClick = {
-                  editorBottomSheet?.state = BottomSheetBehavior.STATE_EXPANDED
-                },
-              ),
-              CommandPaletteItem(
-                title = "Terminal",
-                subtitle = "Open the integrated terminal",
-                icon = IdeIcons.Terminal,
-                onClick = { openTerminal() },
-              ),
-              CommandPaletteItem(
-                title = "Preferences",
-                subtitle = "Open AndroidIDE settings",
-                icon = IdeIcons.Settings,
-                onClick = {
-                  startActivity(Intent(this@BaseEditorActivity, PreferencesActivity::class.java))
-                },
-              ),
-            ),
+          commands = buildWorkspaceCommands(),
           breadcrumbs = workspaceBreadcrumbs,
           statusBarState = workspaceStatus,
           onTabSelected = { index -> binding.tabs.getTabAt(index)?.select() },
@@ -757,6 +727,90 @@ abstract class BaseEditorActivity :
       AppBarLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT),
     )
     workspaceComposeView = compose
+  }
+
+  private fun buildWorkspaceCommands(): List<CommandPaletteItem> {
+    val commands = mutableListOf<CommandPaletteItem>()
+
+    commands +=
+      CommandPaletteItem(
+        title = "Project Explorer",
+        subtitle = "Open files and folders",
+        icon = IdeIcons.FolderOpen,
+        category = "Navigation",
+        shortcut = "Ctrl+Shift+E",
+        keywords = listOf("files", "tree", "project"),
+        onClick = { binding.root.openDrawer(GravityCompat.END) },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Build Center",
+        subtitle = "Monitor the current build",
+        icon = IdeIcons.Build,
+        category = "Build",
+        shortcut = "F9",
+        keywords = listOf("compile", "assemble", "logs", "problems"),
+        onClick = { showBuildCenter() },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Save All",
+        subtitle = "Save all open files",
+        icon = IdeIcons.Save,
+        category = "Editor",
+        shortcut = "Ctrl+S",
+        keywords = listOf("save", "files", "write"),
+        onClick = { doSaveAll() },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Find in Project",
+        subtitle = "Search source files and resources",
+        icon = IdeIcons.Search,
+        category = "Navigation",
+        shortcut = "Ctrl+Shift+F",
+        keywords = listOf("search", "find", "project", "text"),
+        onClick = { findInProjectDialog.show() },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Terminal",
+        subtitle = "Open the integrated terminal",
+        icon = IdeIcons.Terminal,
+        category = "Tools",
+        keywords = listOf("shell", "console", "command"),
+        onClick = { openTerminal() },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Preferences",
+        subtitle = "Open AndroidIDE settings",
+        icon = IdeIcons.Settings,
+        category = "Tools",
+        keywords = listOf("settings", "options", "configuration"),
+        onClick = {
+          startActivity(Intent(this@BaseEditorActivity, PreferencesActivity::class.java))
+        },
+      )
+
+    workspaceTabs.forEachIndexed { index, tab ->
+      commands +=
+        CommandPaletteItem(
+          title = tab.title,
+          subtitle = tab.subtitle ?: "Open in editor",
+          icon = IdeIcons.FileOpen,
+          category = "Open Files",
+          keywords = listOf(tab.id, tab.title),
+          onClick = { binding.tabs.getTabAt(index)?.select() },
+        )
+    }
+
+    return commands
   }
 
   private fun syncWorkspaceTabs() {

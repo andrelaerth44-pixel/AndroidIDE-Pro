@@ -473,6 +473,7 @@ abstract class BaseEditorActivity :
       return
     }
 
+    beginBuildCenter(listOf("assembleDebug"))
     doSaveAll()
     showBuildCenter()
 

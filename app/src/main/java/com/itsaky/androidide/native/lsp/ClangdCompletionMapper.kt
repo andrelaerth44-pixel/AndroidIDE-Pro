@@ -76,15 +76,15 @@ object ClangdCompletionMapper {
       14 -> CompletionItemKind.ENUM
       15 -> CompletionItemKind.KEYWORD
       16 -> CompletionItemKind.SNIPPET
-      17 -> CompletionItemKind.COLOR
-      18 -> CompletionItemKind.FILE
-      19 -> CompletionItemKind.REFERENCE
-      20 -> CompletionItemKind.FOLDER
+      17 -> CompletionItemKind.VALUE
+      18 -> CompletionItemKind.MODULE
+      19 -> CompletionItemKind.VARIABLE
+      20 -> CompletionItemKind.MODULE
       21 -> CompletionItemKind.ENUM_MEMBER
-      22 -> CompletionItemKind.CONSTANT
-      23 -> CompletionItemKind.STRUCT
-      24 -> CompletionItemKind.EVENT
-      25 -> CompletionItemKind.OPERATOR
+      22 -> CompletionItemKind.VARIABLE
+      23 -> CompletionItemKind.CLASS
+      24 -> CompletionItemKind.METHOD
+      25 -> CompletionItemKind.FUNCTION
       26 -> CompletionItemKind.TYPE_PARAMETER
       else -> CompletionItemKind.NONE
     }

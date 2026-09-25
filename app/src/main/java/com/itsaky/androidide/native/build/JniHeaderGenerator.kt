@@ -36,9 +36,11 @@ object JniHeaderGenerator {
     classesDirectory.mkdirs()
 
     val classpath =
-      listOfNotNull(
-        runCatching { Environment.ANDROID_JAR }.getOrNull()?.takeIf { it.isFile },
-      ).joinToString(File.pathSeparator)
+      runCatching { Environment.ANDROID_JAR }
+        .getOrNull()
+        ?.takeIf { it.isFile }
+        ?.absolutePath
+        .orEmpty()
 
     return NativeCommandSpec(
       executable = javac,
@@ -67,6 +69,7 @@ object JniHeaderGenerator {
 
   private fun declaresNativeMethod(file: File): Boolean {
     val text = runCatching { file.readText() }.getOrDefault("")
-    return Regex("""\\bnative\\s+[\\w<>\\[\\], ?]+\\s+\\w+\\s*\\(""").containsMatchIn(text)
+    val pattern = "\\bnative\\s+[\\w<>\\[\\], ?]+\\s+\\w+\\s*\\("
+    return Regex(pattern).containsMatchIn(text)
   }
 }

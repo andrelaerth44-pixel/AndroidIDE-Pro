@@ -51,6 +51,28 @@ class ClangdWorkspaceSession(
     processSession.send(ClangdProtocolMessageFactory.didClose(file))
   }
 
+  fun definition(file: File, line: Int, character: Int): CompletableFuture<com.itsaky.androidide.lsp.models.DefinitionResult?> {
+    val requestId = nextRequestId.getAndIncrement()
+    return processSession.sendRequest(
+      json = ClangdProtocolMessageFactory.definition(requestId, file, line, character),
+      requestId = requestId,
+    ).thenApply(ClangdLocationMapper::mapDefinition)
+  }
+
+  fun references(
+    file: File,
+    line: Int,
+    character: Int,
+    includeDeclaration: Boolean,
+  ): CompletableFuture<com.itsaky.androidide.lsp.models.ReferenceResult?> {
+    val requestId = nextRequestId.getAndIncrement()
+    return processSession.sendRequest(
+      json = ClangdProtocolMessageFactory.references(
+        requestId, file, line, character, includeDeclaration
+      ),
+      requestId = requestId,
+    ).thenApply(ClangdLocationMapper::mapReferences)
+  }
   fun completion(
     file: File,
     line: Int,

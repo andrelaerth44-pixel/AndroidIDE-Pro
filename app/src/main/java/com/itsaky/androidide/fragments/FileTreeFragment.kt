@@ -3,8 +3,7 @@
  *
  * AndroidIDE is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * the Free Software Foundation.
  */
 
 package com.itsaky.androidide.fragments
@@ -14,6 +13,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,42 +29,40 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.Code
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.unit.dp
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.itsaky.androidide.resources.R
 import com.itsaky.androidide.adapters.viewholders.FileTreeViewHolder
 import com.itsaky.androidide.eventbus.events.filetree.FileClickEvent
 import com.itsaky.androidide.eventbus.events.filetree.FileLongClickEvent
 import com.itsaky.androidide.events.ExpandTreeNodeRequestEvent
 import com.itsaky.androidide.events.ListProjectFilesRequestEvent
 import com.itsaky.androidide.projects.ProjectManager.getProjectDirPath
+import com.itsaky.androidide.resources.R
 import com.itsaky.androidide.tasks.TaskExecutor.executeAsync
 import com.itsaky.androidide.tasks.callables.FileTreeCallable
 import com.itsaky.androidide.tasks.callables.FileTreeCallable.SortFileName
 import com.itsaky.androidide.tasks.callables.FileTreeCallable.SortFolder
 import com.itsaky.androidide.ui.compose.AndroidIDETheme
 import com.itsaky.androidide.ui.compose.GlassPanel
+import com.itsaky.androidide.ui.compose.IdeIcons
 import com.itsaky.androidide.utils.ILogger
 import com.unnamed.b.atv.model.TreeNode
 import com.unnamed.b.atv.model.TreeNode.TreeNodeClickListener
@@ -84,6 +83,7 @@ class FileTreeFragment :
 
   private var treeVersion by mutableIntStateOf(0)
   private var isLoading by mutableStateOf(false)
+  private var selectedPath by mutableStateOf<String?>(null)
 
   override fun onCreateView(
     inflater: LayoutInflater,
@@ -98,24 +98,46 @@ class FileTreeFragment :
       setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
       setContent {
         AndroidIDETheme {
-          GlassPanel(
-            modifier = Modifier.fillMaxSize(),
-          ) {
+          GlassPanel(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
+              val projectDir = File(getProjectDirPath())
+
               Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
               ) {
+                Surface(
+                  modifier = Modifier.size(42.dp),
+                  shape = RoundedCornerShape(13.dp),
+                  color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                  Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                      imageVector = IdeIcons.FolderOpen,
+                      contentDescription = null,
+                      tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                  }
+                }
+
+                Spacer(Modifier.width(12.dp))
+
                 Column(modifier = Modifier.weight(1f)) {
                   Text(
-                    text = getString(R.string.app_name),
+                    text = projectDir.name.ifBlank { "Project" },
                     style = MaterialTheme.typography.titleMedium,
                   )
-                  Text(
-                    text = File(getProjectDirPath()).name.ifBlank { "Project" },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                  )
+                  Surface(
+                    shape = RoundedCornerShape(9.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+                  ) {
+                    Text(
+                      text = "Project",
+                      style = MaterialTheme.typography.labelMedium,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                      modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                    )
+                  }
                 }
 
                 if (isLoading) {
@@ -125,12 +147,13 @@ class FileTreeFragment :
                   )
                 } else {
                   IconButton(onClick = { listProjectFiles() }) {
-                    Icon(Icons.Outlined.Refresh, contentDescription = "Refresh")
+                    Icon(IdeIcons.Refresh, contentDescription = "Refresh project")
                   }
                 }
               }
 
               val visibleNodes = buildVisibleTree()
+
               LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 18.dp),
@@ -140,11 +163,19 @@ class FileTreeFragment :
                   items = visibleNodes,
                   key = { it.node.path },
                 ) { item ->
+                  val file = item.node.value
                   FileTreeRow(
                     node = item.node,
                     depth = item.depth,
-                    onClick = { onClick(item.node, item.node.value) },
-                    onLongClick = { onLongClick(item.node, item.node.value) },
+                    selected = selectedPath == file.absolutePath,
+                    onClick = {
+                      selectedPath = file.absolutePath
+                      onClick(item.node, file)
+                    },
+                    onLongClick = {
+                      selectedPath = file.absolutePath
+                      onLongClick(item.node, file)
+                    },
                   )
                 }
               }
@@ -192,7 +223,7 @@ class FileTreeFragment :
 
     val expanded = mutableListOf<String>()
     collectExpandedNodes(root, expanded)
-    mTreeState = expanded.joinToString(AndroidIDE_STATE_SEPARATOR)
+    mTreeState = expanded.joinToString(ANDROIDIDE_STATE_SEPARATOR)
   }
 
   private fun collectExpandedNodes(node: TreeNode, output: MutableList<String>) {
@@ -206,9 +237,7 @@ class FileTreeFragment :
 
   override fun onClick(node: TreeNode, p2: Any) {
     val file = p2 as File
-    if (!file.exists()) {
-      return
-    }
+    if (!file.exists()) return
 
     if (file.isDirectory) {
       if (node.isExpanded) {
@@ -247,9 +276,7 @@ class FileTreeFragment :
       var temp = node
       while (temp.size() == 1) {
         temp = temp.childAt(0)
-        if (!temp.value.isDirectory) {
-          break
-        }
+        if (!temp.value.isDirectory) break
         listFilesForNode(temp.value.listFiles() ?: continue, temp)
         temp.isExpanded = true
       }
@@ -312,8 +339,7 @@ class FileTreeFragment :
       isLoading = false
       treeVersion++
 
-      val root = mRoot
-      if (root != null && root.children.isNotEmpty()) {
+      if (mRoot?.children?.isNotEmpty() == true) {
         tryRestoreState()
       }
       invalidateComposeTree()
@@ -323,7 +349,7 @@ class FileTreeFragment :
   private fun tryRestoreState() {
     val openNodes =
       mTreeState
-        ?.split(AndroidIDE_STATE_SEPARATOR)
+        ?.split(ANDROIDIDE_STATE_SEPARATOR)
         ?.filter { it.isNotBlank() }
         ?.toHashSet()
         ?: hashSetOf()
@@ -348,7 +374,6 @@ class FileTreeFragment :
   }
 
   private fun buildVisibleTree(): List<VisibleTreeNode> {
-    // Touch state so Compose observes asynchronous tree changes.
     treeVersion
 
     val root = mRoot ?: return emptyList()
@@ -385,44 +410,53 @@ class FileTreeFragment :
   }
 }
 
-@androidx.compose.runtime.Composable
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 private fun FileTreeRow(
   node: TreeNode,
   depth: Int,
+  selected: Boolean,
   onClick: () -> Unit,
   onLongClick: () -> Unit,
 ) {
   val file = node.value
+  val rowColor =
+    if (selected) {
+      MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+    } else {
+      Color.Transparent
+    }
 
   Row(
     modifier =
       Modifier
         .fillMaxWidth()
         .padding(start = (depth * 14).dp)
+        .background(rowColor, RoundedCornerShape(11.dp))
         .combinedClickable(
           onClick = onClick,
           onLongClick = onLongClick,
         )
-        .padding(horizontal = 10.dp, vertical = 9.dp),
+        .padding(horizontal = 10.dp, vertical = 8.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     if (file.isDirectory) {
       Icon(
-        imageVector =
-          if (node.isExpanded) Icons.Outlined.ExpandMore else Icons.Outlined.ChevronRight,
+        imageVector = if (node.isExpanded) IdeIcons.ExpandMore else IdeIcons.ChevronRight,
         contentDescription = null,
         modifier = Modifier.size(18.dp),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
       )
     } else {
       Spacer(Modifier.width(18.dp))
     }
 
-    Spacer(Modifier.width(4.dp))
+    Spacer(Modifier.width(5.dp))
 
     Icon(
       imageVector = fileIcon(file),
       contentDescription = null,
-      modifier = Modifier.size(19.dp),
+      modifier = Modifier.size(20.dp),
       tint = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
@@ -430,17 +464,27 @@ private fun FileTreeRow(
 
     Text(
       text = file.name.ifBlank { "Project" },
-      style = MaterialTheme.typography.bodyMedium,
+      style =
+        if (selected) {
+          MaterialTheme.typography.bodyLarge
+        } else {
+          MaterialTheme.typography.bodyMedium
+        },
+      color = MaterialTheme.colorScheme.onSurface,
       maxLines = 1,
     )
   }
 }
 
 private fun fileIcon(file: File): ImageVector {
-  if (file.isDirectory) return Icons.Outlined.Folder
+  if (file.isDirectory) return IdeIcons.Folder
 
   return when (file.extension.lowercase()) {
-    "kt", "kts", "java", "cpp", "c", "h", "xml", "json", "gradle" -> Icons.Outlined.Code
-    else -> Icons.Outlined.Description
+    "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg" -> IdeIcons.Image
+    "sh", "bash", "bat", "cmd", "gradlew" -> IdeIcons.Terminal
+    "kt", "kts", "java", "cpp", "cc", "cxx", "c", "h", "hpp", "xml", "json",
+    "gradle", "groovy" -> IdeIcons.Code
+    "apk", "aab" -> IdeIcons.Download
+    else -> IdeIcons.File
   }
 }

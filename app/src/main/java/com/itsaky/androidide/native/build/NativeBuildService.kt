@@ -61,6 +61,7 @@ class DefaultNativeBuildService(
               ),
             onTaskState = onTaskState,
             onOutput = onOutput,
+            processController = controller,
           )
         },
         worker,

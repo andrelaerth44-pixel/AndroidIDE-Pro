@@ -17,6 +17,7 @@ class NativeBuildCache(
 ) {
 
   private val properties = Properties()
+  private val activeDigest = ThreadLocal<MessageDigest>()
 
   init {
     if (stateFile.isFile) {
@@ -48,29 +49,56 @@ class NativeBuildCache(
 
   private fun fingerprint(command: NativeCommandSpec): String {
     val digest = MessageDigest.getInstance("SHA-256")
-    command.asCommandLine().forEach { argument ->
+    activeDigest.set(digest)
+    try {
+      command.asCommandLine().forEach { argument ->
       digest.update(argument.toByteArray())
       digest.update(0)
     }
 
+    command.executable.takeIf(File::isFile)?.let(::hashFile)
     commandInputFiles(command)
+      .plus(commandHeaderFiles(command))
+      .distinct()
       .sortedBy(File::getAbsolutePath)
-      .forEach { file ->
-        digest.update(file.absolutePath.toByteArray())
-        digest.update(0)
-        digest.update(file.length().toString().toByteArray())
-        digest.update(0)
-        FileInputStream(file).use { input ->
-          val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-          while (true) {
-            val count = input.read(buffer)
-            if (count < 0) break
-            digest.update(buffer, 0, count)
-          }
-        }
-      }
+      .forEach(::hashFile)
 
-    return digest.digest().joinToString("") { "%02x".format(it) }
+      return digest.digest().joinToString("") { "%02x".format(it) }
+    } finally {
+      activeDigest.remove()
+    }
+  }
+
+  private fun hashFile(file: File) {
+    val digest = activeDigest.get()
+    digest.update(file.absolutePath.toByteArray())
+    digest.update(0)
+    digest.update(file.length().toString().toByteArray())
+    digest.update(0)
+    FileInputStream(file).use { input ->
+      val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+      while (true) {
+        val count = input.read(buffer)
+        if (count < 0) break
+        digest.update(buffer, 0, count)
+      }
+    }
+  }
+
+  private fun commandHeaderFiles(command: NativeCommandSpec): List<File> {
+    val includeRoots =
+      command.arguments
+        .filter { it.startsWith("-I") && it.length > 2 }
+        .map { File(it.substring(2)) }
+        .filter(File::isDirectory)
+
+    return includeRoots
+      .asSequence()
+      .flatMap { root ->
+        root.walkTopDown()
+          .filter { it.isFile && it.extension.lowercase() in HEADER_EXTENSIONS }
+      }
+      .toList()
   }
 
   private fun commandInputFiles(command: NativeCommandSpec): List<File> {
@@ -92,6 +120,8 @@ class NativeBuildCache(
 
     return inputs.distinct()
   }
+
+  private val HEADER_EXTENSIONS = setOf("h", "hh", "hpp", "hxx")
 
   private fun outputFile(command: NativeCommandSpec): File? =
     command.arguments

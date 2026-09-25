@@ -24,10 +24,14 @@ object JniHeaderGenerator {
       return null
     }
 
-    val java = runCatching { Environment.JAVA }.getOrNull() ?: return null
-    val javac = java.parentFile?.let { File(it, "javac") } ?: return null
-    if (!javac.isFile) {
-      return null
+    val java =
+      runCatching { Environment.JAVA }.getOrNull()
+        ?: error("JDK is required to generate JNI headers")
+    val javac =
+      java.parentFile?.let { File(it, "javac") }
+        ?: error("javac is not available in the configured JDK")
+    require(javac.isFile) {
+      "javac is not available in the configured JDK: " + javac.absolutePath
     }
 
     val headerDirectory = File(buildDirectory, "jni/headers")

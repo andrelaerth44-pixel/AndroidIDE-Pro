@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -82,21 +81,23 @@ fun AndroidIDEProHome(
       ) {
         items(actions, key = { it.titleRes }) { action ->
           GlassRow(modifier = Modifier.fillMaxWidth()) {
-            TextButton(
-              onClick = action.onClick,
-              modifier = Modifier.fillMaxWidth(),
-              contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
+            Row(
+              modifier =
+                Modifier
+                  .fillMaxWidth()
+                  .clickable(onClick = action.onClick)
+                  .padding(horizontal = 16.dp, vertical = 13.dp),
+              verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
               Icon(
                 imageVector = action.icon,
                 contentDescription = null,
               )
-              Spacer(Modifier.weight(1f))
+              Spacer(Modifier.padding(start = 14.dp))
               Text(
                 text = androidx.compose.ui.res.stringResource(action.titleRes),
                 style = MaterialTheme.typography.titleMedium,
               )
-              Spacer(Modifier.weight(1f))
             }
           }
         }

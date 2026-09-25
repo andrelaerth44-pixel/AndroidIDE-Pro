@@ -754,7 +754,7 @@ abstract class BaseEditorActivity :
           BuildCenterDialog(
             state = buildCenterState,
             onBuild = {
-              showBuildCenter()
+              hideBuildCenter()
               binding.editorToolbar.showOverflowMenu()
             },
             onStop = { hideBuildCenter() },

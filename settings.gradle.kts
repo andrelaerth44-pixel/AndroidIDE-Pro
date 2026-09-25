@@ -74,6 +74,7 @@ include(
   ":lsp:xml",
   ":lsp:testing",
   ":subprojects:aaptcompiler",
+  ":subprojects:build-engine",
   ":subprojects:builder-model-impl",
   ":subprojects:flashbar",
   ":subprojects:framework-stubs",

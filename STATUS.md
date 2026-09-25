@@ -82,7 +82,7 @@ GitHub Actions for the newest commits are currently queued. No successful or fai
 
 ## Next work
 
-1. Connect clangd JSON-RPC lifecycle to `ILanguageServer` and `ILanguageClient`.
+1. Connect the persistent clangd session and JSON-RPC lifecycle to `ILanguageServer` and `ILanguageClient`.
 2. Implement clangd initialize, document open/change, publishDiagnostics and completion requests.
 3. Integrate NativeActivity template into the existing project-template wizard.
 4. Build the unsigned APK packaging pipeline around resource compilation, Java/Dex outputs and native-library merge.

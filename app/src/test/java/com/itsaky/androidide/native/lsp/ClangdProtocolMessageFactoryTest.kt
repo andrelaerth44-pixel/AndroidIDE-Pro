@@ -43,7 +43,7 @@ class ClangdProtocolMessageFactoryTest {
       .getAsJsonArray("contentChanges").size())
     assertEquals(
       "int main() { return 0; }",
-      json.getAsJsonArray("params")
+      params.getAsJsonArray("contentChanges")
         .get(0).asJsonObject.get("text").asString,
     )
   }

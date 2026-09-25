@@ -32,7 +32,11 @@ object NativeCommandPlanner {
     factory: NativeCommandFactory,
   ): List<NativeCommandSpec> {
     val objectDirectory = File(buildDirectory, "obj/$abi")
-    val includeDirectories = listOf(sourceRoot)
+    val includeDirectories =
+      listOf(
+        sourceRoot,
+        File(buildDirectory, "jni/headers"),
+      )
 
     return sourceSet.cSources.map { source ->
       factory.compileC(
@@ -52,7 +56,11 @@ object NativeCommandPlanner {
     factory: NativeCommandFactory,
   ): List<NativeCommandSpec> {
     val objectDirectory = File(buildDirectory, "obj/$abi")
-    val includeDirectories = listOf(sourceRoot)
+    val includeDirectories =
+      listOf(
+        sourceRoot,
+        File(buildDirectory, "jni/headers"),
+      )
 
     return sourceSet.cppSources.map { source ->
       factory.compileCpp(

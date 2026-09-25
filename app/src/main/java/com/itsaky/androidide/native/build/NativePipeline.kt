@@ -7,7 +7,7 @@ object NativePipeline {
 
   fun createGraph(request: NativeBuildRequest): NativeBuildGraph {
     val prefix =
-      "${request.module.moduleName}:${request.abi}:${request.variant}"
+      request.module.moduleName + ":" + request.abi + ":" + request.variant
 
     val scan =
       task(
@@ -36,21 +36,27 @@ object NativePipeline {
         dependencies = listOf(scan.id, headers.id),
       )
 
-    val archive =
-      task(
-        prefix = prefix,
-        kind = NativeBuildTask.Kind.ARCHIVE_OBJECTS,
-        dependencies = listOf(compileC.id, compileCpp.id),
-      )
+    val linkDependencies =
+      if (request.module.targets.any { it.libraryType == NativeLibraryType.STATIC }) {
+        val archive =
+          task(
+            prefix = prefix,
+            kind = NativeBuildTask.Kind.ARCHIVE_OBJECTS,
+            dependencies = listOf(compileC.id, compileCpp.id),
+          )
+        listOf(archive)
+      } else {
+        listOf(compileC, compileCpp)
+      }
 
     val link =
       task(
         prefix = prefix,
         kind = NativeBuildTask.Kind.LINK_NATIVE,
-        dependencies = listOf(archive.id),
+        dependencies = linkDependencies.map { it.id },
         description =
           if (request.module.targets.any { it.libraryType == NativeLibraryType.STATIC }) {
-            "Link native output"
+            "Link native static output"
           } else {
             "Link shared native library"
           },
@@ -69,10 +75,12 @@ object NativePipeline {
         headers,
         compileC,
         compileCpp,
-        archive,
-        link,
-        packageLibraries,
-      )
+      ) +
+        linkDependencies +
+        listOf(
+          link,
+          packageLibraries,
+        )
     )
   }
 
@@ -83,7 +91,7 @@ object NativePipeline {
     description: String = kind.displayName,
   ): NativeBuildTask =
     NativeBuildTask(
-      id = "$prefix:${kind.name.lowercase()}",
+      id = prefix + ":" + kind.name.lowercase(),
       kind = kind,
       dependencies = dependencies,
       description = description,

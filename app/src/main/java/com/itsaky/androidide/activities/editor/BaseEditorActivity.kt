@@ -93,6 +93,8 @@ import com.itsaky.androidide.projects.builder.BuildService
 import com.itsaky.androidide.services.log.LogReceiverService
 import com.itsaky.androidide.services.log.LogReceiverServiceConnection
 import com.itsaky.androidide.services.log.lookupLogService
+import com.itsaky.androidide.toolchain.ToolchainManager
+import com.itsaky.androidide.toolchain.ToolchainSnapshot
 import com.itsaky.androidide.ui.compose.AndroidIDETheme
 import com.itsaky.androidide.ui.compose.BuildCenterDialog
 import com.itsaky.androidide.ui.compose.BuildCenterUiState
@@ -106,6 +108,7 @@ import com.itsaky.androidide.ui.compose.EditorBreadcrumb
 import com.itsaky.androidide.ui.compose.EditorWorkspaceTopBar
 import com.itsaky.androidide.ui.compose.IdeIcons
 import com.itsaky.androidide.ui.compose.IdeStatusBarState
+import com.itsaky.androidide.ui.compose.ToolchainManagerDialog
 import com.itsaky.androidide.ui.compose.WorkspaceTab
 import com.itsaky.androidide.ui.editor.CodeEditorView
 import com.itsaky.androidide.uidesigner.UIDesignerActivity
@@ -166,6 +169,8 @@ abstract class BaseEditorActivity :
   private var workspaceStatus by mutableStateOf(IdeStatusBarState())
   private var buildCenterState by mutableStateOf(BuildCenterUiState())
   private var buildCenterOpen by mutableStateOf(false)
+  private var toolchainManagerSnapshot by mutableStateOf(ToolchainManager.inspect())
+  private var toolchainManagerOpen by mutableStateOf(false)
   private var workspaceComposeView: ComposeView? = null
 
   private val onBackPressedCallback: OnBackPressedCallback =
@@ -354,6 +359,19 @@ abstract class BaseEditorActivity :
 
   internal fun hideBuildCenter() {
     buildCenterOpen = false
+  }
+
+  internal fun showToolchainManager() {
+    toolchainManagerSnapshot = ToolchainManager.inspect()
+    toolchainManagerOpen = true
+  }
+
+  internal fun hideToolchainManager() {
+    toolchainManagerOpen = false
+  }
+
+  internal fun refreshToolchainManager() {
+    toolchainManagerSnapshot = ToolchainManager.inspect()
   }
 
   internal fun beginBuildCenter(tasks: List<String>) {
@@ -840,6 +858,14 @@ abstract class BaseEditorActivity :
             onDismiss = { hideBuildCenter() },
           )
         }
+
+        if (toolchainManagerOpen) {
+          ToolchainManagerDialog(
+            snapshot = toolchainManagerSnapshot,
+            onRefresh = { refreshToolchainManager() },
+            onDismiss = { hideToolchainManager() },
+          )
+        }
       }
     }
 
@@ -876,6 +902,16 @@ abstract class BaseEditorActivity :
         shortcut = "F9",
         keywords = listOf("compile", "assemble", "logs", "problems"),
         onClick = { showBuildCenter() },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Toolchain Manager",
+        subtitle = "Inspect SDK, Java and native toolchains",
+        icon = IdeIcons.Settings,
+        category = "Toolchain",
+        keywords = listOf("sdk", "jdk", "clang", "clangd", "ndk", "toolchain"),
+        onClick = { showToolchainManager() },
       )
 
     commands +=

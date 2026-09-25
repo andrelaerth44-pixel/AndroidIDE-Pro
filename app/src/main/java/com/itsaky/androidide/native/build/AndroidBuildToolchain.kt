@@ -14,7 +14,7 @@ data class AndroidBuildToolchain(
 ) {
   val javaReady: Boolean get() = javac?.isFile == true
   val kotlinReady: Boolean get() = kotlinc?.isFile == true
-  val dexReady: Boolean get() get() = d8?.isFile == true
+  val dexReady: Boolean get() = d8?.isFile == true
   val packageReady: Boolean get() = zipalign?.isFile == true && apksigner?.isFile == true
 }
 

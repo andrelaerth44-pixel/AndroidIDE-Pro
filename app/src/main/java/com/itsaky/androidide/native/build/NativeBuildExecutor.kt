@@ -88,8 +88,17 @@ class NativeBuildExecutor(
         }
 
         NativeBuildTask.Kind.GENERATE_JNI_HEADERS -> {
-          // Header generation will be supplied by the JNI project model.
-          // Keeping the stage explicit lets the graph remain stable.
+          val command = JniHeaderGenerator.plan(
+            moduleRoot = moduleRoot,
+            buildDirectory = buildDirectory,
+          )
+
+          if (command != null) {
+            val result = commandExecutor(command, processController, onOutput)
+            if (!result.success) {
+              return fail(task, "JNI header generation failed", result)
+            }
+          }
         }
 
         NativeBuildTask.Kind.COMPILE_C -> {

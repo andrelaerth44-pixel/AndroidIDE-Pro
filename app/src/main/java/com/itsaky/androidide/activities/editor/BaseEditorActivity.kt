@@ -636,7 +636,7 @@ abstract class BaseEditorActivity :
     val request =
       NativeBuildRequest(
         module = module,
-        abi = AbiTarget.ARM64_V8A,
+        abi = preferredNativeAbi(),
         variant = BuildVariant.DEBUG,
       )
 

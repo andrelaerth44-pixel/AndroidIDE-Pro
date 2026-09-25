@@ -5,22 +5,28 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.fragment.app.viewModels
 import com.blankj.utilcode.util.ThreadUtils
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.itsaky.androidide.activities.MainActivity
 import com.itsaky.androidide.activities.PreferencesActivity
 import com.itsaky.androidide.activities.TerminalActivity
-import com.itsaky.androidide.adapters.MainActionsListAdapter
-import com.itsaky.androidide.app.BaseApplication
 import com.itsaky.androidide.common.databinding.LayoutDialogProgressBinding
-import com.itsaky.androidide.databinding.FragmentMainBinding
-import com.itsaky.androidide.models.MainScreenAction
 import com.itsaky.androidide.preferences.databinding.LayoutDialogTextInputBinding
 import com.itsaky.androidide.resources.R
 import com.itsaky.androidide.resources.R.string
 import com.itsaky.androidide.tasks.executeAsyncProvideError
+import com.itsaky.androidide.ui.compose.AndroidIDEProHome
+import com.itsaky.androidide.ui.compose.MainScreenAction
 import com.itsaky.androidide.utils.DialogUtils
 import com.itsaky.androidide.utils.Environment
 import com.itsaky.androidide.utils.ILogger
@@ -35,50 +41,45 @@ class MainFragment : BaseFragment() {
 
   private val viewModel by viewModels<MainViewModel>(
     ownerProducer = { requireActivity() })
-  private var binding: FragmentMainBinding? = null
 
   private val log = ILogger.newInstance("MainFragment")
 
-  override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                            savedInstanceState: Bundle?
+  override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
+    savedInstanceState: Bundle?
   ): View {
-    binding = FragmentMainBinding.inflate(inflater, container, false)
-    return binding!!.root
-  }
-
-  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-    super.onViewCreated(view, savedInstanceState)
-    val createProject = MainScreenAction(string.create_project,
-      R.drawable.ic_add) { showCreateProject() }
-    val openProject = MainScreenAction(string.msg_open_existing_project,
-      R.drawable.ic_folder) { pickDirectory() }
-    val cloneGitRepository = MainScreenAction(string.git_clone_repo,
-      R.drawable.ic_git) { cloneGitRepo() }
-    val openTerminal =
-      MainScreenAction(string.title_terminal, R.drawable.ic_terminal) {
-        startActivity(Intent(requireActivity(), TerminalActivity::class.java))
+    return ComposeView(requireContext()).apply {
+      setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+      setContent {
+        AndroidIDEProHome(
+          actions =
+            listOf(
+              MainScreenAction(string.create_project, Icons.Outlined.Add) { showCreateProject() },
+              MainScreenAction(string.msg_open_existing_project, Icons.Outlined.FolderOpen) {
+                pickDirectory(this@MainFragment::openProject)
+              },
+              MainScreenAction(string.git_clone_repo, Icons.Outlined.Description) { cloneGitRepo() },
+              MainScreenAction(string.title_terminal, Icons.Outlined.Terminal) {
+                startActivity(Intent(requireActivity(), TerminalActivity::class.java))
+              },
+              MainScreenAction(string.msg_preferences, Icons.Outlined.Settings) {
+                gotoPreferences()
+              },
+              MainScreenAction(string.btn_docs, Icons.Outlined.Description) {
+                requireActivity().let { activity ->
+                  (activity.application as com.itsaky.androidide.app.BaseApplication).openDocs()
+                }
+              },
+              MainScreenAction(string.btn_donate, Icons.Outlined.FavoriteBorder) {
+                requireActivity().let { activity ->
+                  (activity.application as com.itsaky.androidide.app.BaseApplication).openSponsors()
+                }
+              },
+            ),
+        )
       }
-    val preferences = MainScreenAction(string.msg_preferences,
-      R.drawable.ic_settings) { gotoPreferences() }
-    val sponsor = MainScreenAction(string.btn_donate, R.drawable.ic_donate) {
-      BaseApplication.getBaseInstance().openSponsors()
     }
-    val docs = MainScreenAction(string.btn_docs, R.drawable.ic_docs) {
-      BaseApplication.getBaseInstance().openDocs()
-    }
-
-    binding!!.actions.adapter = MainActionsListAdapter(
-      listOf(createProject, openProject, cloneGitRepository, openTerminal,
-        preferences, docs, sponsor))
-  }
-
-  override fun onDestroyView() {
-    super.onDestroyView()
-    binding = null
-  }
-
-  private fun pickDirectory() {
-    pickDirectory(this::openProject)
   }
 
   private fun showCreateProject() {
@@ -99,8 +100,7 @@ class MainFragment : BaseFragment() {
     builder.setCancelable(true)
     builder.setPositiveButton(string.git_clone) { dialog, _ ->
       dialog.dismiss()
-      val url = binding.name.editText?.text?.toString()
-      doClone(url)
+      doClone(binding.name.editText?.text?.toString())
     }
     builder.setNegativeButton(android.R.string.cancel, null)
     builder.show()
@@ -132,14 +132,18 @@ class MainFragment : BaseFragment() {
 
     val progress = GitCloneProgressMonitor(binding.progress, binding.message)
     var git: Git? = null
-    val future = executeAsyncProvideError({
-      return@executeAsyncProvideError Git.cloneRepository()
-        .setURI(url)
-        .setDirectory(targetDir)
-        .setProgressMonitor(progress)
-        .call()
-        .also { git = it }
-    }, { _, _ -> })
+    val future =
+      executeAsyncProvideError(
+        {
+          return@executeAsyncProvideError Git.cloneRepository()
+            .setURI(url)
+            .setDirectory(targetDir)
+            .setProgressMonitor(progress)
+            .call()
+            .also { git = it }
+        },
+        { _, _ -> },
+      )
 
     builder.setPositiveButton(android.R.string.cancel) { iface, _ ->
       iface.dismiss()
@@ -158,7 +162,9 @@ class MainFragment : BaseFragment() {
           if (!future.isCancelled) {
             showCloneError(error)
           }
-        } else flashSuccess(string.git_clone_success)
+        } else {
+          flashSuccess(string.git_clone_success)
+        }
       }
     }
   }
@@ -180,11 +186,12 @@ class MainFragment : BaseFragment() {
     startActivity(Intent(requireActivity(), PreferencesActivity::class.java))
   }
 
-  // TODO(itsaky) : Improve this implementation
-  class GitCloneProgressMonitor(val progress: LinearProgressIndicator,
-                                val message: TextView
+  class GitCloneProgressMonitor(
+    private val progress: LinearProgressIndicator,
+    private val message: android.widget.TextView,
   ) : ProgressMonitor {
 
+    @Volatile
     private var cancelled = false
 
     fun cancel() {
@@ -203,7 +210,7 @@ class MainFragment : BaseFragment() {
       ThreadUtils.runOnUiThread { progress.progress = completed }
     }
 
-    override fun endTask() {}
+    override fun endTask() = Unit
 
     override fun isCancelled(): Boolean {
       return cancelled || Thread.currentThread().isInterrupted

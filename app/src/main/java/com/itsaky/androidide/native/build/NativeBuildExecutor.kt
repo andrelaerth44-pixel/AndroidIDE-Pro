@@ -1,5 +1,6 @@
 package com.itsaky.androidide.native.build
 
+import com.itsaky.androidide.native.lsp.ClangdCompilationDatabase
 import com.itsaky.androidide.native.model.NativeBuildRequest
 import com.itsaky.androidide.native.model.NativeLibraryType
 import com.itsaky.androidide.toolchain.NativeToolchain
@@ -111,6 +112,18 @@ class NativeBuildExecutor(
               factory = factory,
             )
 
+          val allCommands =
+            NativeCommandPlanner.planCompilation(
+              sourceRoot = sourceRoot,
+              sourceSet = target.sourceSet,
+              buildDirectory = buildDirectory,
+              abi = request.abi,
+              factory = factory,
+            )
+          ClangdCompilationDatabase.write(
+            outputDirectory = buildDirectory,
+            commands = allCommands.cCommands + allCommands.cppCommands,
+          )
           val result = executeCommands(task.id, commands, executed, onOutput, processController)
           if (result != null) {
             onTaskState(task, NativeBuildTaskState.FAILED)
@@ -128,7 +141,14 @@ class NativeBuildExecutor(
               factory = factory,
             )
 
-          val result = executeCommands(task.id, commands, executed, onOutput)
+          val result =
+            executeCommands(
+              taskId = task.id,
+              commands = commands,
+              executed = executed,
+              onOutput = onOutput,
+              processController = processController,
+            )
           if (result != null) {
             onTaskState(task, NativeBuildTaskState.FAILED)
             return result

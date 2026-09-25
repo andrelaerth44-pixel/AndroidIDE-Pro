@@ -575,6 +575,13 @@ abstract class BaseEditorActivity :
     return null
   }
 
+  private fun preferredNativeAbi(): AbiTarget =
+    Build.SUPPORTED_ABIS
+      .asSequence()
+      .mapNotNull(AbiTarget::fromAndroidAbi)
+      .firstOrNull()
+      ?: AbiTarget.ARM64_V8A
+
   internal fun startNativeBuild() {
     val projectRoot =
       runCatching { File(getProjectDirPath()).canonicalFile }.getOrNull()
@@ -591,7 +598,7 @@ abstract class BaseEditorActivity :
       runCatching {
         NativeProjectModelLoader.load(
           moduleRoot = moduleRoot,
-          abi = AbiTarget.ARM64_V8A,
+          abi = preferredNativeAbi(),
           variant = BuildVariant.DEBUG,
         )
       }.getOrNull()
@@ -731,7 +738,7 @@ abstract class BaseEditorActivity :
     service.execute(
       moduleRoot = module,
       variant = BuildVariant.DEBUG,
-      abi = AbiTarget.ARM64_V8A,
+      abi = preferredNativeAbi(),
       onStage = { stage, detail -> ThreadUtils.runOnUiThread { updateNativeAndroidBuildStage(stage, detail) } },
       onOutput = { line -> ThreadUtils.runOnUiThread { appendBuildCenterOutput(line) } },
     ).whenComplete { result, error ->

@@ -74,7 +74,7 @@ class NativeBuildExecutorTest {
         NativeBuildExecutor(
           toolchain = toolchain,
           androidApiLevel = 28,
-          commandExecutor = { command, _ ->
+          commandExecutor = { command, _, _ ->
             val outputIndex = command.arguments.indexOf("-o")
             if (outputIndex >= 0) {
               File(command.arguments[outputIndex + 1]).apply {

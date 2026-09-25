@@ -80,11 +80,6 @@ android {
 
 kapt { arguments { arg("eventBusIndex", "${BuildConfig.packageName}.events.AppEventsIndex") } }
 
-if (providers.gradleProperty("androidide.kapt.diagnostic").orNull == "true") {
-  tasks.matching { it.name.contains("kapt", ignoreCase = true) }.configureEach {
-    enabled = false
-  }
-}
 
 
 configurations.configureEach {

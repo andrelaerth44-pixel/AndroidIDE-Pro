@@ -5,6 +5,7 @@ import com.itsaky.androidide.lsp.models.DiagnosticResult
 import java.io.Closeable
 import java.io.File
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 /** High-level native language workspace backed by one persistent clangd process. */
@@ -110,12 +111,14 @@ class ClangdWorkspaceSession(
           json = ClangdProtocolMessageFactory.shutdown(requestId),
           requestId = requestId,
         )
-      response.whenComplete { _, _ ->
-        runCatching {
-          processSession.send(ClangdProtocolMessageFactory.exit())
+      response
+        .orTimeout(2, TimeUnit.SECONDS)
+        .whenComplete { _, _ ->
+          runCatching {
+            processSession.send(ClangdProtocolMessageFactory.exit())
+          }
+          processSession.stop()
         }
-        processSession.stop()
-      }
     }.onFailure {
       runCatching { processSession.send(ClangdProtocolMessageFactory.exit()) }
       processSession.stop()

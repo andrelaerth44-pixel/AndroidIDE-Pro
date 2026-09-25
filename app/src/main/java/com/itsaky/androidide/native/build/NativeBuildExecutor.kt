@@ -99,8 +99,11 @@ class NativeBuildExecutor(
               factory = factory,
             )
 
-          val result = executeCommands(task, commands, executed, onOutput, onTaskState)
-          if (result != null) return result
+          val result = executeCommands(commands, executed, onOutput)
+          if (result != null) {
+            onTaskState(task, NativeBuildTaskState.FAILED)
+            return result
+          }
         }
 
         NativeBuildTask.Kind.COMPILE_CPP -> {
@@ -113,8 +116,11 @@ class NativeBuildExecutor(
               factory = factory,
             )
 
-          val result = executeCommands(task, commands, executed, onOutput, onTaskState)
-          if (result != null) return result
+          val result = executeCommands(commands, executed, onOutput)
+          if (result != null) {
+            onTaskState(task, NativeBuildTaskState.FAILED)
+            return result
+          }
         }
 
         NativeBuildTask.Kind.ARCHIVE_OBJECTS -> {
@@ -175,11 +181,9 @@ class NativeBuildExecutor(
   }
 
   private fun executeCommands(
-    task: NativeBuildTask,
     commands: List<NativeCommandSpec>,
     executed: MutableList<String>,
     onOutput: (String) -> Unit,
-    onTaskState: (NativeBuildTask, NativeBuildTaskState) -> Unit,
   ): NativeBuildResult? {
     for (command in commands) {
       command.arguments
@@ -194,14 +198,12 @@ class NativeBuildExecutor(
         return NativeBuildResult(
           success = false,
           executedTasks = executed,
-          failedTaskId = task.id,
+          failedTaskId = "compile",
           message = "Native compile command failed with exit code " + result.exitCode,
         )
       }
     }
 
-    executed += task.id
-    onTaskState(task, NativeBuildTaskState.SUCCESS)
     return null
   }
 

@@ -1201,12 +1201,33 @@ abstract class BaseEditorActivity :
 
     commands +=
       CommandPaletteItem(
-        title = "Native Build",
-        subtitle = "Build the detected C/C++ module with the native toolchain",
+        title = "Build APK",
+        subtitle = "Build the Android app with the native pipeline",
+        icon = IdeIcons.Build,
+        category = "Build",
+        shortcut = "F9",
+        keywords = listOf("build", "apk", "native", "aapt2", "dex", "sign"),
+        onClick = { startBuildCenterBuild() },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Native Library Build",
+        subtitle = "Build only the detected C/C++ module",
         icon = IdeIcons.Code,
         category = "Build",
         keywords = listOf("native", "c", "c++", "clang", "ndk", "jni"),
         onClick = { startNativeBuild() },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Legacy Gradle Build",
+        subtitle = "Use Gradle compatibility mode for existing projects",
+        icon = IdeIcons.Build,
+        category = "Build",
+        keywords = listOf("gradle", "assemble", "compatibility"),
+        onClick = { startLegacyGradleBuild() },
       )
 
     commands +=

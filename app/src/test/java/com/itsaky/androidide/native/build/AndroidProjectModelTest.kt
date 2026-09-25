@@ -6,6 +6,33 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AndroidProjectModelTest {
+
+  @Test
+  fun loaderReadsManifestPackage() {
+    val module = Files.createTempDirectory("android-model-package").toFile()
+    try {
+      val manifest = File(module, "src/main/AndroidManifest.xml")
+      manifest.parentFile!!.mkdirs()
+      manifest.writeText(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            package="com.example.nativeapp">
+          <application />
+        </manifest>
+        """.trimIndent()
+      )
+      File(module, "src/main/res").mkdirs()
+
+      val model = AndroidProjectModelLoader.load(module)
+
+      assertEquals("com.example.nativeapp", model?.applicationId)
+    } finally {
+      module.deleteRecursively()
+    }
+  }
+
+
   @Test
   fun loaderFindsAndroidSourcesAndManifestPackage() {
     val root = Files.createTempDirectory("android-project-model").toFile()

@@ -136,7 +136,7 @@ class ClangdLanguageServer : ILanguageServer {
 
   @NonNull
   override fun formatCode(params: FormatCodeParams): CodeFormatResult =
-    CodeFormatResult(false, Collections.emptyList())
+    CodeFormatResult.NONE
 
   override fun handleFailure(failure: LSPFailure): Boolean = false
 

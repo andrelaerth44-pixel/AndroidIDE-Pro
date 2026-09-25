@@ -2,181 +2,228 @@
 
 Date: 2026-09-25
 
-## Baseline
+## Baseline and current state
 
-- Before-commit: d673b02875228f2fc19be5c37e2c464bc1c40295
-- Current HEAD: 0b91d8dec2a5bed610fa1d279bd4f41c7614955c
-- Commits between baseline and HEAD: 271
-- Files changed: 105
-- Added lines: 9,552
-- Deleted lines: 519
-- Added files: 89
-- Modified files: 16
+- Previous audit baseline: `d673b02875228f2fc19be5c37e2c464bc1c40295`
+- Current HEAD: `c7d99d9e8f2fdb1cfa4b082ac4aa5e4920f4065d`
+- Commits since that audit baseline: 331
+- Current `main...compose-glass-foundation` comparison: 333 commits ahead, 628 behind, 119 changed files.
+- These numbers describe repository history, not feature-completion percentages.
 
-## Before
+## Before this development track
 
-The baseline was the existing AndroidIDE architecture: XML home/editor surfaces, the legacy AndroidTreeView file tree, Sora editor lifecycle, Java/XML language servers, Gradle BuildService, Gradle-oriented project templates, existing AAPT2 infrastructure and the existing APK signing/install infrastructure.
+The starting AndroidIDE architecture was the existing XML/editor/language infrastructure with:
+- Sora editor lifecycle.
+- Java and XML language servers.
+- Android project templates centered on Gradle.
+- Gradle BuildService as the normal project build path.
+- Existing Android SDK/AAPT2/signing/install infrastructure.
 
-## Current UI
+## Current UI changes
 
+Implemented and integrated:
 - Compose + Material 3 workspace foundation.
-- Compose home shell and command palette.
-- Compose explorer with filtering/search and file actions.
+- Compose home/shell surfaces.
+- Compose project explorer with filtering, search and file actions.
 - Compose editor workspace header.
-- Real editor tabs mirrored into Compose and closable through the existing editor lifecycle.
-- Breadcrumbs and status information.
-- Build Center with live status, logs, problems and cancellation.
-- Toolchain Manager with filesystem discovery.
-- Legacy editor infrastructure is intentionally retained underneath the new presentation.
+- Real editor tabs mirrored into Compose while legacy tab lifecycle remains available.
+- Breadcrumbs and status bar.
+- Command Palette with native build, APK build/install, toolchain and explicit legacy Gradle commands.
+- Build Center with task state, logs, Problems and cancellation.
+- Toolchain Manager backed by filesystem discovery.
 
-## Current native model
+This remains an incremental migration; the existing editor lifecycle is still the source of truth underneath the new presentation.
 
-- Native project/module/target/source-set model.
-- Build variants and library types.
-- arm64-v8a is the first implemented native ABI.
-- .androidide/native.json configuration.
-- Deterministic source scanning and native build graph.
+## Native project model
 
-## Current native compiler backend
+Implemented:
+- `AbiTarget`: arm64-v8a, armeabi-v7a, x86 and x86_64.
+- `BuildVariant`.
+- `NativeLibraryType`.
+- `NativeSourceSet`.
+- `NativeTarget`.
+- `NativeModule`.
+- `.androidide/native.json` configuration.
+- Android manifest/minSdk/targetSdk project-model loading.
+- Canonical native library-name normalization so project names with spaces/punctuation still produce stable `lib<name>.so` and `System.loadLibrary(<name>)` values.
 
-- app-level Clang/Clang++/LLD/llvm-ar backend.
-- C17 and C++20 compilation.
-- Android target triple generation.
-- Native ProcessBuilder execution with streaming output.
-- Race-safe cancellation.
+## Native compiler backend
+
+The primary editor-integrated native backend is under `app/src/main/java/com/itsaky/androidide/native/build`.
+
+Implemented:
+- Deterministic native source scanning.
+- Typed dependency-aware build graph.
+- Clang C17 compilation.
+- Clang++ C++20 compilation.
+- Android target triples for all four modeled ABIs.
+- LLD shared linking.
+- llvm-ar static archives.
+- Generated JNI headers added to C/C++ include paths.
+- ProcessBuilder execution with streaming output.
+- Race-safe native cancellation.
 - Async NativeBuildService.
-- Native build tasks are visible in Build Center.
+- Build Center task/output integration.
+- libc++ shared-runtime discovery and packaging when provisioned.
 
-## Current JNI
+## JNI
 
+Implemented:
 - Java native-method detection.
-- javac -h header generation.
-- Generated JNI headers added to native include paths.
-- JNI project generator.
-- JNI App wizard is registered in the existing template provider.
-- Kotlin external fun header generation is not implemented.
+- Real `javac -h` execution.
+- Explicit failure when `javac` is unavailable.
+- Generated JNI headers included by native compilation.
+- Standalone JNI project generator.
+- JNI App project wizard registered in the existing template provider.
 
-## Current clangd
+Not yet implemented:
+- Kotlin `external fun` header generation.
+- Full automatic JNI binding generation beyond the explicit template.
 
-- compile_commands.json.
-- clangd process session and JSON-RPC transport.
-- Request/response routing and notification routing.
-- initialize, didOpen, didChange, didClose, completion, shutdown and exit messages.
-- Diagnostic mapping to AndroidIDE DiagnosticResult.
-- Completion mapping to AndroidIDE CompletionResult.
-- Native ILanguageServer adapter is registered through LspHandler.
-- C/C++ document events are synchronized with clangd.
+## Clangd
 
-Not yet implemented in the adapter: request cancellation, formatting, definition, references and signature help.
+Implemented:
+- `compile_commands.json` generation from the exact native compiler commands.
+- Clangd executable planning.
+- Persistent clangd process session.
+- JSON-RPC `Content-Length` transport.
+- Async request/response routing.
+- initialize / initialized.
+- didOpen / didChange / didClose.
+- completion.
+- definition.
+- references.
+- publishDiagnostics mapping into AndroidIDE `DiagnosticResult`.
+- completion mapping into AndroidIDE `CompletionResult`.
+- location mapping for definition/reference results.
+- Native `ILanguageServer` adapter registered through `LspHandler`.
+- C/C++ document-event synchronization.
 
-## Current templates
+Still missing in the adapter:
+- request cancellation propagation.
+- formatting.
+- signature help.
+- richer code actions/rename.
+- full editor-side UX verification on a real clangd binary.
 
-- NativeActivity project wizard is registered.
-- JNI App project wizard is registered.
-- Both generate Gradle-free native.json configuration.
+## NativeActivity and JNI templates
 
-## Current APK packaging
+Implemented:
+- NativeActivity project wizard.
+- JNI App project wizard.
+- Gradle-free `.androidide/native.json` generation.
+- NativeActivity launcher manifest with native library metadata.
+- JNI bridge plus Java Activity sample.
+- Native templates create the Android `src/main/res` directory required by the native APK loader.
+- Native library names generated by templates match the backend's canonical naming rule.
 
-- AAPT2 compile planning.
-- AAPT2 resource link planning.
-- Native APK package planner/executor.
-- Native shared-library merge into lib/arm64-v8a/lib<module>.so.
+## Native Android APK pipeline
 
-Still missing from this native path: Java/Kotlin compilation, DEX, zipalign, v2/v3 signing and installation.
+A complete native APK pipeline is now represented in `NativeAndroidBuildExecutor`:
 
-## Critical finding: duplicate native backends
+```
+AAPT2 compile
+  -> AAPT2 link
+  -> javac generated sources
+  -> kotlinc (when Kotlin exists)
+  -> javac project Java
+  -> native C/C++ build
+  -> D8
+  -> merge DEX
+  -> merge native library
+  -> merge assets
+  -> zipalign
+  -> debug keystore generation
+  -> apksigner
+  -> optional installation
+```
 
-The repository contains two native execution models:
+Implemented in code:
+- Android SDK build-tool discovery for javac/kotlinc/D8/zipalign/apksigner/keytool/adb.
+- AAPT2 resource compile/link planning.
+- Gradle-free Android project model.
+- Java and Kotlin compilation stages.
+- D8 stage.
+- DEX merge into APK.
+- Native-library merge under `lib/<abi>/`.
+- Asset merge.
+- zipalign.
+- debug keystore generation.
+- apksigner execution.
+- Build & Install command integrated with the existing installer callback.
+- Device ABI selection for native APK/library builds.
 
-1. app/src/main/java/com/itsaky/androidide/native/build
-   Direct Clang/Clang++/LLD/llvm-ar backend used by the editor Native Build action.
+Important validation distinction:
+- The pipeline is implemented and wired.
+- The current branch has not yet received a successful GitHub Actions/device validation for the latest commits; the newest runs are still queued.
 
-2. subprojects/build-engine
-   NativeBuildEngine plus NdkBuild and a custom NdkToolchain expecting libllvmtools.so and libld-gnu-lld.so.
+## Secondary NDK/build-engine backend
 
-The second backend is included in settings.gradle.kts but is not an app dependency in app/build.gradle.kts. It is therefore not the backend used by the editor Native Build action.
+A second backend exists under `subprojects/build-engine`:
+- `NativeBuildEngine`.
+- `NdkBuild`.
+- `NdkToolchain`.
+- Multi-ABI LLVM compilation.
+- Direct Clang/Clang++/LLD/llvm-ar execution.
+- `c++_shared` runtime copying.
+- Incremental task fingerprints.
 
-No matching libllvmtools.so or libld-gnu-lld.so payload is present in the repository tree.
+Current state:
+- The module is included in `settings.gradle.kts`.
+- It is not the executor used by the editor's Native Build action.
+- The repository therefore currently contains two native execution architectures.
 
-These two backends need to converge to one primary native architecture.
+This is an architectural debt to resolve: one authoritative native backend should eventually remain.
 
-## Critical finding: Gradle is still the actual normal build path
+## ABI/toolchain state
 
-The normal Build Center Build action still calls BuildService.executeTasks(assembleDebug). Native Build is a separate command. Therefore the native backend is not yet the primary AndroidIDE Pro APK backend.
+Modeled:
+- arm64-v8a
+- armeabi-v7a
+- x86
+- x86_64
 
-## Critical finding: current native APK path is not end-to-end
+Toolchain discovery:
+- Clang
+- Clang++
+- Clangd
+- LLD
+- LLDB
+- llvm-ar
+- libc++ headers
+- libc++ shared runtime when present
 
-Current flow:
+The repository does not itself contain a complete bundled NDK/LLVM payload. The build depends on external provisioning of that toolchain.
 
-AAPT2 compile -> AAPT2 link -> native library ZIP merge
+## Gradle status
 
-Missing:
+Gradle remains in the repository for IDE build infrastructure and project compatibility.
 
-Java/Kotlin compile -> DEX -> zipalign -> APK signing -> install
+For AndroidIDE Pro user projects:
+- `Build APK` uses the native Android pipeline.
+- `Build & Install APK` uses the native Android pipeline.
+- `Native Library Build` uses the direct native backend.
+- `Legacy Gradle Build` is explicit compatibility mode.
 
-Existing Gradle infrastructure still supplies the normal complete APK pipeline.
+Therefore Gradle is no longer the selected backend for the new APK build command, but it has not yet been removed from the product or repository.
 
-## Toolchain reality
+## What is still to do
 
-ToolchainManager and NativeToolchainLocator perform real filesystem discovery, but the repository does not contain a complete Android NDK/LLVM payload. Native builds depend on external toolchain provisioning.
-
-## Validation reality
-
-The latest GitHub Actions run for HEAD 0b91d8de is queued. No successful or failed CI result for the current HEAD was observed during this audit.
-
-Therefore the branch is not yet CI-validated.
-
-## What is implemented
-
-- Compose workspace foundation.
-- Explorer and editor workspace presentation.
-- Build Center integration.
-- Toolchain discovery UI.
-- Native project model.
-- Native build graph.
-- Direct Clang build executor.
-- JNI header generation.
-- compile_commands generation.
-- clangd transport/session/adapter foundation.
-- NativeActivity wizard.
-- JNI App wizard.
-- AAPT2/native APK package planning and native merge.
-
-## What is integrated
-
-- Compose workspace is integrated with real editor lifecycle.
-- Build Center receives real Gradle events.
-- Native Build feeds real native task state/output into Build Center.
-- clangd is registered in the existing language-server registry.
-- clangd consumes native document events and publishes mapped diagnostics.
-- native templates are registered in the existing template provider.
-
-## What is not end-to-end
-
-- Native backend as the complete APK producer.
-- Complete bundled NDK/toolchain.
-- Java/Kotlin plus DEX in the native graph.
-- zipalign/sign/install in the native graph.
-- Multiple native ABIs.
-- LLDB/debugger/profiler.
-
-## Next engineering order
-
-1. Stabilize CI against current HEAD.
-2. Choose one native backend and eliminate the duplicate model.
-3. Define and ship the AndroidIDE Pro native toolchain/NDK payload.
-4. Add Java/Kotlin compilation and DEX to the native graph.
-5. Complete unsigned APK assembly with native libraries.
-6. Add zipalign and v2/v3 signing.
-7. Make Native Build the main Build Center backend; keep Gradle as compatibility mode.
-8. Expand ABI support.
-9. Add LLDB/debugger and profiler.
+1. Stabilize the current branch with passing GitHub Actions and real-device validation.
+2. Reconcile `app/native/build` and `subprojects/build-engine` into one authoritative native architecture.
+3. Package/provision the complete AndroidIDE Pro LLVM/NDK toolchain instead of relying on external files.
+4. Add request cancellation, formatting and richer clangd features to the editor adapter.
+5. Improve Java/Kotlin dependency/classpath handling for broader Android projects.
+6. Make the native APK graph robust for multidex, resources/assets edge cases and additional packaging inputs.
+7. Expand automated APK integration tests beyond planners/mocks into real toolchain smoke tests.
+8. Add LLDB/debugger and profiling.
+9. Remove the remaining Gradle dependency from the AndroidIDE Pro user-project path once compatibility requirements are covered.
 
 ## Status terminology
 
-Implemented = code exists and has focused tests.
-Integrated = connected to the real AndroidIDE lifecycle.
-End-to-end = a real user flow can exercise the complete subsystem.
-Validated = current CI/device build proves it.
+- Implemented = code exists and has focused tests.
+- Integrated = connected to the real AndroidIDE lifecycle.
+- End-to-end = a real user flow can exercise the complete subsystem.
+- Validated = current CI/device evidence proves it.
 
 Do not treat file existence as proof of integration or end-to-end operation.

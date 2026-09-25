@@ -6,6 +6,8 @@ import java.io.File
 data class NativeProjectConfig(
   val libraryType: NativeLibraryType = NativeLibraryType.SHARED,
   val androidApiLevel: Int = 28,
+  val minSdk: Int = 28,
+  val targetSdk: Int = 28,
 )
 
 object NativeProjectConfigStore {

@@ -4,124 +4,118 @@ Date: 2026-09-25
 
 ## Source of truth
 
-This file is the working status snapshot for the AndroidIDE Pro development branch.
-
 Branch: `compose-glass-foundation`
+
+Current HEAD:
+`c7d99d9e8f2fdb1cfa4b082ac4aa5e4920f4065d`
 
 ## Active sprint
 
-### Native Build Foundation
+### Native Android Backend
 
-The Compose workspace, Build Center, Command Palette and Toolchain Manager foundations are already integrated with the existing editor lifecycle.
+The native backend now spans the entire intended project-build shape:
 
-### Completed in the current native sprint
+```
+Project model
+  -> resource processing
+  -> Java/Kotlin compilation
+  -> JNI/native compilation
+  -> D8
+  -> DEX merge
+  -> native-library merge
+  -> asset merge
+  -> zipalign
+  -> signing
+  -> installation
+```
 
-#### Project model
-- `AbiTarget` with canonical Android ABI name; arm64-v8a is implemented first.
-- `BuildVariant`
-- `NativeLibraryType`
-- `NativeSourceSet`
-- `NativeTarget`
-- `NativeModule`
-- `.androidide/native.json` project configuration and round-trip persistence.
-- Native source discovery under `src/main`.
+The implementation is wired to Build Center, but the newest GitHub Actions runs are still queued, so this state is not yet CI/device validated.
 
-#### Build graph
-- Typed deterministic build tasks.
-- Dependency validation and cycle detection.
-- Dependency-aware topological order.
-- Shared-library and static-library branches selected from the requested ABI/variant target.
+## Completed
 
-#### Native command layer
-- Clang C17 compilation.
-- Clang++ C++20 compilation with libc++.
-- Android arm64-v8a target triple.
-- LLD shared linking.
-- llvm-ar static archive generation.
-- Generated JNI header directory is available to C/C++ include paths.
-- Canonical `lib/arm64-v8a/` output naming.
+### Workspace
+- Compose workspace shell.
+- Explorer V2 foundation.
+- Editor workspace/header.
+- Command Palette.
+- Build Center.
+- Toolchain Manager.
+- Legacy editor lifecycle retained underneath.
 
-#### Process and service layer
-- Real `ProcessBuilder` execution.
-- Streaming process output.
-- Race-safe native process cancellation.
-- Single-build asynchronous `NativeBuildService`.
-- Build Center task/progress/output integration.
+### Native compiler
+- Native project model.
+- Four Android ABI targets.
+- Build variants.
+- Shared/static library model.
+- Deterministic source scanning.
+- Dependency-aware native build graph.
+- Clang C17.
+- Clang++ C++20.
+- LLD.
+- llvm-ar.
+- Process streaming and cancellation.
+- JNI `javac -h`.
+- `compile_commands.json`.
+- libc++ shared-runtime discovery/packaging.
 
-#### JNI
-- Java native-method detection.
-- Real `javac -h` command planning/execution.
-- Explicit failure when a configured JDK does not contain `javac`.
-- Dependency-free JNI project generator producing a Java bridge and C++ implementation.
+### Clangd
+- Persistent clangd session.
+- JSON-RPC transport.
+- Request/response router.
+- initialize lifecycle.
+- document synchronization.
+- diagnostics.
+- completion.
+- definition.
+- references.
+- location mapping.
+- `ILanguageServer` adapter registered in the existing LSP registry.
 
-#### Clangd
-- `compile_commands.json` generated from the exact native compile commands.
-- Database written at the native module root.
-- Clangd launch command planner.
-- Persistent clangd process session with stderr capture and lifecycle control.
-- JSON-RPC framing transport using UTF-8 and `Content-Length`.
-- Core initialize, document open/change/close, completion, shutdown and exit message generation.
-- `publishDiagnostics` mapping to `DiagnosticResult`.
-- LSP completion mapping to AndroidIDE `CompletionResult`.
-- Native `ILanguageServer` registration through `LspHandler`.
-- Workspace lifecycle synchronization so asynchronous editor events do not create duplicate clangd sessions.
+### Templates
+- NativeActivity wizard.
+- JNI App wizard.
+- Both registered through the existing template provider.
+- Generated projects are Gradle-free and include `.androidide/native.json`.
+- Native library naming is shared between templates and the build model.
 
-The clangd transport is now connected to AndroidIDE Pro's existing language-server registry. The adapter consumes C/C++ document events, routes diagnostics to the existing language client, and exposes completion through the existing `CompletionResult` model.
+### Native APK
+- AAPT2 compile/link.
+- Java/Kotlin compilation.
+- D8.
+- DEX merge.
+- Native library merge.
+- libc++ runtime merge.
+- assets merge.
+- zipalign.
+- debug keystore generation.
+- apksigner.
+- Build & Install action.
+- Device ABI selection.
 
-#### NativeActivity
-- Standalone NativeActivity template generator.
-- NativeActivity project is available in the existing project wizard.
-- Java NativeActivity host.
-- Minimal `ANativeActivity_onCreate` native entry point.
-- Manifest metadata for the generated native shared library.
+## Important architecture debt
 
-#### JNI project wizard
-- JNI App project is available in the existing project wizard.
-- Generates `NativeBridge.java`, `MainActivity.java` and `native_bridge.cpp`.
-- Generates a launcher manifest and Gradle-free `.androidide/native.json`.
+The repository currently contains two native build architectures:
 
-#### APK native packaging
-- AAPT2 resource compile planner.
-- AAPT2 resource link planner.
-- Native APK package planner/executor.
-- Native shared-library merge stage for unsigned APKs.
-- ABI-aware entry path: `lib/arm64-v8a/lib<module>.so`.
-- Native libraries are emitted as ZIP `STORED` entries.
-- Merge occurs before signing; v2/v3 signatures must be generated afterward.
+1. `app/native/build` — the backend actually used by the editor and Build Center.
+2. `subprojects/build-engine` — a second generic/native engine containing `NdkBuild`.
 
-### Important architecture finding
-- A second native backend also exists under `subprojects/build-engine`.
-- The editor Native Build action currently uses the app-level `native/build` backend.
-- These native backends must be reconciled before AndroidIDE Pro has one authoritative native build architecture.
+The second engine is not currently the user-facing backend. These must be reconciled before declaring the native architecture finished.
 
 ## Validation state
 
-GitHub Actions for the newest commits are currently queued. No successful or failed result for the latest native changes has been observed yet, so the repository should not be considered CI-validated at this point.
+- Current GitHub Actions runs for the latest changes are queued.
+- No successful result for the current HEAD has been observed yet.
+- No real-device APK smoke test has been observed yet.
 
 ## Next work
 
-1. Stabilize CI against the current HEAD.
-2. Reconcile the app-level native backend with subprojects/build-engine.
-3. Add clangd request cancellation plus formatting, definition and references support.
-4. Add Java/Kotlin compilation and DEX to the native APK graph.
-5. Add zip alignment and v2/v3 APK signing to the native pipeline.
-6. Promote Native Build to the primary Build Center path; keep Gradle only as compatibility infrastructure.
-7. Package and provision the complete AndroidIDE Pro LLVM/NDK toolchain.
-8. Add additional ABIs, then LLDB/debugger and profiler support.
+1. Get current CI green and fix any compiler/test failures.
+2. Converge the two native backends into one architecture.
+3. Provision/ship the complete AndroidIDE Pro LLVM/NDK toolchain.
+4. Harden the native APK pipeline with broader dependency/resource/classpath handling.
+5. Add clangd cancellation, formatting and richer LSP features.
+6. Expand APK integration tests and device smoke tests.
+7. Add LLDB/debugger/profiler.
+8. Remove the need for Gradle in the AndroidIDE Pro user-project path, retaining it only as compatibility infrastructure.
 
-## Architecture direction
-
-```
-Project
-  -> Project Model
-  -> Build Graph
-  -> Java/Kotlin Pipeline + Native Pipeline
-  -> Resource Merge
-  -> Dex
-  -> Native Library Merge
-  -> APK Alignment
-  -> APK Signing
-  -> Install
-```
-
-Gradle must not become the planned primary AndroidIDE Pro backend.
+Gradle must not become the planned primary backend for AndroidIDE Pro user projects.

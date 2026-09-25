@@ -44,6 +44,17 @@ object NativeToolchainLocator {
         expectedRoot?.let { File(it, "include/c++/v1") },
       ).firstOrNull { it.exists() }
 
+    val libcxxShared =
+      listOfNotNull(
+        expectedRoot?.let { File(it, "lib64/libc++_shared.so") },
+        expectedRoot?.let { File(it, "lib/arm64-v8a/libc++_shared.so") },
+        expectedRoot?.let { File(it, "sysroot/usr/lib/aarch64-linux-android/libc++_shared.so") },
+      ).firstOrNull(File::isFile)
+        ?: expectedRoot
+          ?.takeIf(File::isDirectory)
+          ?.walkTopDown()
+          ?.firstOrNull { it.isFile && it.name == "libc++_shared.so" }
+
     return NativeToolchain(
       root = expectedRoot?.takeIf { it.exists() },
       sysroot = sysroot,
@@ -52,6 +63,7 @@ object NativeToolchainLocator {
         displayName = "libc++",
         path = libcxx,
       ),
+      libcxxShared = libcxxShared,
     )
   }
 

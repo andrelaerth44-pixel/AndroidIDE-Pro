@@ -93,7 +93,7 @@ class ClangdLanguageServer : ILanguageServer {
     cancelChecker: ICancelChecker,
   ): CompletionResult {
     if (!isNativeFile(params.file)) return CompletionResult.EMPTY
-    if (cancelChecker.isCancelled) return CompletionResult.EMPTY
+    if (cancelChecker.isCancelled()) return CompletionResult.EMPTY
 
     val session = workspace ?: return CompletionResult.EMPTY
     return runCatching {

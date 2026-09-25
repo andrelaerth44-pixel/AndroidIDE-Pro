@@ -33,6 +33,17 @@ class ClangdJsonRpcResponseRouterTest {
   }
 
   @Test
+  fun notificationHandlerCanBeRebound() {
+    val notifications = mutableListOf<String>()
+    val router = ClangdJsonRpcResponseRouter()
+
+    router.setNotificationHandler { notifications += it }
+    router.route("{"jsonrpc":"2.0","method":"initialized"}")
+
+    assertEquals(1, notifications.size)
+  }
+
+  @Test
   fun failOnlyCompletesTheRequestedFuture() {
     val router = ClangdJsonRpcResponseRouter()
     val first = router.register(1)

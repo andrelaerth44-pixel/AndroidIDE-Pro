@@ -5,6 +5,7 @@ object NativeCommandExecutor {
   fun execute(
     command: NativeCommandSpec,
     environment: Map<String, String> = emptyMap(),
+    controller: NativeProcessController? = null,
     onOutput: (String) -> Unit = {},
   ): NativeProcessResult {
     val startedAt = System.currentTimeMillis()
@@ -19,21 +20,27 @@ object NativeCommandExecutor {
     processBuilder.environment().putAll(environment)
 
     val process = processBuilder.start()
-    val output = StringBuilder()
+    controller?.attach(process)
 
-    process.inputStream.bufferedReader().useLines { lines ->
-      lines.forEach { line ->
-        output.append(line).append('\n')
-        onOutput(line)
+    try {
+      val output = StringBuilder()
+
+      process.inputStream.bufferedReader().useLines { lines ->
+        lines.forEach { line ->
+          output.append(line).append('\n')
+          onOutput(line)
+        }
       }
+
+      val exitCode = process.waitFor()
+
+      return NativeProcessResult(
+        exitCode = exitCode,
+        output = output.toString(),
+        durationMs = System.currentTimeMillis() - startedAt,
+      )
+    } finally {
+      controller?.clear(process)
     }
-
-    val exitCode = process.waitFor()
-
-    return NativeProcessResult(
-      exitCode = exitCode,
-      output = output.toString(),
-      durationMs = System.currentTimeMillis() - startedAt,
-    )
   }
 }

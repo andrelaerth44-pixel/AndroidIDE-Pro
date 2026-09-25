@@ -109,7 +109,6 @@ class NativeAndroidBuildExecutor(
           abi.androidAbiName,
       )
     buildDirectory.mkdirs()
-
     val compiledResources = File(buildDirectory, "resources.zip")
     val unsignedApk = File(buildDirectory, "unsigned.apk")
     val alignedApk = File(buildDirectory, "aligned.apk")
@@ -251,25 +250,27 @@ class NativeAndroidBuildExecutor(
 
     if (nativeModule != null) {
       val nativeToolchain = NativeToolchainLocator.locate()
-      val required =
-        listOf(
-          NativeToolId.CLANG,
-          NativeToolId.CLANGXX,
-        )
+      val needsC = nativeModule.targets.any { it.sourceSet.cSources.isNotEmpty() }
+      val needsCpp =
+        nativeModule.targets.any {
+          it.sourceSet.cppSources.isNotEmpty() ||
+            it.libraryType == NativeLibraryType.SHARED
+        }
       val missing =
-        required.firstOrNull { nativeModule.targets.any { target ->
-          when {
-            target.sourceSet.cSources.isNotEmpty() ->
-              it == NativeToolId.CLANG && nativeToolchain.tool(it)?.path == null
-            target.sourceSet.cppSources.isNotEmpty() ->
-              it == NativeToolId.CLANGXX && nativeToolchain.tool(it)?.path == null
-            else -> false
-          }
-        } }
+        when {
+          needsC && nativeToolchain.tool(NativeToolId.CLANG)?.path == null ->
+            "CLANG"
+          needsCpp && nativeToolchain.tool(NativeToolId.CLANGXX)?.path == null ->
+            "CLANGXX"
+          nativeModule.targets.any { it.libraryType == NativeLibraryType.STATIC } &&
+            nativeToolchain.tool(NativeToolId.LLVM_AR)?.path == null ->
+            "LLVM_AR"
+          else -> null
+        }
       if (missing != null) {
         return fail(
           NativeAndroidBuildStage.COMPILE_NATIVE,
-          "Native toolchain is missing " + missing.name,
+          "Native toolchain is missing " + missing,
         )
       }
 

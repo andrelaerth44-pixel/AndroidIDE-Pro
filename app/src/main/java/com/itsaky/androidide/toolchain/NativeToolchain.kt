@@ -8,6 +8,7 @@ enum class NativeToolId {
   CLANGD,
   LLD,
   LLDB,
+  LLVM_AR,
   LIBCXX,
 }
 

@@ -25,6 +25,7 @@ import com.itsaky.androidide.models.Range
 import com.itsaky.androidide.native.lsp.ClangdCommandPlanner
 import com.itsaky.androidide.native.lsp.ClangdProcessSession
 import com.itsaky.androidide.native.lsp.ClangdWorkspaceSession
+import com.itsaky.androidide.native.model.NativeProjectModelLoader
 import com.itsaky.androidide.progress.ICancelChecker
 import com.itsaky.androidide.projects.ProjectManager
 import com.itsaky.androidide.projects.api.Project
@@ -35,6 +36,7 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -49,7 +51,7 @@ class ClangdLanguageServer : ILanguageServer {
   private val log = ILogger.newInstance("ClangdLanguageServer")
   private var client: ILanguageClient? = null
   private var settings: IServerSettings? = null
-  private val diagnostics = mutableMapOf<Path, DiagnosticResult>()
+  private val diagnostics = ConcurrentHashMap<Path, DiagnosticResult>()
   private var workspaceRoot: File? = null
   private var workspace: ClangdWorkspaceSession? = null
 
@@ -175,6 +177,11 @@ class ClangdLanguageServer : ILanguageServer {
     workspace?.close()
     workspace = null
     workspaceRoot = moduleRoot
+
+    if (NativeProjectModelLoader.load(moduleRoot) == null) {
+      log.info("No native sources found; native clangd remains inactive")
+      return
+    }
 
     val toolchain = NativeToolchainLocator.locate()
     if (toolchain.tool(NativeToolId.CLANGD)?.path == null) {

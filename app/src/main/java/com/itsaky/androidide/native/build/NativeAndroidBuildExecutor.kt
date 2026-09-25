@@ -384,6 +384,22 @@ class NativeAndroidBuildExecutor(
           outputApk = next,
         )
         currentApk = next
+
+        nativeToolchain.libcxxShared
+          ?.takeIf(File::isFile)
+          ?.let { libcxx ->
+            onStage(NativeAndroidBuildStage.MERGE_NATIVE, "Merge libc++ runtime")
+            val runtimeApk = File(buildDirectory, "native-runtime-merged.apk")
+            ApkEntryMerger.merge(
+              inputApk = currentApk,
+              outputApk = runtimeApk,
+              replacementEntries =
+                mapOf(
+                  "lib/" + abi.androidAbiName + "/libc++_shared.so" to libcxx,
+                ),
+            )
+            currentApk = runtimeApk
+          }
       }
     }
 

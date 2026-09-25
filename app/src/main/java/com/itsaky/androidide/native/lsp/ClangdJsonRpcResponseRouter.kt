@@ -5,8 +5,11 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 class ClangdJsonRpcResponseRouter(
-  private val onNotification: (String) -> Unit = {},
+  onNotification: (String) -> Unit = {},
 ) {
+
+  @Volatile
+  private var notificationHandler: (String) -> Unit = onNotification
 
   private val pending = ConcurrentHashMap<Int, CompletableFuture<String>>()
 
@@ -27,7 +30,11 @@ class ClangdJsonRpcResponseRouter(
         return
       }
     }
-    onNotification(json)
+    notificationHandler(json)
+  }
+
+  fun setNotificationHandler(handler: (String) -> Unit) {
+    notificationHandler = handler
   }
 
   fun fail(requestId: Int, error: Throwable) {

@@ -60,6 +60,9 @@ class ClangdProcessSession(
 
   fun initialize(workspaceRoot: File, requestId: Int = 1) {
     send(ClangdProtocolMessageFactory.initialize(requestId, workspaceRoot))
+  }
+
+  fun initialized() {
     send(ClangdProtocolMessageFactory.initialized())
   }
 

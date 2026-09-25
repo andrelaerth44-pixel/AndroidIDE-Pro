@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -157,12 +155,13 @@ private fun BuildStepRow(step: BuildStepUi) {
       }
     }
   }
+  }
 }
 
 private fun stepStateIcon(state: BuildStepState): ImageVector =
   when (state) {
     BuildStepState.PENDING -> IdeIcons.Pending
-    BuildStepState.RUNNING -> Icons.Outlined.PlayArrow
+    BuildStepState.RUNNING -> IdeIcons.Play
     BuildStepState.SUCCESS -> IdeIcons.Check
     BuildStepState.FAILED -> IdeIcons.Error
   }

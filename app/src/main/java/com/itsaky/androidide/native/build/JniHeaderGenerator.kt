@@ -24,7 +24,8 @@ object JniHeaderGenerator {
       return null
     }
 
-    val javac = runCatching { Environment.JAVA }.getOrNull() ?: return null
+    val java = runCatching { Environment.JAVA }.getOrNull() ?: return null
+    val javac = java.parentFile?.let { File(it, "javac") } ?: return null
     if (!javac.isFile) {
       return null
     }
@@ -40,7 +41,7 @@ object JniHeaderGenerator {
       ).joinToString(File.pathSeparator)
 
     return NativeCommandSpec(
-      executable = javac.parentFile?.let { File(it, "javac") } ?: javac,
+      executable = javac,
       arguments =
         buildList {
           add("-h")

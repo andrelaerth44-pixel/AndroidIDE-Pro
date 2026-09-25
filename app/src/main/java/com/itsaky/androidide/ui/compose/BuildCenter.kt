@@ -1,0 +1,170 @@
+package com.itsaky.androidide.ui.compose
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+
+enum class BuildStepState {
+  PENDING,
+  RUNNING,
+  SUCCESS,
+  FAILED,
+}
+
+data class BuildStepUi(
+  val id: String,
+  val title: String,
+  val detail: String? = null,
+  val state: BuildStepState = BuildStepState.PENDING,
+)
+
+@Composable
+fun AndroidIDEProBuildCenter(
+  steps: List<BuildStepUi>,
+  isBuilding: Boolean,
+  onBuild: () -> Unit,
+  onStop: () -> Unit,
+  onRefresh: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  AndroidIDETheme {
+    Column(
+      modifier = modifier.fillMaxSize().padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      GlassSurface(modifier = Modifier.fillMaxWidth()) {
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(18.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = "Build Center",
+              style = MaterialTheme.typography.titleLarge,
+            )
+            Text(
+              text = if (isBuilding) "Building project…" else "Ready to build",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+
+          IconButton(onClick = onRefresh) {
+            Icon(Icons.Outlined.Refresh, contentDescription = "Refresh build")
+          }
+
+          if (isBuilding) {
+            IconButton(onClick = onStop) {
+              Icon(Icons.Outlined.Stop, contentDescription = "Stop build")
+            }
+          } else {
+            Button(
+              onClick = onBuild,
+              contentPadding = PaddingValues(horizontal = 14.dp),
+            ) {
+              Icon(
+                imageVector = Icons.Outlined.PlayArrow,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+              )
+              Spacer(Modifier.size(6.dp))
+              Text("Build")
+            }
+          }
+        }
+      }
+
+      GlassPanel(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+          verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+          Text(
+            text = "Pipeline",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+          )
+
+          LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = 8.dp),
+          ) {
+            items(steps, key = { it.id }) { step ->
+              BuildStepRow(step)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun BuildStepRow(step: BuildStepUi) {
+  Row(
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Icon(
+      imageVector = stepStateIcon(step.state),
+      contentDescription = null,
+      modifier = Modifier.size(20.dp),
+      tint =
+        when (step.state) {
+          BuildStepState.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
+          BuildStepState.RUNNING -> MaterialTheme.colorScheme.primary
+          BuildStepState.SUCCESS -> MaterialTheme.colorScheme.primary
+          BuildStepState.FAILED -> MaterialTheme.colorScheme.error
+        },
+    )
+
+    Column(
+      modifier = Modifier.weight(1f).padding(start = 12.dp),
+    ) {
+      Text(
+        text = step.title,
+        style = MaterialTheme.typography.bodyLarge,
+      )
+      if (!step.detail.isNullOrBlank()) {
+        Text(
+          text = step.detail!!,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+    }
+  }
+}
+
+private fun stepStateIcon(state: BuildStepState): ImageVector =
+  when (state) {
+    BuildStepState.PENDING -> Icons.Outlined.HourglassEmpty
+    BuildStepState.RUNNING -> Icons.Outlined.PlayArrow
+    BuildStepState.SUCCESS -> Icons.Outlined.CheckCircle
+    BuildStepState.FAILED -> Icons.Outlined.ErrorOutline
+  }

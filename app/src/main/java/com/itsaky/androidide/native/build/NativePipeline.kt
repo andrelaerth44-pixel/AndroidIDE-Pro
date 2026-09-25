@@ -6,6 +6,15 @@ import com.itsaky.androidide.native.model.NativeLibraryType
 object NativePipeline {
 
   fun createGraph(request: NativeBuildRequest): NativeBuildGraph {
+    val target =
+      requireNotNull(
+        request.module.targets.firstOrNull {
+          it.abi == request.abi && it.variant == request.variant
+        }
+      ) {
+        "Requested native target is not present in the module"
+      }
+
     val prefix =
       request.module.moduleName + ":" + request.abi + ":" + request.variant
 
@@ -43,12 +52,8 @@ object NativePipeline {
       compileCpp,
     )
 
-    val sharedTarget = request.module.targets.any {
-      it.libraryType == NativeLibraryType.SHARED
-    }
-
     val finalTask =
-      if (sharedTarget) {
+      if (target.libraryType == NativeLibraryType.SHARED) {
         task(
           prefix = prefix,
           kind = NativeBuildTask.Kind.LINK_NATIVE,

@@ -178,12 +178,7 @@ class NativeBuildExecutor(
         }
 
         NativeBuildTask.Kind.PACKAGE_NATIVE_LIBS -> {
-          val type =
-            if (request.module.targets.any { it.libraryType == NativeLibraryType.SHARED }) {
-              NativeLibraryType.SHARED
-            } else {
-              NativeLibraryType.STATIC
-            }
+          val type = target.libraryType
 
           val output = nativeOutputFile(buildDirectory, request, type)
           if (!output.isFile) {

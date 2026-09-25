@@ -109,16 +109,20 @@ class NativeAndroidBuildExecutor(
           abi.androidAbiName,
       )
     buildDirectory.mkdirs()
-    classesDirectory.mkdirs()
-    generatedJava.mkdirs()
-    dexDirectory.mkdirs()
     val compiledResources = File(buildDirectory, "resources.zip")
     val unsignedApk = File(buildDirectory, "unsigned.apk")
     val alignedApk = File(buildDirectory, "aligned.apk")
-    val signedApk = File(buildDirectory, "outputs/" + moduleRoot.name + "-debug.apk")
+    val signedApk =
+      File(
+        buildDirectory,
+        "outputs/" + moduleRoot.name + "-" + variant.name.lowercase() + ".apk",
+      )
     val generatedJava = File(buildDirectory, "generated")
     val classesDirectory = File(buildDirectory, "classes")
     val dexDirectory = File(buildDirectory, "dex")
+    generatedJava.mkdirs()
+    classesDirectory.mkdirs()
+    dexDirectory.mkdirs()
     val kotlinClasspath = findKotlinStdlib(toolchain)
     val classpath = buildClasspath(model, kotlinClasspath)
 

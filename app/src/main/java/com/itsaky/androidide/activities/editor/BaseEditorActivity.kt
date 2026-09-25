@@ -87,7 +87,11 @@ import com.itsaky.androidide.models.LogLine
 import com.itsaky.androidide.models.OpenedFile
 import com.itsaky.androidide.models.Range
 import com.itsaky.androidide.models.SearchResult
+import com.itsaky.androidide.native.build.AndroidProjectModelLoader
+import com.itsaky.androidide.native.build.DefaultNativeAndroidBuildService
 import com.itsaky.androidide.native.build.DefaultNativeBuildService
+import com.itsaky.androidide.native.build.NativeAndroidBuildService
+import com.itsaky.androidide.native.build.NativeAndroidBuildStage
 import com.itsaky.androidide.native.build.NativeBuildExecutor
 import com.itsaky.androidide.native.build.NativeBuildService
 import com.itsaky.androidide.native.build.NativeBuildTaskState
@@ -181,6 +185,7 @@ abstract class BaseEditorActivity :
   private var buildCenterState by mutableStateOf(BuildCenterUiState())
   private var buildCenterOpen by mutableStateOf(false)
   private var nativeBuildService: NativeBuildService? = null
+  private var nativeAndroidBuildService: NativeAndroidBuildService? = null
   private var toolchainManagerSnapshot by mutableStateOf(ToolchainManager.inspect())
   private var toolchainManagerOpen by mutableStateOf(false)
   private var workspaceComposeView: ComposeView? = null
@@ -386,6 +391,38 @@ abstract class BaseEditorActivity :
     toolchainManagerSnapshot = ToolchainManager.inspect()
   }
 
+  private fun updateNativeAndroidBuildStage(
+    stage: NativeAndroidBuildStage,
+    detail: String?,
+  ) {
+    val current = buildCenterState
+    val stageId = "android-native." + stage.name.lowercase()
+    val updated =
+      current.steps.map { step ->
+        when {
+          step.id == stageId ->
+            step.copy(
+              state =
+                when (stage) {
+                  NativeAndroidBuildStage.SUCCESS -> BuildStepState.SUCCESS
+                  NativeAndroidBuildStage.FAILED -> BuildStepState.FAILED
+                  else -> BuildStepState.RUNNING
+                },
+              detail = detail ?: step.detail,
+            )
+          step.state == BuildStepState.RUNNING -> step.copy(state = BuildStepState.SUCCESS)
+          else -> step
+        }
+      }
+    val completed = updated.count { it.state == BuildStepState.SUCCESS }
+    buildCenterState =
+      current.copy(
+        status = detail ?: current.status,
+        progress = if (updated.isEmpty()) null else completed.toFloat() / updated.size.toFloat(),
+        steps = updated,
+        isBuilding = stage != NativeAndroidBuildStage.SUCCESS && stage != NativeAndroidBuildStage.FAILED,
+      )
+  }
   internal fun beginBuildCenterSteps(steps: List<BuildStepUi>, status: String = "Preparing build…") {
     buildCenterState =
       BuildCenterUiState(

@@ -95,7 +95,7 @@ Implemented in the current branch:
 - Native command generation for C17/C++20, Android ARM64 targeting, libc++, LLD and llvm-ar.
 - Native build executor with asynchronous service, real process cancellation and Build Center integration.
 - Clangd `compile_commands.json` generation from the same compiler commands.
-- Clangd launch planning and JSON-RPC `Content-Length` transport foundation.
+- Clangd launch planning, persistent process sessions and JSON-RPC `Content-Length` transport foundation.
 - Real JNI `javac -h` header-generation stage with explicit JDK/javac validation.
 - Reusable JNI project template generator with a C++ JNI bridge.
 - Reusable NativeActivity project template with native entrypoint and manifest.

@@ -34,65 +34,66 @@ object ToolchainManager {
     val nativeToolchain = NativeToolchainLocator.locate()
     val androidBuildTools = com.itsaky.androidide.native.build.AndroidBuildToolchainLocator.locate()
 
-    val components = mutableListOf(
-      component(
-        id = "jdk",
-        name = "JDK",
-        description = "Java runtime and compiler environment",
-        file = javaHome,
-      ),
-      component(
-        id = "android-sdk",
-        name = "Android SDK",
-        description = "SDK root used by the current AndroidIDE installation",
-        file = androidHome,
-      ),
-      component(
-        id = "aapt2",
-        name = "AAPT2",
-        description = "Android resource compiler",
-        file = aapt2,
-      ),
-      component(
-        id = "android-jar",
-        name = "Android API",
-        description = "Boot classpath Android API jar used by language/build tooling",
-        file = androidJar,
-      ),
-    )
+    val components = mutableListOf<ToolchainComponent>()
+    components +=
+      listOf(
+        component(
+          id = "jdk",
+          name = "JDK",
+          description = "Java runtime and compiler environment",
+          file = javaHome,
+        ),
+        component(
+          id = "android-sdk",
+          name = "Android SDK",
+          description = "SDK root used by the current AndroidIDE installation",
+          file = androidHome,
+        ),
+        component(
+          id = "aapt2",
+          name = "AAPT2",
+          description = "Android resource compiler",
+          file = aapt2,
+        ),
+        component(
+          id = "android-jar",
+          name = "Android API",
+          description = "Boot classpath Android API jar used by language/build tooling",
+          file = androidJar,
+        ),
+        component(
+          id = "javac",
+          name = "javac",
+          description = "Java compiler used by the native Android pipeline",
+          file = androidBuildTools.javac,
+        ),
+        component(
+          id = "kotlinc",
+          name = "kotlinc",
+          description = "Kotlin compiler used when Kotlin sources are present",
+          file = androidBuildTools.kotlinc,
+        ),
+        component(
+          id = "d8",
+          name = "D8",
+          description = "DEX compiler used by the native Android pipeline",
+          file = androidBuildTools.d8,
+        ),
+        component(
+          id = "zipalign",
+          name = "zipalign",
+          description = "APK ZIP alignment tool",
+          file = androidBuildTools.zipalign,
+        ),
+        component(
+          id = "apksigner",
+          name = "apksigner",
+          description = "APK v2/v3 signing tool",
+          file = androidBuildTools.apksigner,
+        ),
+      )
 
-      component(
-        id = "javac",
-        name = "javac",
-        description = "Java compiler used by the native Android pipeline",
-        file = androidBuildTools.javac,
-      ),
-      component(
-        id = "kotlinc",
-        name = "kotlinc",
-        description = "Kotlin compiler used when Kotlin sources are present",
-        file = androidBuildTools.kotlinc,
-      ),
-      component(
-        id = "d8",
-        name = "D8",
-        description = "DEX compiler used by the native Android pipeline",
-        file = androidBuildTools.d8,
-      ),
-      component(
-        id = "zipalign",
-        name = "zipalign",
-        description = "APK ZIP alignment tool",
-        file = androidBuildTools.zipalign,
-      ),
-      component(
-        id = "apksigner",
-        name = "apksigner",
-        description = "APK v2/v3 signing tool",
-        file = androidBuildTools.apksigner,
-      ),
-
-        nativeToolchain.tools.forEach { tool ->
+    nativeToolchain.tools.forEach { tool ->
       components +=
         nativeComponent(
           id = tool.id.name.lowercase(),

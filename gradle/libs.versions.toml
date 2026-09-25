@@ -3,6 +3,10 @@ agp = "8.0.2"
 agp-tooling = "8.0.2"
 gradle-tooling = "8.1.1"
 kotlin = "1.8.21"
+compose-compiler = "1.4.7"
+compose-ui = "1.4.3"
+compose-material3 = "1.1.1"
+compose-activity = "1.7.2"
 tree-sitter = "3.2.0"
 editor = "0.21.1-5c3385c-SNAPSHOT"
 glide = "4.15.1"
@@ -23,6 +27,13 @@ androidide-ts-json = { module = "com.itsaky.androidide:tree-sitter-json", versio
 androidide-ts-kotlin = { module = "com.itsaky.androidide:tree-sitter-kotlin", version.ref = "tree-sitter" }
 androidide-ts-log = { module = "com.itsaky.androidide:tree-sitter-log", version.ref = "tree-sitter" }
 androidide-ts-xml = { module = "com.itsaky.androidide:tree-sitter-xml", version.ref = "tree-sitter" }
+
+# Compose
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose-ui" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose-ui" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "compose-ui" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
+androidx-compose-activity = { module = "androidx.activity:activity-compose", version.ref = "compose-activity" }
 
 # Common
 common-editor = { module = "io.github.Rosemoe.sora-editor:editor", version.ref = "editor" }

@@ -89,5 +89,5 @@ object AndroidProjectModelLoader {
   }
 
   private val PACKAGE_PATTERN =
-    Pattern.compile("""packages*=s*["']([^"']+)["']""")
+    Pattern.compile("\\bpackage\\s*=\\s*[\"']([^\"']+)[\"']")
 }

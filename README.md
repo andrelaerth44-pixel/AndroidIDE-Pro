@@ -53,6 +53,67 @@
 - [ ] Asset Studio (Drawable & Icon Maker)
 - [x] Git
 
+## AndroidIDE Pro Development Track
+
+This repository contains the AndroidIDE Pro development track. The current work focuses on a modern on-device IDE workspace built with Jetpack Compose and Material 3 while preserving the existing editor, project, and language infrastructure during the migration.
+
+### Working branch
+
+Current development branch:
+
+`compose-glass-foundation`
+
+The branch is intentionally incremental. Existing AndroidIDE editor services remain in place while the Compose workspace is introduced around them.
+
+### Current UI direction
+
+- Simple, fast, organized IDE workspace.
+- Jetpack Compose + Material 3 for new UI.
+- Light glass surfaces with restrained transparency.
+- Material/Lucide/Phosphor-style iconography through the shared `IdeIcons` layer.
+- No neon/RGB/cyberpunk styling.
+- Existing functionality is reused instead of being rewritten without a concrete reason.
+
+### Workspace V2 progress
+
+Current sprint: **Workspace V2**.
+
+Implemented in the current branch:
+
+- Compose project/file Explorer with expandable tree, state restoration, file filtering and row context actions.
+- Compose editor workspace header with real editor-tab state.
+- Closable editor tabs connected to the existing `EditorHandlerActivity` file lifecycle.
+- Modified-file indicators and save action.
+- File breadcrumbs derived from the active project path.
+- Status bar data for language, device ABI, Git branch and cursor position.
+- Command Palette with grouped actions, search, keywords and shortcut labels.
+- Build Center with pipeline state, progress, problems and log panels.
+- Shared Compose icon set and glass surface primitives.
+
+The Compose editor host is integrated incrementally into the existing editor activity. The legacy `TabLayout` remains available internally while its visible presentation is handled by Compose.
+
+### Build architecture direction
+
+AndroidIDE Pro is moving toward a native on-device build pipeline inspired by CodeAssist, with explicit stages for resource processing, Java/Kotlin compilation, native compilation, dexing, packaging, alignment, signing and installation.
+
+The native build engine/NDK work present in the branch is still experimental foundation work. It is **not** considered the completed NDK product and remains behind the Workspace V2 UI sprint.
+
+The project must not regress into making Gradle the planned primary build backend for the AndroidIDE Pro architecture.
+
+### Next work
+
+1. Finish Workspace V2 polish and validation.
+2. Complete the real Build Center event/log bridge.
+3. Add command execution and file-opening actions to Command Palette.
+4. Finish Toolchain Manager foundations.
+5. Integrate Clang/Clangd and C/C++ project templates.
+6. Add JNI/NativeActivity tooling.
+7. Return to the full NDK/toolchain implementation, then debugger and profiler work.
+
+### Continuity rule
+
+The repository documentation is part of the project's continuity mechanism. After meaningful architectural or UI changes, update this section and the project status documentation so a future development session can continue from the repository instead of relying on conversation history.
+
 ## Installation
 
 > _Please install AndroidIDE from trusted sources only i.e._

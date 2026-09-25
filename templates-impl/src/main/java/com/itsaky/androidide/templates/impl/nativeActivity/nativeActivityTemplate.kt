@@ -88,7 +88,9 @@ private fun writeNativeActivityProject(
   val cpp = File(data.projectDir, "src/main/cpp/native_activity.cpp")
   val manifest = File(data.projectDir, "src/main/AndroidManifest.xml")
   val nativeConfig = File(data.projectDir, ".androidide/native.json")
+  val res = File(data.projectDir, "src/main/res")
   val moduleName = NativeLibraryNaming.sanitize(data.name)
+  res.mkdirs()
 
   executor.save(
     "package $packageName;\n\n" +

@@ -20,7 +20,7 @@ The repository README contains the broader project continuity notes. This file r
 | Editor Host V2 | In progress | Compose host is integrated into the existing editor activity; tabs can select and close real editor instances. |
 | Modified tabs | Implemented | Existing editor modification state is reflected in Compose tabs. |
 | Breadcrumbs | Implemented | Active file path is exposed as Compose breadcrumbs. |
-| Build Center V2 | Integrated | Real build-service prepare/progress/output/success/failure events now feed Compose state; cancellation remains unavailable in the current service API. |
+| Build Center V2 | Integrated | Real build-service prepare/progress/output/success/failure events feed Compose state; compiler-style output is parsed into Problems. Cancellation remains unavailable in the current service API. |
 | Command Palette | Integrated | Real editor/project actions and currently open files are exposed alongside grouped search and shortcuts. |
 | Status Bar | Implemented | Language, ABI, Git branch, cursor position and editor state are modeled. |
 | Git status | Partial | Current branch is read from the project repository when available. |
@@ -57,8 +57,8 @@ Local repository cloning from this environment was not available because outboun
 ## Immediate next work
 
 1. Validate the latest GitHub Actions build and inspect any compile errors.
-2. Improve Build Center diagnostics and connect build output to structured Problems.
-3. Make the Build Center start action invoke the existing build command directly.
+2. Make the Build Center start action invoke the existing build command directly.
+3. Polish Problems navigation so a diagnostic can open the matching source location.
 4. Polish Explorer interactions and workspace spacing.
 5. Continue Workspace V2 cleanup before Toolchain Manager and C/C++ tooling.
 6. Keep NDK implementation behind the UI sprint unless a concrete integration dependency requires it.

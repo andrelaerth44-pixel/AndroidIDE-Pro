@@ -59,6 +59,7 @@ object NativeActivityTemplateGenerator {
   private fun cppSource(): String =
     """
     #include <android/native_activity.h>
+    #include <cstddef>
 
     extern "C" void ANativeActivity_onCreate(
         ANativeActivity* activity,

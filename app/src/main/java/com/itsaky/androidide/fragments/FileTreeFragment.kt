@@ -453,11 +453,9 @@ private fun FileTreeRow(
 
     Spacer(Modifier.width(5.dp))
 
-    Icon(
-      imageVector = fileIcon(file),
-      contentDescription = null,
+    FileTypeIcon(
+      file = file,
       modifier = Modifier.size(20.dp),
-      tint = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
     Spacer(Modifier.width(10.dp))
@@ -476,15 +474,61 @@ private fun FileTreeRow(
   }
 }
 
-private fun fileIcon(file: File): ImageVector {
-  if (file.isDirectory) return IdeIcons.Folder
+@Composable
+private fun FileTypeIcon(
+  file: File,
+  modifier: Modifier = Modifier,
+) {
+  if (file.isDirectory) {
+    Icon(
+      imageVector = IdeIcons.Folder,
+      contentDescription = null,
+      modifier = modifier,
+      tint = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    return
+  }
 
-  return when (file.extension.lowercase()) {
-    "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg" -> IdeIcons.Image
-    "sh", "bash", "bat", "cmd", "gradlew" -> IdeIcons.Terminal
-    "kt", "kts", "java", "cpp", "cc", "cxx", "c", "h", "hpp", "xml", "json",
-    "gradle", "groovy" -> IdeIcons.Code
-    "apk", "aab" -> IdeIcons.Download
-    else -> IdeIcons.File
+  val ext = file.extension.lowercase()
+  val badge =
+    when (ext) {
+      "java" -> "J"
+      "kt", "kts" -> "K"
+      "xml" -> "<>"
+      "json" -> "{}"
+      "gradle", "groovy" -> "G"
+      "c", "h" -> "C"
+      "cpp", "cc", "cxx", "hpp" -> "C++"
+      else -> null
+    }
+
+  if (badge == null) {
+    Icon(
+      imageVector =
+        when (ext) {
+          "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg" -> IdeIcons.Image
+          "sh", "bash", "bat", "cmd" -> IdeIcons.Terminal
+          "apk", "aab" -> IdeIcons.Download
+          else -> IdeIcons.File
+        },
+      contentDescription = null,
+      modifier = modifier,
+      tint = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    return
+  }
+
+  Surface(
+    modifier = modifier,
+    shape = RoundedCornerShape(6.dp),
+    color = MaterialTheme.colorScheme.surfaceVariant,
+  ) {
+    Box(contentAlignment = Alignment.Center) {
+      Text(
+        text = badge,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
   }
 }

@@ -75,6 +75,7 @@ fun AndroidIDEProBuildCenter(
   isBuilding: Boolean,
   onBuild: () -> Unit,
   onStop: () -> Unit,
+  canStopBuild: Boolean = false,
   onRefresh: () -> Unit,
   modifier: Modifier = Modifier,
   logs: List<BuildLogUi> = emptyList(),

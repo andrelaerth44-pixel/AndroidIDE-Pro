@@ -7,13 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.FolderOpen
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Terminal
 import androidx.fragment.app.viewModels
 import com.blankj.utilcode.util.ThreadUtils
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -26,6 +19,7 @@ import com.itsaky.androidide.resources.R
 import com.itsaky.androidide.resources.R.string
 import com.itsaky.androidide.tasks.executeAsyncProvideError
 import com.itsaky.androidide.ui.compose.AndroidIDEProHome
+import com.itsaky.androidide.ui.compose.IdeIcons
 import com.itsaky.androidide.ui.compose.MainScreenAction
 import com.itsaky.androidide.utils.DialogUtils
 import com.itsaky.androidide.utils.Environment
@@ -55,15 +49,15 @@ class MainFragment : BaseFragment() {
         AndroidIDEProHome(
           actions =
             listOf(
-              MainScreenAction(string.create_project, Icons.Outlined.Add) { showCreateProject() },
-              MainScreenAction(string.msg_open_existing_project, Icons.Outlined.FolderOpen) {
+              MainScreenAction(string.create_project, IdeIcons.Add) { showCreateProject() },
+              MainScreenAction(string.msg_open_existing_project, IdeIcons.FolderOpen) {
                 pickDirectory(this@MainFragment::openProject)
               },
-              MainScreenAction(string.git_clone_repo, Icons.Outlined.Description) { cloneGitRepo() },
-              MainScreenAction(string.title_terminal, Icons.Outlined.Terminal) {
+              MainScreenAction(string.git_clone_repo, IdeIcons.File) { cloneGitRepo() },
+              MainScreenAction(string.title_terminal, IdeIcons.Terminal) {
                 startActivity(Intent(requireActivity(), TerminalActivity::class.java))
               },
-              MainScreenAction(string.msg_preferences, Icons.Outlined.Settings) {
+              MainScreenAction(string.msg_preferences, IdeIcons.Settings) {
                 gotoPreferences()
               },
               MainScreenAction(string.btn_docs, Icons.Outlined.Description) {
@@ -71,7 +65,7 @@ class MainFragment : BaseFragment() {
                   (activity.application as com.itsaky.androidide.app.BaseApplication).openDocs()
                 }
               },
-              MainScreenAction(string.btn_donate, Icons.Outlined.FavoriteBorder) {
+              MainScreenAction(string.btn_donate, IdeIcons.Favorite) {
                 requireActivity().let { activity ->
                   (activity.application as com.itsaky.androidide.app.BaseApplication).openSponsors()
                 }

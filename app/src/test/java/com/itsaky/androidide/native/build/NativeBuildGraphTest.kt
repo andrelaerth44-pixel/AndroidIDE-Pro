@@ -90,7 +90,8 @@ class NativeBuildGraphTest {
 
     val kinds = graph.topologicalOrder().map { it.kind }
     assertTrue(kinds.contains(NativeBuildTask.Kind.ARCHIVE_OBJECTS))
-    assertEquals(NativeBuildTask.Kind.LINK_NATIVE, kinds[kinds.lastIndex - 1])
+    assertTrue(!kinds.contains(NativeBuildTask.Kind.LINK_NATIVE))
+    assertEquals(NativeBuildTask.Kind.ARCHIVE_OBJECTS, kinds[kinds.lastIndex - 1])
   }
 
   @Test

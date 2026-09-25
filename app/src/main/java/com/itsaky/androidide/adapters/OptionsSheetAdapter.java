@@ -22,6 +22,9 @@ package com.itsaky.androidide.adapters;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
+import android.content.res.ColorStateList;
+
+import com.google.android.material.color.MaterialColors;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -52,7 +55,17 @@ public class OptionsSheetAdapter extends RecyclerView.Adapter<OptionsSheetAdapte
     final SheetOption option = options.get(p2);
 
     binding.text.setText(option.title);
+
+    final boolean destructive = option.id != null && option.id.toLowerCase().contains("delete");
+    final int normalColor =
+        MaterialColors.getColor(binding.getRoot(), com.itsaky.androidide.R.attr.colorOnSurface);
+    final int destructiveColor =
+        MaterialColors.getColor(binding.getRoot(), com.itsaky.androidide.R.attr.colorError);
+    final int itemColor = destructive ? destructiveColor : normalColor;
+
+    binding.text.setTextColor(itemColor);
     binding.icon.setImageDrawable(option.icon);
+    binding.icon.setImageTintList(ColorStateList.valueOf(itemColor));
 
     binding
         .getRoot()

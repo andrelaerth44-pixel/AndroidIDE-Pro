@@ -710,6 +710,41 @@ abstract class BaseEditorActivity :
     }
   }
 
+  internal fun startBuildCenterBuild() {
+    val root = runCatching { File(getProjectDirPath()).canonicalFile }.getOrNull() ?: return
+    val module = File(root, "app").takeIf { it.isDirectory } ?: root
+    if (AndroidProjectModelLoader.load(module) == null) {
+      flashError("Android module is unavailable")
+      appendBuildCenterOutput("Native backend could not find a valid Android module.")
+      return
+    }
+    val stages = NativeAndroidBuildStage.values()
+      .filter { it != NativeAndroidBuildStage.SUCCESS && it != NativeAndroidBuildStage.FAILED }
+      .map { s -> BuildStepUi("android-native." + s.name.lowercase(), s.name.lowercase().replace('_', ' '), BuildStepState.PENDING) }
+    beginBuildCenterSteps(stages, "Preparing native Android build…")
+    showBuildCenter()
+    doSaveAll()
+    val service = DefaultNativeAndroidBuildService()
+    nativeAndroidBuildService = service
+    service.execute(
+      moduleRoot = module,
+      variant = BuildVariant.DEBUG,
+      abi = AbiTarget.ARM64_V8A,
+      onStage = { stage, detail -> ThreadUtils.runOnUiThread { updateNativeAndroidBuildStage(stage, detail) } },
+      onOutput = { line -> ThreadUtils.runOnUiThread { appendBuildCenterOutput(line) } },
+    ).whenComplete { result, error ->
+      ThreadUtils.runOnUiThread {
+        if (error != null || result?.success != true) {
+          finishBuildCenter(false, stages.map { it.title })
+          appendBuildCenterOutput(error?.message ?: result?.message ?: "Native Android build failed")
+        } else {
+          finishBuildCenter(true, stages.map { it.title })
+          result.outputApk?.let { appendBuildCenterOutput("APK: " + it.absolutePath) }
+        }
+        nativeAndroidBuildService = null
+      }
+    }
+  }
   internal fun startLegacyGradleBuild() {
     val buildService = Lookup.getDefault().lookup(BuildService.KEY_BUILD_SERVICE)
     if (buildService == null) {

@@ -30,6 +30,10 @@ class ClangdJsonRpcResponseRouter(
     onNotification(json)
   }
 
+  fun fail(requestId: Int, error: Throwable) {
+    pending.remove(requestId)?.completeExceptionally(error)
+  }
+
   fun failAll(error: Throwable) {
     pending.values.forEach { it.completeExceptionally(error) }
     pending.clear()

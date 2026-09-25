@@ -360,8 +360,8 @@ abstract class BaseEditorActivity :
     val steps =
       tasks.mapIndexed { index, task ->
         BuildStepUi(
-          id = task.ifBlank { "task-\${index}" },
-          title = task.ifBlank { "Build task \${index + 1}" },
+          id = task.ifBlank { "task-${index}" },
+          title = task.ifBlank { "Build task ${index + 1}" },
           state = BuildStepState.PENDING,
         )
       }
@@ -450,7 +450,7 @@ abstract class BaseEditorActivity :
       val level = if (index == 2) group[3] else group[4]
       val message = if (index == 2) group[4] else group[5]
       return BuildIssueUi(
-        id = "\${file}:\${lineNumber ?: 0}:\${column ?: 0}:\${message}",
+        id = "${file}:${lineNumber ?: 0}:${column ?: 0}:${message}",
         message = message,
         file = file,
         line = lineNumber,
@@ -482,14 +482,14 @@ abstract class BaseEditorActivity :
           ThreadUtils.runOnUiThread {
             viewModel.isBuildInProgress = false
             finishBuildCenter(success = false, tasks = listOf("assembleDebug"))
-            appendBuildCenterOutput("Build failed to start: \${error.message ?: error.javaClass.simpleName}")
+            appendBuildCenterOutput("Build failed to start: ${error.message ?: error.javaClass.simpleName}")
           }
         }
       }
     } catch (error: Throwable) {
       viewModel.isBuildInProgress = false
       finishBuildCenter(success = false, tasks = listOf("assembleDebug"))
-      appendBuildCenterOutput("Build failed to start: \${error.message ?: error.javaClass.simpleName}")
+      appendBuildCenterOutput("Build failed to start: ${error.message ?: error.javaClass.simpleName}")
     }
   }
 
@@ -505,7 +505,7 @@ abstract class BaseEditorActivity :
       if (error != null || result?.wasEnqueued != true) {
         ThreadUtils.runOnUiThread {
           appendBuildCenterOutput(
-            "Unable to cancel build\${error?.let { ": \${it.message}" } ?: "."}"
+            "Unable to cancel build${error?.let { ": ${it.message}" } ?: "."}"
           )
         }
       }
@@ -559,8 +559,8 @@ abstract class BaseEditorActivity :
         steps = finalState.ifEmpty {
           tasks.mapIndexed { index, task ->
             BuildStepUi(
-              id = task.ifBlank { "task-\${index}" },
-              title = task.ifBlank { "Build task \${index + 1}" },
+              id = task.ifBlank { "task-${index}" },
+              title = task.ifBlank { "Build task ${index + 1}" },
               state = if (success) BuildStepState.SUCCESS else BuildStepState.FAILED,
             )
           }

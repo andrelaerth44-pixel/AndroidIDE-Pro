@@ -1,6 +1,7 @@
 package com.itsaky.androidide.native.model
 
 import com.itsaky.androidide.native.build.NativeSourceScanner
+import com.itsaky.androidide.utils.NativeLibraryNaming
 import java.io.File
 
 object NativeProjectModelLoader {
@@ -25,18 +26,18 @@ object NativeProjectModelLoader {
     }
 
     val config = NativeProjectConfigStore.load(moduleRoot)
+    val libraryName = NativeLibraryNaming.sanitize(moduleRoot.name)
     val target =
       NativeTarget(
-        name = moduleRoot.name,
+        name = libraryName,
         abi = abi,
         variant = variant,
-        libraryType = NativeProjectConfigStore.load(moduleRoot)?.libraryType
-          ?: NativeLibraryType.SHARED,
+        libraryType = config?.libraryType ?: NativeLibraryType.SHARED,
         sourceSet = sourceSet,
       )
 
     return NativeModule(
-      moduleName = moduleRoot.name,
+      moduleName = libraryName,
       targets = listOf(target),
       androidApiLevel = config?.androidApiLevel ?: 28,
     )

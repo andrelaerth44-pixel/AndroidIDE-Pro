@@ -66,6 +66,7 @@ class NativeBuildExecutor(
       )
 
     val executed = mutableListOf<String>()
+    val cache = NativeBuildCache(File(buildDirectory, "native-build-cache.properties"))
 
     fun fail(task: NativeBuildTask, message: String, result: NativeProcessResult? = null): NativeBuildResult {
       onTaskState(task, NativeBuildTaskState.FAILED)
@@ -124,7 +125,15 @@ class NativeBuildExecutor(
             outputDirectory = moduleRoot,
             commands = allCommands.cCommands + allCommands.cppCommands,
           )
-          val result = executeCommands(task.id, commands, executed, onOutput, processController)
+          val result =
+            executeCommands(
+              taskId = task.id,
+              commands = commands,
+              executed = executed,
+              cache = cache,
+              onOutput = onOutput,
+              processController = processController,
+            )
           if (result != null) {
             onTaskState(task, NativeBuildTaskState.FAILED)
             return result
@@ -146,6 +155,7 @@ class NativeBuildExecutor(
               taskId = task.id,
               commands = commands,
               executed = executed,
+              cache = cache,
               onOutput = onOutput,
               processController = processController,
             )
@@ -159,9 +169,14 @@ class NativeBuildExecutor(
           val output = nativeOutputFile(buildDirectory, request, NativeLibraryType.STATIC)
           output.parentFile?.mkdirs()
           val command = factory.archiveObjects(objectFiles, output)
-          val result = commandExecutor(command, processController, onOutput)
-          if (!result.success) {
-            return fail(task, "Static archive failed", result)
+          if (!cache.isUpToDate(command)) {
+            val result = commandExecutor(command, processController, onOutput)
+            if (!result.success) {
+              return fail(task, "Static archive failed", result)
+            }
+            cache.record(command)
+          } else {
+            onOutput("Up-to-date: " + task.description)
           }
           executed += task.id
         }
@@ -170,9 +185,14 @@ class NativeBuildExecutor(
           val output = nativeOutputFile(buildDirectory, request, NativeLibraryType.SHARED)
           output.parentFile?.mkdirs()
           val command = factory.linkShared(request.abi, objectFiles, output)
-          val result = commandExecutor(command, processController, onOutput)
-          if (!result.success) {
-            return fail(task, "Shared library link failed", result)
+          if (!cache.isUpToDate(command)) {
+            val result = commandExecutor(command, processController, onOutput)
+            if (!result.success) {
+              return fail(task, "Shared library link failed", result)
+            }
+            cache.record(command)
+          } else {
+            onOutput("Up-to-date: " + task.description)
           }
           executed += task.id
         }
@@ -211,10 +231,24 @@ class NativeBuildExecutor(
     taskId: String,
     commands: List<NativeCommandSpec>,
     executed: MutableList<String>,
+    cache: NativeBuildCache,
     onOutput: (String) -> Unit,
     processController: NativeProcessController?,
   ): NativeBuildResult? {
     for (command in commands) {
+      if (cache.isUpToDate(command)) {
+        onOutput(
+          "Up-to-date: " +
+            command.arguments
+              .windowed(2, 1)
+              .firstOrNull { it.first() == "-c" }
+              ?.last()
+              ?.let(::File)
+              ?.name
+              .orEmpty(),
+        )
+        continue
+      }
       command.arguments
         .windowed(2, 1)
         .firstOrNull { it.first() == "-o" }
@@ -230,6 +264,7 @@ class NativeBuildExecutor(
           message = "Native compile command failed with exit code " + result.exitCode,
         )
       }
+      cache.record(command)
     }
 
     return null

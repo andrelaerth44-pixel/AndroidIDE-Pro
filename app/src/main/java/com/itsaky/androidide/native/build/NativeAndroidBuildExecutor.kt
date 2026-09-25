@@ -109,6 +109,9 @@ class NativeAndroidBuildExecutor(
           abi.androidAbiName,
       )
     buildDirectory.mkdirs()
+    classesDirectory.mkdirs()
+    generatedJava.mkdirs()
+    dexDirectory.mkdirs()
     val compiledResources = File(buildDirectory, "resources.zip")
     val unsignedApk = File(buildDirectory, "unsigned.apk")
     val alignedApk = File(buildDirectory, "aligned.apk")

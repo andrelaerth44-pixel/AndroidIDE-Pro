@@ -52,6 +52,8 @@ class EditorBuildEventListener : GradleBuildService.EventListener {
     }
 
     activity().viewModel.isBuildInProgress = true
+    activity().beginBuildCenter(buildInfo.tasks)
+    activity().showBuildCenter()
     activity().binding.bottomSheet.clearBuildOutput()
 
     if (buildInfo.tasks.isNotEmpty()) {
@@ -65,11 +67,13 @@ class EditorBuildEventListener : GradleBuildService.EventListener {
 
     isFirstBuild = false
     activity().viewModel.isBuildInProgress = false
+    activity().finishBuildCenter(success = true, tasks = tasks)
   }
 
   override fun onProgressEvent(event: ProgressEvent) {
     if (event is ProjectConfigurationStartEvent || event is TaskStartEvent) {
       activity().setStatus(event.descriptor.displayName)
+      activity().updateBuildCenterProgress(event.descriptor.displayName)
     }
   }
 
@@ -78,13 +82,17 @@ class EditorBuildEventListener : GradleBuildService.EventListener {
 
     isFirstBuild = false
     activity().viewModel.isBuildInProgress = false
+    activity().finishBuildCenter(success = false, tasks = tasks)
   }
 
   override fun onOutput(line: String?) {
-    line?.let { activity().appendBuildOutput(it) }
-    // TODO This can be handled better when ProgressEvents are received from Tooling API server
-    if (line!!.contains("BUILD SUCCESSFUL") || line.contains("BUILD FAILED")) {
-      activity().setStatus(line)
+    line?.let {
+      activity().appendBuildOutput(it)
+      activity().appendBuildCenterOutput(it)
+      // TODO This can be handled better when ProgressEvents are received from Tooling API server
+      if (it.contains("BUILD SUCCESSFUL") || it.contains("BUILD FAILED")) {
+        activity().setStatus(it)
+      }
     }
   }
 

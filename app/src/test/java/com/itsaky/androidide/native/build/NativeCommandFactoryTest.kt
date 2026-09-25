@@ -57,6 +57,52 @@ class NativeCommandFactoryTest {
   }
 
   @Test
+  fun archiveObjectsUsesLlvmAr() {
+    val factory =
+      NativeCommandFactory(
+        toolchain.copy(
+          tools =
+            toolchain.tools +
+              NativeTool(
+                id = NativeToolId.LLVM_AR,
+                displayName = "LLVM ar",
+                path = File("/toolchain/bin/llvm-ar"),
+              )
+        ),
+        androidApiLevel = 28,
+      )
+
+    val command =
+      factory.archiveObjects(
+        objects = listOf(File("/build/a.o"), File("/build/b.o")),
+        output = File("/build/libnative.a"),
+      )
+
+    assertEquals("/toolchain/bin/llvm-ar", command.executable.absolutePath)
+    assertEquals(
+      listOf("rcs", "/build/libnative.a", "/build/a.o", "/build/b.o"),
+      command.arguments,
+    )
+  }
+
+  @Test
+  fun linkSharedUsesAndroidTargetAndLld() {
+    val command =
+      NativeCommandFactory(toolchain, androidApiLevel = 28)
+        .linkShared(
+          abi = AbiTarget.ARM64_V8A,
+          objects = listOf(File("/build/native.o")),
+          output = File("/build/libnative.so"),
+        )
+
+    assertEquals("/toolchain/bin/clang++", command.executable.absolutePath)
+    assertTrue(command.arguments.contains("--target=aarch64-linux-android28"))
+    assertTrue(command.arguments.contains("-stdlib=libc++"))
+    assertTrue(command.arguments.contains("-fuse-ld=lld"))
+    assertTrue(command.arguments.contains("/build/native.o"))
+  }
+
+  @Test
   fun compileCppUsesCxx20() {
     val command =
       NativeCommandFactory(toolchain, androidApiLevel = 28)

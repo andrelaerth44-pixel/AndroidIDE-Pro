@@ -97,6 +97,7 @@ import com.itsaky.androidide.ui.compose.AndroidIDETheme
 import com.itsaky.androidide.ui.compose.BuildCenterDialog
 import com.itsaky.androidide.ui.compose.BuildCenterUiState
 import com.itsaky.androidide.ui.compose.BuildLogUi
+import com.itsaky.androidide.ui.compose.BuildIssueUi
 import com.itsaky.androidide.ui.compose.BuildLogLevel
 import com.itsaky.androidide.ui.compose.BuildStepState
 import com.itsaky.androidide.ui.compose.BuildStepUi
@@ -401,19 +402,64 @@ abstract class BaseEditorActivity :
   internal fun appendBuildCenterOutput(line: String?) {
     val text = line?.trimEnd().orEmpty()
     if (text.isBlank()) return
+
     val current = buildCenterState
+    val level =
+      when {
+        text.contains("error", ignoreCase = true) -> BuildLogLevel.ERROR
+        text.contains("warning", ignoreCase = true) -> BuildLogLevel.WARNING
+        else -> BuildLogLevel.INFO
+      }
+
     val logs =
       (current.logs + BuildLogUi(
         id = System.nanoTime().toString(),
         message = text,
-        level =
-          when {
-            text.contains("error", ignoreCase = true) -> BuildLogLevel.ERROR
-            text.contains("warning", ignoreCase = true) -> BuildLogLevel.WARNING
-            else -> BuildLogLevel.INFO
-          },
+        level = level,
       )).takeLast(500)
-    buildCenterState = current.copy(logs = logs, status = text)
+
+    val issue = parseBuildIssue(text)
+    val issues =
+      if (issue == null) {
+        current.issues
+      } else {
+        (current.issues + issue).takeLast(200)
+      }
+
+    buildCenterState = current.copy(
+      logs = logs,
+      issues = issues,
+      status = text,
+    )
+  }
+
+  private fun parseBuildIssue(line: String): BuildIssueUi? {
+    val patterns =
+      listOf(
+        Regex("""^(.+?):\((\d+),(\d+)\):\s+(error|warning):\s+(.+)$"""),
+        Regex("""^(.+?):(\d+):(\d+):\s+(error|warning):\s+(.+)$"""),
+        Regex("""^(.+?):(\d+):\s+(error|warning):\s+(.+)$"""),
+      )
+
+    for ((index, pattern) in patterns.withIndex()) {
+      val match = pattern.find(line) ?: continue
+      val group = match.groupValues
+      val file = group[1]
+      val lineNumber = group[2].toIntOrNull()
+      val column = if (index == 2) null else group[3].toIntOrNull()
+      val level = if (index == 2) group[3] else group[4]
+      val message = if (index == 2) group[4] else group[5]
+      return BuildIssueUi(
+        id = "\${file}:\${lineNumber ?: 0}:\${column ?: 0}:\${message}",
+        message = message,
+        file = file,
+        line = lineNumber,
+        column = column,
+        isError = level.equals("error", ignoreCase = true),
+      )
+    }
+
+    return null
   }
 
   internal fun finishBuildCenter(success: Boolean, tasks: List<String>) {

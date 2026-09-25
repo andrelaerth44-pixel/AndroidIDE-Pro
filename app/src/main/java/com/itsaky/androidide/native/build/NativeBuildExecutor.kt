@@ -261,7 +261,7 @@ class NativeBuildExecutor(
 
     return File(
       buildDirectory,
-      "libs/" + request.abi.name.lowercase() + "/" +
+      "libs/" + request.abi.androidAbiName + "/" +
         prefix + request.module.moduleName + extension,
     )
   }

@@ -396,6 +396,7 @@ open class EditorHandlerActivity : ProjectHandlerActivity(), IEditorHandler {
 
   private fun onEditorContentChanged() {
     viewModel.setFilesModified(true)
+    refreshWorkspaceStatus()
     invalidateOptionsMenu()
   }
 

@@ -74,6 +74,7 @@ data class BuildIssueUi(
 fun AndroidIDEProBuildCenter(
   steps: List<BuildStepUi>,
   isBuilding: Boolean,
+  status: String = "",
   onBuild: () -> Unit,
   onStop: () -> Unit,
   canStopBuild: Boolean = false,
@@ -103,7 +104,8 @@ fun AndroidIDEProBuildCenter(
                 style = MaterialTheme.typography.titleLarge,
               )
               Text(
-                text = if (isBuilding) "Building project…" else "Ready to build",
+                text =
+                  status.ifBlank { if (isBuilding) "Building project…" else "Ready to build" },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
               )

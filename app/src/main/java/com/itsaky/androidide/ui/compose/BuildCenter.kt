@@ -11,13 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.HourglassEmpty
-import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -75,12 +68,12 @@ fun AndroidIDEProBuildCenter(
           }
 
           IconButton(onClick = onRefresh) {
-            Icon(Icons.Outlined.Refresh, contentDescription = "Refresh build")
+            Icon(IdeIcons.Refresh, contentDescription = "Refresh build")
           }
 
           if (isBuilding) {
             IconButton(onClick = onStop) {
-              Icon(Icons.Outlined.Stop, contentDescription = "Stop build")
+              Icon(IdeIcons.Stop, contentDescription = "Stop build")
             }
           } else {
             Button(
@@ -88,7 +81,7 @@ fun AndroidIDEProBuildCenter(
               contentPadding = PaddingValues(horizontal = 14.dp),
             ) {
               Icon(
-                imageVector = Icons.Outlined.PlayArrow,
+                imageVector = IdeIcons.Play,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
               )
@@ -163,8 +156,8 @@ private fun BuildStepRow(step: BuildStepUi) {
 
 private fun stepStateIcon(state: BuildStepState): ImageVector =
   when (state) {
-    BuildStepState.PENDING -> Icons.Outlined.HourglassEmpty
+    BuildStepState.PENDING -> IdeIcons.Pending
     BuildStepState.RUNNING -> Icons.Outlined.PlayArrow
-    BuildStepState.SUCCESS -> Icons.Outlined.CheckCircle
-    BuildStepState.FAILED -> Icons.Outlined.ErrorOutline
+    BuildStepState.SUCCESS -> IdeIcons.Check
+    BuildStepState.FAILED -> IdeIcons.Error
   }

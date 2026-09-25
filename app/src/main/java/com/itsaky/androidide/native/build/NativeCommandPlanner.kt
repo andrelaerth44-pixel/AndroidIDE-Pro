@@ -2,7 +2,6 @@ package com.itsaky.androidide.native.build
 
 import com.itsaky.androidide.native.model.AbiTarget
 import com.itsaky.androidide.native.model.NativeSourceSet
-import com.itsaky.androidide.toolchain.NativeToolchain
 import java.io.File
 import java.nio.file.Path
 
@@ -19,35 +18,60 @@ object NativeCommandPlanner {
     buildDirectory: File,
     abi: AbiTarget,
     factory: NativeCommandFactory,
-  ): NativeCompilePlan {
+  ): NativeCompilePlan =
+    NativeCompilePlan(
+      cCommands = planC(sourceRoot, sourceSet, buildDirectory, abi, factory),
+      cppCommands = planCpp(sourceRoot, sourceSet, buildDirectory, abi, factory),
+    )
+
+  fun planC(
+    sourceRoot: File,
+    sourceSet: NativeSourceSet,
+    buildDirectory: File,
+    abi: AbiTarget,
+    factory: NativeCommandFactory,
+  ): List<NativeCommandSpec> {
     val objectDirectory = File(buildDirectory, "obj/$abi")
     val includeDirectories = listOf(sourceRoot)
 
-    val cCommands =
-      sourceSet.cSources.map { source ->
-        factory.compileC(
-          abi = abi,
-          source = source.toFile(),
-          output = objectFile(objectDirectory, source, sourceRoot),
-          includeDirectories = includeDirectories,
-        )
-      }
-
-    val cppCommands =
-      sourceSet.cppSources.map { source ->
-        factory.compileCpp(
-          abi = abi,
-          source = source.toFile(),
-          output = objectFile(objectDirectory, source, sourceRoot),
-          includeDirectories = includeDirectories,
-        )
-      }
-
-    return NativeCompilePlan(
-      cCommands = cCommands,
-      cppCommands = cppCommands,
-    )
+    return sourceSet.cSources.map { source ->
+      factory.compileC(
+        abi = abi,
+        source = source.toFile(),
+        output = objectFile(objectDirectory, source, sourceRoot),
+        includeDirectories = includeDirectories,
+      )
+    }
   }
+
+  fun planCpp(
+    sourceRoot: File,
+    sourceSet: NativeSourceSet,
+    buildDirectory: File,
+    abi: AbiTarget,
+    factory: NativeCommandFactory,
+  ): List<NativeCommandSpec> {
+    val objectDirectory = File(buildDirectory, "obj/$abi")
+    val includeDirectories = listOf(sourceRoot)
+
+    return sourceSet.cppSources.map { source ->
+      factory.compileCpp(
+        abi = abi,
+        source = source.toFile(),
+        output = objectFile(objectDirectory, source, sourceRoot),
+        includeDirectories = includeDirectories,
+      )
+    }
+  }
+
+  fun objectFiles(
+    sourceRoot: File,
+    sourceSet: NativeSourceSet,
+    buildDirectory: File,
+    abi: AbiTarget,
+  ): List<File> =
+    (sourceSet.cSources + sourceSet.cppSources)
+      .map { objectFile(File(buildDirectory, "obj/$abi"), it, sourceRoot) }
 
   private fun objectFile(
     objectDirectory: File,

@@ -84,6 +84,7 @@ object ToolchainManager {
       NativeToolId.CLANGD -> "C/C++ language server for editor diagnostics and completion"
       NativeToolId.LLD -> "LLVM linker used for native library linking"
       NativeToolId.LLDB -> "Native debugger planned for the debugging phase"
+      NativeToolId.LLVM_AR -> "LLVM archive tool used for static native libraries"
       NativeToolId.LIBCXX -> "C++ standard library headers for native compilation"
     }
 

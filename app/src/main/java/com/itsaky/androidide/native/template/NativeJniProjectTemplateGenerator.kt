@@ -32,7 +32,7 @@ object NativeJniProjectTemplateGenerator {
     val javaFile =
       File(
         moduleRoot,
-        "src/main/java/$packagePath/\${spec.className}.java",
+        "src/main/java/$packagePath/${spec.className}.java",
       )
     val cppFile = File(moduleRoot, "src/main/cpp/native_bridge.cpp")
 
@@ -48,17 +48,17 @@ object NativeJniProjectTemplateGenerator {
 
   private fun javaSource(spec: NativeJniProjectTemplateSpec): String =
     """
-    package \${spec.packageName};
+    package ${spec.packageName};
 
-    public final class \${spec.className} {
+    public final class ${spec.className} {
       static {
-        System.loadLibrary("\${spec.moduleName}");
+        System.loadLibrary("${spec.moduleName}");
       }
 
-      private \${spec.className}() {
+      private ${spec.className}() {
       }
 
-      public static native String \${spec.methodName}();
+      public static native String ${spec.methodName}();
     }
     """.trimIndent() + "\n"
 

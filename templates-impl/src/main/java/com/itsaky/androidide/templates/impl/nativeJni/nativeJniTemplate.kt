@@ -86,6 +86,8 @@ private fun writeNativeJniProject(
   val cpp = File(data.projectDir, "src/main/cpp/native_bridge.cpp")
   val manifest = File(data.projectDir, "src/main/AndroidManifest.xml")
   val nativeConfig = File(data.projectDir, ".androidide/native.json")
+  val res = File(data.projectDir, "src/main/res")
+  res.mkdirs()
 
   executor.save(
     "package $packageName;\n\n" +

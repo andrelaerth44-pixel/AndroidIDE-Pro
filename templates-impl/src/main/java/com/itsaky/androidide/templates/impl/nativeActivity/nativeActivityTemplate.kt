@@ -19,6 +19,7 @@ import com.itsaky.androidide.templates.Sdk
 import com.itsaky.androidide.templates.impl.ProjectTemplateRecipeResultImpl
 import com.itsaky.androidide.templates.impl.R
 import com.itsaky.androidide.utils.Environment
+import com.itsaky.androidide.utils.NativeLibraryNaming
 import java.io.File
 
 fun nativeActivityProject(): ProjectTemplate {
@@ -87,6 +88,7 @@ private fun writeNativeActivityProject(
   val cpp = File(data.projectDir, "src/main/cpp/native_activity.cpp")
   val manifest = File(data.projectDir, "src/main/AndroidManifest.xml")
   val nativeConfig = File(data.projectDir, ".androidide/native.json")
+  val moduleName = NativeLibraryNaming.sanitize(data.name)
 
   executor.save(
     "package $packageName;\n\n" +

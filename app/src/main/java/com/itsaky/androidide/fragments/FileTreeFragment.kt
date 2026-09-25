@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,6 +100,8 @@ class FileTreeFragment :
       setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
       setContent {
         AndroidIDETheme {
+          var query by rememberSaveable { mutableStateOf("") }
+
           GlassPanel(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
               val projectDir = File(getProjectDirPath())
@@ -140,6 +144,14 @@ class FileTreeFragment :
                   }
                 }
 
+                IconButton(
+                  onClick = {
+                    mRoot?.childAt(0)?.let { postProjectContextMenu(it, projectDir) }
+                  },
+                ) {
+                  Icon(IdeIcons.Add, contentDescription = "New")
+                }
+
                 if (isLoading) {
                   CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
@@ -147,36 +159,142 @@ class FileTreeFragment :
                   )
                 } else {
                   IconButton(onClick = { listProjectFiles() }) {
-                    Icon(IdeIcons.Refresh, contentDescription = "Refresh project")
+                    Icon(IdeIcons.Refresh, contentDescription = "Refresh")
+                  }
+                }
+
+                IconButton(
+                  onClick = {
+                    mRoot?.childAt(0)?.let { postProjectContextMenu(it, projectDir) }
+                  },
+                ) {
+                  Icon(IdeIcons.More, contentDescription = "More")
+                }
+              }
+
+              Surface(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+              ) {
+                Row(
+                  modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                  verticalAlignment = Alignment.CenterVertically,
+                ) {
+                  Icon(
+                    IdeIcons.Search,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                  )
+                  Spacer(Modifier.width(9.dp))
+
+                  Box(modifier = Modifier.weight(1f)) {
+                    if (query.isBlank()) {
+                      Text(
+                        text = "Search files",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                      )
+                    }
+
+                    BasicTextField(
+                      value = query,
+                      onValueChange = { query = it },
+                      modifier = Modifier.fillMaxWidth(),
+                      singleLine = true,
+                      textStyle =
+                        MaterialTheme.typography.bodyMedium.copy(
+                          color = MaterialTheme.colorScheme.onSurface,
+                        ),
+                    )
+                  }
+
+                  if (query.isNotBlank()) {
+                    Text(
+                      text = "×",
+                      modifier = Modifier.padding(start = 8.dp),
+                      style = MaterialTheme.typography.titleMedium,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                   }
                 }
               }
 
-              val visibleNodes = buildVisibleTree()
+              Spacer(Modifier.height(8.dp))
 
-              LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+              val visibleNodes =
+                if (query.isBlank()) buildVisibleTree()
+                else buildSearchTree(query)
+
+              Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
               ) {
-                items(
-                  items = visibleNodes,
-                  key = { it.node.path },
-                ) { item ->
-                  val file = item.node.value
-                  FileTreeRow(
-                    node = item.node,
-                    depth = item.depth,
-                    selected = selectedPath == file.absolutePath,
-                    onClick = {
-                      selectedPath = file.absolutePath
-                      onClick(item.node, file)
-                    },
-                    onLongClick = {
-                      selectedPath = file.absolutePath
-                      onLongClick(item.node, file)
-                    },
-                  )
+                Text(
+                  text = if (query.isBlank()) "Project" else visibleNodes.size.toString() + " result(s)",
+                  style = MaterialTheme.typography.labelMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                  text = if (query.isBlank()) "Files" else "Filtered",
+                  style = MaterialTheme.typography.labelSmall,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                )
+              }
+
+              if (visibleNodes.isEmpty()) {
+                Box(
+                  modifier = Modifier.fillMaxSize().padding(24.dp),
+                  contentAlignment = Alignment.Center,
+                ) {
+                  Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                      imageVector = if (query.isBlank()) IdeIcons.FolderOpen else IdeIcons.Search,
+                      contentDescription = null,
+                      modifier = Modifier.size(30.dp),
+                      tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                      text = if (query.isBlank()) "No files" else "No matching files",
+                      style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                      text =
+                        if (query.isBlank()) "Refresh the project tree to try again."
+                        else "Try another file or folder name.",
+                      style = MaterialTheme.typography.bodySmall,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                  }
+                }
+              } else {
+                LazyColumn(
+                  modifier = Modifier.fillMaxSize(),
+                  contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 18.dp),
+                  verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                  items(
+                    items = visibleNodes,
+                    key = { it.node.path },
+                  ) { item ->
+                    val file = item.node.value
+                    FileTreeRow(
+                      node = item.node,
+                      depth = item.depth,
+                      selected = selectedPath == file.absolutePath,
+                      onClick = {
+                        selectedPath = file.absolutePath
+                        onClick(item.node, file)
+                      },
+                      onLongClick = {
+                        selectedPath = file.absolutePath
+                        onLongClick(item.node, file)
+                      },
+                    )
+                  }
                 }
               }
             }
@@ -393,6 +511,36 @@ class FileTreeFragment :
     }
 
     return result
+  }
+
+  private fun buildSearchTree(query: String): List<VisibleTreeNode> {
+    val root = mRoot ?: return emptyList()
+    val normalized = query.trim().lowercase()
+    if (normalized.isBlank()) return buildVisibleTree()
+
+    val result = mutableListOf<VisibleTreeNode>()
+
+    fun collect(node: TreeNode, depth: Int) {
+      for (child in node.children) {
+        val file = child.value
+        if (file.name.lowercase().contains(normalized)) {
+          result += VisibleTreeNode(child, depth)
+        }
+        if (child.children.isNotEmpty()) {
+          collect(child, depth + 1)
+        }
+      }
+    }
+
+    collect(root, 0)
+    return result
+  }
+
+  private fun postProjectContextMenu(node: TreeNode, projectDir: File) {
+    val event = FileLongClickEvent(projectDir)
+    event.put(Context::class.java, requireContext())
+    event.put(TreeNode::class.java, node)
+    org.greenrobot.eventbus.EventBus.getDefault().post(event)
   }
 
   private fun invalidateComposeTree() {

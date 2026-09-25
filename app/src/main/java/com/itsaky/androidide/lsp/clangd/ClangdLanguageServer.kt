@@ -113,13 +113,42 @@ class ClangdLanguageServer : ILanguageServer {
   override fun findReferences(
     params: ReferenceParams,
     cancelChecker: ICancelChecker,
-  ): ReferenceResult = ReferenceResult(Collections.emptyList())
+  ): ReferenceResult {
+    if (!isNativeFile(params.file) || cancelChecker.isCancelled()) {
+      return ReferenceResult(Collections.emptyList())
+    }
+    val session = workspace ?: return ReferenceResult(Collections.emptyList())
+    return runCatching {
+      session.references(
+        file = params.file.toFile(),
+        line = params.position.line,
+        character = params.position.column,
+        includeDeclaration = params.includeDeclaration,
+      ).get(2, TimeUnit.SECONDS) ?: ReferenceResult(Collections.emptyList())
+    }.getOrElse {
+      ReferenceResult(Collections.emptyList())
+    }
+  }
 
   @NonNull
   override fun findDefinition(
     params: DefinitionParams,
     cancelChecker: ICancelChecker,
-  ): DefinitionResult = DefinitionResult(Collections.emptyList())
+  ): DefinitionResult {
+    if (!isNativeFile(params.file) || cancelChecker.isCancelled()) {
+      return DefinitionResult(Collections.emptyList())
+    }
+    val session = workspace ?: return DefinitionResult(Collections.emptyList())
+    return runCatching {
+      session.definition(
+        file = params.file.toFile(),
+        line = params.position.line,
+        character = params.position.column,
+      ).get(2, TimeUnit.SECONDS) ?: DefinitionResult(Collections.emptyList())
+    }.getOrElse {
+      DefinitionResult(Collections.emptyList())
+    }
+  }
 
   @NonNull
   override fun expandSelection(params: ExpandSelectionParams): Range = params.selection

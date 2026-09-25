@@ -112,6 +112,8 @@ class NativeBuildExecutorTest {
       )
       assertNotNull(result.outputFile)
       assertTrue(result.outputFile!!.isFile)
+      assertTrue(moduleRoot.resolve("compile_commands.json").isFile)
+      assertTrue(moduleRoot.resolve("compile_commands.json").readText().contains("native.cpp"))
       assertTrue(states.contains(NativeBuildTaskState.FAILED).not())
     } finally {
       moduleRoot.deleteRecursively()

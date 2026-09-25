@@ -23,6 +23,7 @@ class NativeCommandFactory(
       output = output,
       languageStandard = "c17",
       includeDirectories = includeDirectories,
+      extraArguments = emptyList(),
     )
 
   fun compileCpp(
@@ -38,7 +39,62 @@ class NativeCommandFactory(
       output = output,
       languageStandard = "c++20",
       includeDirectories = includeDirectories,
+      extraArguments = listOf("-stdlib=libc++"),
     )
+
+  fun archiveObjects(
+    objects: List<File>,
+    output: File,
+  ): NativeCommandSpec {
+    val archiver =
+      requireNotNull(toolchain.tool(NativeToolId.LLVM_AR)?.path) {
+        "Native tool 'LLVM_AR' is not available"
+      }
+
+    return NativeCommandSpec(
+      executable = archiver,
+      arguments =
+        buildList {
+          add("rcs")
+          add(output.absolutePath)
+          objects.forEach { add(it.absolutePath) }
+        },
+      workingDirectory = output.parentFile,
+    )
+  }
+
+  fun linkShared(
+    abi: AbiTarget,
+    objects: List<File>,
+    output: File,
+  ): NativeCommandSpec {
+    val linker =
+      requireNotNull(toolchain.tool(NativeToolId.CLANGXX)?.path) {
+        "Native tool 'CLANGXX' is not available"
+      }
+
+    require(androidApiLevel >= 21) {
+      "Android API level must be >= 21"
+    }
+
+    return NativeCommandSpec(
+      executable = linker,
+      arguments =
+        buildList {
+          add("--target=" + abi.androidTriplePrefix + androidApiLevel)
+          toolchain.sysroot?.let {
+            add("--sysroot=" + it.absolutePath)
+          }
+          add("-stdlib=libc++")
+          add("-shared")
+          add("-fuse-ld=lld")
+          objects.forEach { add(it.absolutePath) }
+          add("-o")
+          add(output.absolutePath)
+        },
+      workingDirectory = output.parentFile,
+    )
+  }
 
   private fun compile(
     toolId: NativeToolId,
@@ -47,6 +103,7 @@ class NativeCommandFactory(
     output: File,
     languageStandard: String,
     includeDirectories: List<File>,
+    extraArguments: List<String>,
   ): NativeCommandSpec {
     val compiler =
       requireNotNull(toolchain.tool(toolId)?.path) {
@@ -64,6 +121,7 @@ class NativeCommandFactory(
       }
       add("-std=" + languageStandard)
       add("-fPIC")
+      extraArguments.forEach(::add)
       includeDirectories.forEach {
         add("-I" + it.absolutePath)
       }

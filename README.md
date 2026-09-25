@@ -117,7 +117,7 @@ The project must not regress into making Gradle the planned primary build backen
 ### Immediate next work
 
 1. Let the queued GitHub Actions validation run and fix any compile errors it reports.
-2. Connect the clangd JSON-RPC transport to the existing `ILanguageServer` / editor lifecycle.
+2. Connect the persistent clangd session and JSON-RPC transport to the existing `ILanguageServer` / editor lifecycle.
 3. Add clangd `initialize`, document sync, diagnostics, completion and shutdown handling.
 4. Add NativeActivity template integration to the existing project-template wizard.
 5. Turn the native APK library merge stage into a complete unsigned-package pipeline with resource/APK merge.

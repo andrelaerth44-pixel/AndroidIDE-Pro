@@ -17,9 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -46,6 +44,10 @@ fun AndroidIDEProWorkspaceV2(
   onBuild: () -> Unit,
   onMore: () -> Unit,
   modifier: Modifier = Modifier,
+  breadcrumbs: List<EditorBreadcrumb> = emptyList(),
+  onTabClosed: (Int) -> Unit = {},
+  onSave: () -> Unit = {},
+  statusBarState: IdeStatusBarState = IdeStatusBarState(),
 ) {
   AndroidIDETheme {
     Column(
@@ -81,7 +83,7 @@ fun AndroidIDEProWorkspaceV2(
                 maxLines = 1,
               )
               Text(
-                text = "${tabs.size} open file(s)",
+                text = if (tabs.isEmpty()) "No open files" else "${tabs.size} open file(s)",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
@@ -93,47 +95,14 @@ fun AndroidIDEProWorkspaceV2(
             IconButton(onClick = onSearch) {
               Icon(IdeIcons.Search, contentDescription = "Search")
             }
+            IconButton(onClick = onSave) {
+              Icon(IdeIcons.Save, contentDescription = "Save file")
+            }
             IconButton(onClick = onBuild) {
               Icon(IdeIcons.Build, contentDescription = "Build")
             }
             IconButton(onClick = onMore) {
               Icon(IdeIcons.More, contentDescription = "More")
-            }
-          }
-
-          if (tabs.isNotEmpty()) {
-            ScrollableTabRow(
-              selectedTabIndex = selectedTab.coerceIn(0, tabs.lastIndex),
-              edgePadding = 8.dp,
-              containerColor = Color.Transparent,
-              divider = {},
-            ) {
-              tabs.forEachIndexed { index, tab ->
-                Tab(
-                  selected = selectedTab == index,
-                  onClick = { onTabSelected(index) },
-                  text = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                      Text(
-                        text = tab.title,
-                        maxLines = 1,
-                      )
-                      if (tab.modified) {
-                        Spacer(Modifier.width(5.dp))
-                        Box(
-                          modifier =
-                            Modifier
-                              .size(6.dp)
-                              .background(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.shapes.small,
-                              ),
-                        )
-                      }
-                    }
-                  },
-                )
-              }
             }
           }
         }
@@ -179,37 +148,22 @@ fun AndroidIDEProWorkspaceV2(
         GlassSurface(
           modifier = Modifier.weight(1f).fillMaxHeight(),
         ) {
-          Box(modifier = Modifier.fillMaxSize()) {
+          EditorHostV2(
+            tabs = tabs,
+            selectedTab = selectedTab,
+            breadcrumbs = breadcrumbs,
+            onTabSelected = onTabSelected,
+            onTabClosed = onTabClosed,
+          ) {
             content()
           }
         }
       }
 
-      GlassRow(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
-      ) {
-        Row(
-          modifier = Modifier.fillMaxWidth().height(38.dp).padding(horizontal = 12.dp),
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          Text(
-            text = "Problems 0",
-            style = MaterialTheme.typography.labelMedium,
-          )
-          Spacer(Modifier.width(14.dp))
-          Text(
-            text = "Build ready",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-          )
-          Spacer(Modifier.weight(1f))
-          Text(
-            text = "Native",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-        }
-      }
+      IdeStatusBar(
+        state = statusBarState,
+        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+      )
     }
   }
 }

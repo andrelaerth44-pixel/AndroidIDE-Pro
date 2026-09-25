@@ -3,20 +3,13 @@ package com.itsaky.androidide.ui.compose
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.FolderOpen
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -49,32 +42,28 @@ fun AndroidIDEProHome(
       modifier = modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 18.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-      GlassSurface(
-        modifier = Modifier.fillMaxWidth(),
-      ) {
+      GlassSurface(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp)) {
           Text(
             text = "AndroidIDE Pro",
             style = MaterialTheme.typography.headlineSmall,
           )
           Text(
-            text = "A fast, native Android IDE.",
+            text = "Fast, native Android development.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
       }
 
-      GlassRow(
-        modifier = Modifier.fillMaxWidth(),
-      ) {
+      GlassRow(modifier = Modifier.fillMaxWidth()) {
         TextButton(
           onClick = { paletteOpen = true },
           modifier = Modifier.fillMaxWidth(),
           contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         ) {
-          Icon(Icons.Outlined.Search, contentDescription = null)
-          Spacer(Modifier.padding(start = 6.dp))
+          Icon(IdeIcons.Search, contentDescription = null)
+          Spacer(Modifier.padding(start = 8.dp))
           Text(
             text = "Search commands, files and actions",
             modifier = Modifier.weight(1f),
@@ -91,10 +80,8 @@ fun AndroidIDEProHome(
         contentPadding = PaddingValues(bottom = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
-        items(actions) { action ->
-          GlassRow(
-            modifier = Modifier.fillMaxWidth(),
-          ) {
+        items(actions, key = { it.titleRes }) { action ->
+          GlassRow(modifier = Modifier.fillMaxWidth()) {
             TextButton(
               onClick = action.onClick,
               modifier = Modifier.fillMaxWidth(),
@@ -114,8 +101,6 @@ fun AndroidIDEProHome(
           }
         }
       }
-    }
-  }
 
       if (paletteOpen) {
         val paletteItems =
@@ -126,10 +111,12 @@ fun AndroidIDEProHome(
               onClick = action.onClick,
             )
           }
+
         CommandPalette(
           items = paletteItems,
           onDismiss = { paletteOpen = false },
         )
       }
     }
+  }
 }

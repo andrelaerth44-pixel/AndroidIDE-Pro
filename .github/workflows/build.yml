@@ -46,7 +46,7 @@ jobs:
             ${{ runner.os }}-gradle-
       - name: Assemble Debug
         if: ${{ github.ref != 'refs/heads/main' }}
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug -Pandroidide.kapt.diagnostic=true
         env:
           ReleaseAndroidIDE: false
           IDE_SIGNING_ALIAS: ${{ secrets.IDE_SIGNING_ALIAS }}

@@ -72,20 +72,17 @@ object ClangdCompletionMapper {
       8 -> CompletionItemKind.INTERFACE
       9 -> CompletionItemKind.MODULE
       10 -> CompletionItemKind.PROPERTY
-      13 -> CompletionItemKind.VALUE
-      14 -> CompletionItemKind.ENUM
-      15 -> CompletionItemKind.KEYWORD
-      16 -> CompletionItemKind.SNIPPET
-      17 -> CompletionItemKind.VALUE
-      18 -> CompletionItemKind.MODULE
-      19 -> CompletionItemKind.VARIABLE
-      20 -> CompletionItemKind.MODULE
-      21 -> CompletionItemKind.ENUM_MEMBER
-      22 -> CompletionItemKind.VARIABLE
-      23 -> CompletionItemKind.CLASS
-      24 -> CompletionItemKind.METHOD
-      25 -> CompletionItemKind.FUNCTION
-      26 -> CompletionItemKind.TYPE_PARAMETER
+      11, 12 -> CompletionItemKind.VALUE
+      13 -> CompletionItemKind.ENUM
+      14 -> CompletionItemKind.KEYWORD
+      15 -> CompletionItemKind.SNIPPET
+      16 -> CompletionItemKind.VALUE
+      17, 18, 19 -> CompletionItemKind.VALUE
+      20 -> CompletionItemKind.ENUM_MEMBER
+      21 -> CompletionItemKind.VARIABLE
+      22 -> CompletionItemKind.CLASS
+      23, 24 -> CompletionItemKind.VALUE
+      25 -> CompletionItemKind.TYPE_PARAMETER
       else -> CompletionItemKind.NONE
     }
 }

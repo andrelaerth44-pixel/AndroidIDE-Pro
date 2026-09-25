@@ -32,6 +32,7 @@ object ToolchainManager {
     val aapt2 = safeFile { Environment.AAPT2 }
     val androidJar = safeFile { Environment.ANDROID_JAR }
     val nativeToolchain = NativeToolchainLocator.locate()
+    val androidBuildTools = com.itsaky.androidide.native.build.AndroidBuildToolchainLocator.locate()
 
     val components = mutableListOf(
       component(
@@ -60,7 +61,38 @@ object ToolchainManager {
       ),
     )
 
-    nativeToolchain.tools.forEach { tool ->
+      component(
+        id = "javac",
+        name = "javac",
+        description = "Java compiler used by the native Android pipeline",
+        file = androidBuildTools.javac,
+      ),
+      component(
+        id = "kotlinc",
+        name = "kotlinc",
+        description = "Kotlin compiler used when Kotlin sources are present",
+        file = androidBuildTools.kotlinc,
+      ),
+      component(
+        id = "d8",
+        name = "D8",
+        description = "DEX compiler used by the native Android pipeline",
+        file = androidBuildTools.d8,
+      ),
+      component(
+        id = "zipalign",
+        name = "zipalign",
+        description = "APK ZIP alignment tool",
+        file = androidBuildTools.zipalign,
+      ),
+      component(
+        id = "apksigner",
+        name = "apksigner",
+        description = "APK v2/v3 signing tool",
+        file = androidBuildTools.apksigner,
+      ),
+
+        nativeToolchain.tools.forEach { tool ->
       components +=
         nativeComponent(
           id = tool.id.name.lowercase(),

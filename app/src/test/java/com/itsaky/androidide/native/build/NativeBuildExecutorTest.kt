@@ -11,6 +11,7 @@ import com.itsaky.androidide.toolchain.NativeToolId
 import com.itsaky.androidide.toolchain.NativeToolchain
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -36,6 +37,69 @@ class NativeBuildExecutorTest {
           ),
         ),
     )
+
+  @Test
+  fun secondBuildReusesCachedNativeOutputs() {
+    val moduleRoot = Files.createTempDirectory("native-build-cache").toFile()
+    try {
+      val source = File(moduleRoot, "src/main/cpp/native.cpp").apply {
+        parentFile.mkdirs()
+        writeText("int native_cpp() { return 0; }")
+      }
+
+      val module =
+        NativeModule(
+          moduleName = "app",
+          targets =
+            listOf(
+              NativeTarget(
+                name = "app",
+                abi = AbiTarget.ARM64_V8A,
+                variant = BuildVariant.DEBUG,
+                libraryType = NativeLibraryType.SHARED,
+                sourceSet = NativeSourceSet(
+                  cppSources = listOf(source.toPath()),
+                ),
+              )
+            ),
+        )
+
+      val invocations = AtomicInteger(0)
+      val executor =
+        NativeBuildExecutor(
+          toolchain = toolchain,
+          androidApiLevel = 28,
+          commandExecutor = { command, _, _ ->
+            invocations.incrementAndGet()
+            val outputIndex = command.arguments.indexOf("-o")
+            if (outputIndex >= 0) {
+              File(command.arguments[outputIndex + 1]).apply {
+                parentFile?.mkdirs()
+                writeText("fake native output")
+              }
+            }
+            NativeProcessResult(0, "ok", 1)
+          },
+        )
+
+      val request =
+        NativeBuildRequest(
+          module = module,
+          abi = AbiTarget.ARM64_V8A,
+          variant = BuildVariant.DEBUG,
+        )
+
+      val first = executor.execute(request, moduleRoot)
+      val firstInvocations = invocations.get()
+      val second = executor.execute(request, moduleRoot)
+
+      assertTrue(first.success)
+      assertTrue(second.success)
+      assertEquals(firstInvocations, invocations.get())
+    } finally {
+      moduleRoot.deleteRecursively()
+    }
+  }
 
   @Test
   fun sharedBuildExecutesGraphAndProducesOutput() {

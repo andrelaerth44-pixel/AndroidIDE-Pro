@@ -94,6 +94,12 @@ import com.itsaky.androidide.services.log.LogReceiverService
 import com.itsaky.androidide.services.log.LogReceiverServiceConnection
 import com.itsaky.androidide.services.log.lookupLogService
 import com.itsaky.androidide.ui.compose.AndroidIDETheme
+import com.itsaky.androidide.ui.compose.BuildCenterDialog
+import com.itsaky.androidide.ui.compose.BuildCenterUiState
+import com.itsaky.androidide.ui.compose.BuildLogUi
+import com.itsaky.androidide.ui.compose.BuildLogLevel
+import com.itsaky.androidide.ui.compose.BuildStepState
+import com.itsaky.androidide.ui.compose.BuildStepUi
 import com.itsaky.androidide.ui.compose.CommandPaletteItem
 import com.itsaky.androidide.ui.compose.EditorBreadcrumb
 import com.itsaky.androidide.ui.compose.EditorWorkspaceTopBar
@@ -157,6 +163,8 @@ abstract class BaseEditorActivity :
   private val workspaceBreadcrumbs = mutableStateListOf<EditorBreadcrumb>()
   private var workspaceSelectedTab by mutableIntStateOf(-1)
   private var workspaceStatus by mutableStateOf(IdeStatusBarState())
+  private var buildCenterState by mutableStateOf(BuildCenterUiState())
+  private var buildCenterOpen by mutableStateOf(false)
   private var workspaceComposeView: ComposeView? = null
 
   private val onBackPressedCallback: OnBackPressedCallback =
@@ -338,6 +346,103 @@ abstract class BaseEditorActivity :
   protected fun refreshWorkspaceStatus(index: Int = workspaceSelectedTab) {
     syncWorkspaceStatus(index)
   }
+
+  internal fun showBuildCenter() {
+    buildCenterOpen = true
+  }
+
+  internal fun hideBuildCenter() {
+    buildCenterOpen = false
+  }
+
+  internal fun beginBuildCenter(tasks: List<String>) {
+    val steps =
+      tasks.mapIndexed { index, task ->
+        BuildStepUi(
+          id = task.ifBlank { "task-\${index}" },
+          title = task.ifBlank { "Build task \${index + 1}" },
+          state = BuildStepState.PENDING,
+        )
+      }
+    buildCenterState =
+      BuildCenterUiState(
+        isBuilding = true,
+        status = "Preparing build…",
+        steps = steps,
+      )
+  }
+
+  internal fun updateBuildCenterProgress(message: String) {
+    val current = buildCenterState
+    val normalized = message.trim()
+    val updatedSteps =
+      if (normalized.isBlank() || current.steps.isEmpty()) {
+        current.steps
+      } else {
+        current.steps.mapIndexed { index, step ->
+          when {
+            step.state == BuildStepState.SUCCESS -> step
+            step.title == normalized || normalized.contains(step.title) ->
+              step.copy(state = BuildStepState.RUNNING, detail = normalized)
+            index == 0 && current.steps.none { it.state == BuildStepState.RUNNING } ->
+              step.copy(state = BuildStepState.RUNNING, detail = normalized)
+            else -> step
+          }
+        }
+      }
+    buildCenterState =
+      current.copy(
+        isBuilding = true,
+        status = normalized.ifBlank { current.status },
+        steps = updatedSteps,
+      )
+  }
+
+  internal fun appendBuildCenterOutput(line: String?) {
+    val text = line?.trimEnd().orEmpty()
+    if (text.isBlank()) return
+    val current = buildCenterState
+    val logs =
+      (current.logs + BuildLogUi(
+        id = System.nanoTime().toString(),
+        message = text,
+        level =
+          when {
+            text.contains("error", ignoreCase = true) -> BuildLogLevel.ERROR
+            text.contains("warning", ignoreCase = true) -> BuildLogLevel.WARNING
+            else -> BuildLogLevel.INFO
+          },
+      )).takeLast(500)
+    buildCenterState = current.copy(logs = logs, status = text)
+  }
+
+  internal fun finishBuildCenter(success: Boolean, tasks: List<String>) {
+    val finalState =
+      buildCenterState.steps.map { step ->
+        when {
+          success && step.state != BuildStepState.FAILED -> step.copy(state = BuildStepState.SUCCESS)
+          !success && step.state != BuildStepState.SUCCESS -> step.copy(state = BuildStepState.FAILED)
+          else -> step
+        }
+      }
+    val status = if (success) "Build successful" else "Build failed"
+    buildCenterState =
+      buildCenterState.copy(
+        isBuilding = false,
+        status = status,
+        progress = if (success) 1f else buildCenterState.progress,
+        steps = finalState.ifEmpty {
+          tasks.mapIndexed { index, task ->
+            BuildStepUi(
+              id = task.ifBlank { "task-\${index}" },
+              title = task.ifBlank { "Build task \${index + 1}" },
+              state = if (success) BuildStepState.SUCCESS else BuildStepState.FAILED,
+            )
+          }
+        },
+      )
+  }
+
 
   private fun syncWorkspaceStatus(index: Int = workspaceSelectedTab) {
     val editorView = provideEditorAt(index) ?: run {
@@ -625,9 +730,22 @@ abstract class BaseEditorActivity :
           onTabClosed = { index -> closeWorkspaceTab(index) },
           onSave = { doSaveAll() },
           onExplorer = { binding.root.openDrawer(GravityCompat.END) },
-          onBuild = { editorBottomSheet?.state = BottomSheetBehavior.STATE_EXPANDED },
+          onBuild = { showBuildCenter() },
           onMore = { binding.editorToolbar.showOverflowMenu() },
         )
+
+        if (buildCenterOpen) {
+          BuildCenterDialog(
+            state = buildCenterState,
+            onBuild = {
+              showBuildCenter()
+              binding.editorToolbar.showOverflowMenu()
+            },
+            onStop = { hideBuildCenter() },
+            onRefresh = { refreshWorkspaceStatus() },
+            onDismiss = { hideBuildCenter() },
+          )
+        }
       }
     }
 

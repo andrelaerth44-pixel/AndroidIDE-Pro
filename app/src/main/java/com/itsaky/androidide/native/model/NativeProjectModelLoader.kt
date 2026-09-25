@@ -29,7 +29,8 @@ object NativeProjectModelLoader {
         name = moduleRoot.name,
         abi = abi,
         variant = variant,
-        libraryType = NativeLibraryType.SHARED,
+        libraryType = NativeProjectConfigStore.load(moduleRoot)?.libraryType
+          ?: NativeLibraryType.SHARED,
         sourceSet = sourceSet,
       )
 

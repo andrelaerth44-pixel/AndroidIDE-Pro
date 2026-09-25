@@ -49,6 +49,26 @@ class ClangdProtocolMessageFactoryTest {
   }
 
   @Test
+  fun shutdownRequestOmitsParamsAndExitIsNotification() {
+    val shutdown =
+      JsonParser.parseString(
+        ClangdProtocolMessageFactory.shutdown(11)
+      ).asJsonObject
+
+    assertEquals("shutdown", shutdown.get("method").asString)
+    assertEquals(11, shutdown.get("id").asInt)
+    assertTrue(!shutdown.has("params"))
+
+    val exit =
+      JsonParser.parseString(
+        ClangdProtocolMessageFactory.exit()
+      ).asJsonObject
+
+    assertEquals("exit", exit.get("method").asString)
+    assertTrue(!exit.has("id"))
+  }
+
+  @Test
   fun completionUsesZeroBasedPosition() {
     val json =
       JsonParser.parseString(

@@ -6,7 +6,6 @@ import com.itsaky.androidide.utils.Environment
 import java.io.BufferedReader
 import java.io.Closeable
 import java.io.File
-import com.google.gson.JsonParser
 import java.io.InputStreamReader
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
@@ -16,6 +15,7 @@ class ClangdProcessSession(
   private val environment: Map<String, String> = Environment.getEnvironment(),
   private val processController: NativeProcessController = NativeProcessController(),
   private val onStderrLine: (String) -> Unit = {},
+  private val onNotification: (String) -> Unit = {},
 ) : Closeable {
 
   private var process: Process? = null
@@ -84,7 +84,7 @@ class ClangdProcessSession(
     try {
       send(json)
     } catch (error: Throwable) {
-      responseRouter.failAll(error)
+      responseRouter.fail(requestId, error)
       throw error
     }
     return future

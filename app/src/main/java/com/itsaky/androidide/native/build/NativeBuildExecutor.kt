@@ -102,7 +102,7 @@ class NativeBuildExecutor(
               factory = factory,
             )
 
-          val result = executeCommands(task.id, commands, executed, onOutput)
+          val result = executeCommands(task.id, commands, executed, onOutput, processController)
           if (result != null) {
             onTaskState(task, NativeBuildTaskState.FAILED)
             return result
@@ -188,6 +188,7 @@ class NativeBuildExecutor(
     commands: List<NativeCommandSpec>,
     executed: MutableList<String>,
     onOutput: (String) -> Unit,
+    processController: NativeProcessController?,
   ): NativeBuildResult? {
     for (command in commands) {
       command.arguments
@@ -196,7 +197,7 @@ class NativeBuildExecutor(
         ?.last()
         ?.let { File(it).parentFile?.mkdirs() }
 
-      val result = commandExecutor(command, onOutput)
+      val result = commandExecutor(command, processController, onOutput)
       if (!result.success) {
         return NativeBuildResult(
           success = false,

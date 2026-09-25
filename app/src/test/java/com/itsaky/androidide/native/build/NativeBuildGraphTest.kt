@@ -95,6 +95,44 @@ class NativeBuildGraphTest {
   }
 
   @Test
+  fun pipelineUsesLibraryTypeFromRequestedVariant() {
+    val module =
+      NativeModule(
+        moduleName = "mixed",
+        targets =
+          listOf(
+            NativeTarget(
+              name = "debug",
+              abi = AbiTarget.ARM64_V8A,
+              variant = BuildVariant.DEBUG,
+              libraryType = NativeLibraryType.STATIC,
+              sourceSet = NativeSourceSet(),
+            ),
+            NativeTarget(
+              name = "release",
+              abi = AbiTarget.ARM64_V8A,
+              variant = BuildVariant.RELEASE,
+              libraryType = NativeLibraryType.SHARED,
+              sourceSet = NativeSourceSet(),
+            ),
+          ),
+      )
+
+    val graph =
+      NativePipeline.createGraph(
+        NativeBuildRequest(
+          module = module,
+          abi = AbiTarget.ARM64_V8A,
+          variant = BuildVariant.DEBUG,
+        )
+      )
+
+    val kinds = graph.topologicalOrder().map { it.kind }
+    assertTrue(kinds.contains(NativeBuildTask.Kind.ARCHIVE_OBJECTS))
+    assertTrue(!kinds.contains(NativeBuildTask.Kind.LINK_NATIVE))
+  }
+
+  @Test
   fun pipelineCreatesDependencyAwareNativeStages() {
     val module =
       NativeModule(

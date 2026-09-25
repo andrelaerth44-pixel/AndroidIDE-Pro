@@ -129,6 +129,8 @@ import com.itsaky.androidide.ui.editor.CodeEditorView
 import com.itsaky.androidide.uidesigner.UIDesignerActivity
 import com.itsaky.androidide.utils.ActionMenuUtils.createMenu
 import com.itsaky.androidide.utils.ApkInstallationSessionCallback
+import com.itsaky.androidide.utils.ApkInstaller
+import com.itsaky.androidide.utils.InstallationResultHandler
 import com.itsaky.androidide.utils.DURATION_INDEFINITE
 import com.itsaky.androidide.utils.DialogUtils.newMaterialDialogBuilder
 import com.itsaky.androidide.utils.ILogger
@@ -710,7 +712,7 @@ abstract class BaseEditorActivity :
     }
   }
 
-  internal fun startBuildCenterBuild() {
+  internal fun startBuildCenterBuild(installAfterBuild: Boolean = false) {
     val root = runCatching { File(getProjectDirPath()).canonicalFile }.getOrNull() ?: return
     val module = File(root, "app").takeIf { it.isDirectory } ?: root
     if (AndroidProjectModelLoader.load(module) == null) {
@@ -739,7 +741,17 @@ abstract class BaseEditorActivity :
           appendBuildCenterOutput(error?.message ?: result?.message ?: "Native Android build failed")
         } else {
           finishBuildCenter(true, stages.map { it.title })
-          result.outputApk?.let { appendBuildCenterOutput("APK: " + it.absolutePath) }
+          result.outputApk?.let { apk ->
+            appendBuildCenterOutput("APK: " + apk.absolutePath)
+            if (installAfterBuild) {
+              ApkInstaller.installApk(
+                this@BaseEditorActivity,
+                InstallationResultHandler.createEditorActivitySender(this@BaseEditorActivity),
+                apk,
+                installationSessionCallback(),
+              )
+            }
+          }
         }
         nativeAndroidBuildService = null
       }
@@ -1208,6 +1220,16 @@ abstract class BaseEditorActivity :
         shortcut = "F9",
         keywords = listOf("build", "apk", "native", "aapt2", "dex", "sign"),
         onClick = { startBuildCenterBuild() },
+      )
+
+    commands +=
+      CommandPaletteItem(
+        title = "Build & Install APK",
+        subtitle = "Build with the native pipeline and install the result",
+        icon = IdeIcons.Build,
+        category = "Build",
+        keywords = listOf("run", "install", "apk", "native", "debug"),
+        onClick = { startBuildCenterBuild(installAfterBuild = true) },
       )
 
     commands +=

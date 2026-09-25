@@ -109,6 +109,8 @@
   <string name="template_fragment_and_viewmodel" translatable="false">Fragment + ViewModel</string>
   <string name="template_native_activity">NativeActivity</string>
   <string name="template_native_activity_description">Creates a Gradle-free NativeActivity project with the AndroidIDE Pro native backend</string>
+  <string name="template_native_jni">JNI App</string>
+  <string name="template_native_jni_description">Creates a Gradle-free Android app with a Java JNI bridge and C++ native library</string>
   <string name="template_cpp">Native C++</string>
   <string name="template_cpp_description">Creates a new project with an Empty Activity configured to use JNI</string>
   <string name="template_no_activity">No Activity</string>

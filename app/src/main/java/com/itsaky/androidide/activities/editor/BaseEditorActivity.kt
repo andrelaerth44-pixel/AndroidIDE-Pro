@@ -29,8 +29,16 @@ import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import androidx.activity.OnBackPressedCallback
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
@@ -43,6 +51,7 @@ import com.blankj.utilcode.util.FileUtils
 import com.blankj.utilcode.util.IntentUtils
 import com.blankj.utilcode.util.KeyboardUtils
 import com.blankj.utilcode.util.ThreadUtils
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback
 import com.google.android.material.navigation.NavigationView
@@ -82,6 +91,11 @@ import com.itsaky.androidide.projects.builder.BuildService
 import com.itsaky.androidide.services.log.LogReceiverService
 import com.itsaky.androidide.services.log.LogReceiverServiceConnection
 import com.itsaky.androidide.services.log.lookupLogService
+import com.itsaky.androidide.ui.compose.AndroidIDETheme
+import com.itsaky.androidide.ui.compose.CommandPaletteItem
+import com.itsaky.androidide.ui.compose.EditorWorkspaceTopBar
+import com.itsaky.androidide.ui.compose.IdeIcons
+import com.itsaky.androidide.ui.compose.WorkspaceTab
 import com.itsaky.androidide.ui.editor.CodeEditorView
 import com.itsaky.androidide.uidesigner.UIDesignerActivity
 import com.itsaky.androidide.utils.ActionMenuUtils.createMenu
@@ -133,6 +147,10 @@ abstract class BaseEditorActivity :
   val viewModel by viewModels<EditorViewModel>()
   lateinit var binding: ActivityEditorBinding
     protected set
+
+  private val workspaceTabs = mutableStateListOf<WorkspaceTab>()
+  private var workspaceSelectedTab by mutableIntStateOf(-1)
+  private var workspaceComposeView: ComposeView? = null
 
   private val onBackPressedCallback: OnBackPressedCallback =
     object : OnBackPressedCallback(true) {
@@ -230,6 +248,7 @@ abstract class BaseEditorActivity :
     binding.tabs.addOnTabSelectedListener(this)
 
     setupViews()
+    setupComposeWorkspace()
 
     KeyboardUtils.registerSoftInputChangedListener(this) { onSoftInputChanged() }
     startLogReceiver()
@@ -295,6 +314,7 @@ abstract class BaseEditorActivity :
 
   override fun onTabSelected(tab: Tab) {
     val position = tab.position
+    workspaceSelectedTab = position
     viewModel.displayedFileIndex = position
 
     val editorView = provideEditorAt(position)!!
@@ -485,18 +505,94 @@ abstract class BaseEditorActivity :
     invalidateOptionsMenu()
   }
 
+  private fun setupComposeWorkspace() {
+    val compose = ComposeView(this)
+    compose.setViewCompositionStrategy(
+      ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed,
+    )
+    compose.setContent {
+      AndroidIDETheme {
+        EditorWorkspaceTopBar(
+          projectName = File(getProjectDirPath()).name.ifBlank { "Project" },
+          tabs = workspaceTabs,
+          selectedTab = workspaceSelectedTab,
+          commands =
+            listOf(
+              CommandPaletteItem(
+                title = "Project Explorer",
+                subtitle = "Open files and folders",
+                icon = IdeIcons.FolderOpen,
+                onClick = { binding.root.openDrawer(GravityCompat.END) },
+              ),
+              CommandPaletteItem(
+                title = "Build Project",
+                subtitle = "Open the build panel",
+                icon = IdeIcons.Build,
+                onClick = {
+                  editorBottomSheet?.state = BottomSheetBehavior.STATE_EXPANDED
+                },
+              ),
+              CommandPaletteItem(
+                title = "Terminal",
+                subtitle = "Open the integrated terminal",
+                icon = IdeIcons.Terminal,
+                onClick = { openTerminal() },
+              ),
+              CommandPaletteItem(
+                title = "Preferences",
+                subtitle = "Open AndroidIDE settings",
+                icon = IdeIcons.Settings,
+                onClick = {
+                  startActivity(Intent(this@BaseEditorActivity, PreferencesActivity::class.java))
+                },
+              ),
+            ),
+          onTabSelected = { index -> binding.tabs.getTabAt(index)?.select() },
+          onExplorer = { binding.root.openDrawer(GravityCompat.END) },
+          onBuild = { editorBottomSheet?.state = BottomSheetBehavior.STATE_EXPANDED },
+          onMore = { binding.editorToolbar.showOverflowMenu() },
+        )
+      }
+    }
+
+    binding.editorToolbar.visibility = View.GONE
+    binding.tabs.visibility = View.GONE
+    binding.editorAppBarLayout.addView(
+      compose,
+      0,
+      AppBarLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT),
+    )
+    workspaceComposeView = compose
+  }
+
+  private fun syncWorkspaceTabs() {
+    workspaceTabs.clear()
+    val opened = getOpenedFiles()
+    opened.forEachIndexed { index, file ->
+      val path = file.absolutePath
+      workspaceTabs +=
+        WorkspaceTab(
+          id = path,
+          title = File(path).name,
+          modified = provideEditorAt(index)?.isModified == true,
+        )
+    }
+    workspaceSelectedTab = viewModel.getCurrentFileIndex()
+  }
+
   private fun setupViews() {
     viewModel._isBuildInProgress.observe(this) { onBuildStatusChanged() }
     viewModel._isInitializing.observe(this) { onBuildStatusChanged() }
     viewModel._statusText.observe(this) { binding.bottomSheet.setStatus(it.first, it.second) }
 
     viewModel.observeFiles(this) { files ->
+      syncWorkspaceTabs()
       binding.apply {
         if (files.isNullOrEmpty()) {
           tabs.visibility = View.GONE
           viewContainer.displayedChild = 1
         } else {
-          tabs.visibility = View.VISIBLE
+          tabs.visibility = View.GONE
           viewContainer.displayedChild = 0
         }
       }
@@ -596,7 +692,7 @@ abstract class BaseEditorActivity :
 
     binding.apply {
       viewContainer.viewTreeObserver.addOnGlobalLayoutListener(observer)
-      bottomSheet.setOffsetAnchor(editorToolbar)
+      bottomSheet.setOffsetAnchor(workspaceComposeView ?: editorToolbar)
     }
   }
 

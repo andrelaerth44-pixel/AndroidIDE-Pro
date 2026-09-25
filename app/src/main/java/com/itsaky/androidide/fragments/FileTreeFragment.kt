@@ -214,8 +214,11 @@ class FileTreeFragment :
       if (node.isExpanded) {
         collapseNode(node)
       } else {
-        setLoading(node)
-        listNode(node) { expandNode(node) }
+        isLoading = true
+        listNode(node) {
+          expandNode(node)
+          isLoading = false
+        }
       }
     }
 
@@ -232,12 +235,6 @@ class FileTreeFragment :
   private fun expandNode(node: TreeNode) {
     node.isExpanded = true
     invalidateComposeTree()
-  }
-
-  private fun setLoading(node: TreeNode) {
-    if (node.viewHolder is FileTreeViewHolder) {
-      (node.viewHolder as FileTreeViewHolder).setLoading(true)
-    }
   }
 
   private fun listNode(node: TreeNode, whenDone: Runnable) {

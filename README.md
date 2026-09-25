@@ -74,9 +74,9 @@ The branch is intentionally incremental. Existing AndroidIDE editor services rem
 - No neon/RGB/cyberpunk styling.
 - Existing functionality is reused instead of being rewritten without a concrete reason.
 
-### Workspace V2 progress
+### AndroidIDE Pro progress
 
-Current sprint: **Workspace V2**.
+Current sprint: **Native Build Foundation**.
 
 Implemented in the current branch:
 
@@ -89,6 +89,10 @@ Implemented in the current branch:
 - Command Palette with grouped actions, search, keywords and shortcut labels.
 - Build Center UI with pipeline state, live status/progress, structured Problems and logs.
 - Shared Compose icon set and glass surface primitives.
+- Native Project Model with ABI, build variant, library type, source set, module and target models.
+- Native Build Graph with dependency validation, cycle detection, semantic topological ordering and ready-task calculation.
+- Native toolchain discovery for Clang, Clang++, Clangd, LLD, LLDB and libc++.
+- Toolchain Manager connected to real filesystem discovery instead of hard-coded readiness.
 
 The visible editor-tab presentation is now Compose-driven, while the legacy `TabLayout` remains internally available so existing selection and editor lifecycle code continues to work.
 
@@ -103,12 +107,12 @@ The project must not regress into making Gradle the planned primary build backen
 ### Immediate next work
 
 1. Validate the latest GitHub Actions build and fix any compile errors.
-2. Polish Explorer interactions and workspace spacing.
-3. Finish Command Palette coverage for real project/editor actions.
-4. Finish Workspace V2 cleanup before the Toolchain Manager sprint.
-5. Build the Toolchain Manager foundation and real tool discovery.
-6. Add C/C++ templates, Clang/Clangd, JNI and NativeActivity support.
-7. Implement the native compiler/NDK pipeline, then debugger and profiler work.
+2. Build the native executor layer on top of NativeBuildGraph.
+3. Connect toolchain discovery to compiler command generation without executing native compilation yet.
+4. Add C/C++ project templates and source scanning.
+5. Add Clangd configuration generation and editor integration.
+6. Add JNI and NativeActivity project templates.
+7. Implement the real arm64-v8a compiler/packaging path, then debugger and profiler work.
 
 ### Continuity rule
 

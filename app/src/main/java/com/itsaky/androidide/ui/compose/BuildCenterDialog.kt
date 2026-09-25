@@ -15,6 +15,7 @@ fun BuildCenterDialog(
   onBuild: () -> Unit,
   onStop: () -> Unit,
   onRefresh: () -> Unit,
+  onIssueClick: (BuildIssueUi) -> Unit,
   onDismiss: () -> Unit,
 ) {
   Dialog(
@@ -28,9 +29,10 @@ fun BuildCenterDialog(
         steps = state.steps,
         isBuilding = state.isBuilding,
         onBuild = onBuild,
-        onStop = onDismiss,
-        canStopBuild = false,
+        onStop = onStop,
+        canStopBuild = true,
         onRefresh = onRefresh,
+        onIssueClick = onIssueClick,
         logs = state.logs,
         issues = state.issues,
         progress = state.progress,

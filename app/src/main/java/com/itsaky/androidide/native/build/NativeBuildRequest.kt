@@ -8,4 +8,11 @@ data class NativeBuildRequest(
   val module: NativeModule,
   val abi: AbiTarget,
   val variant: BuildVariant,
-)
+) {
+
+  init {
+    require(module.targets.any { it.abi == abi && it.variant == variant }) {
+      "No native target exists for ABI " + abi + " and variant " + variant
+    }
+  }
+}

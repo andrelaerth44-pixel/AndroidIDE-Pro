@@ -1,6 +1,7 @@
 package com.itsaky.androidide.ui.compose
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -78,6 +79,7 @@ fun AndroidIDEProBuildCenter(
   canStopBuild: Boolean = false,
   onRefresh: () -> Unit,
   modifier: Modifier = Modifier,
+  onIssueClick: (BuildIssueUi) -> Unit = {},
   logs: List<BuildLogUi> = emptyList(),
   issues: List<BuildIssueUi> = emptyList(),
   progress: Float? = null,
@@ -111,11 +113,11 @@ fun AndroidIDEProBuildCenter(
               Icon(IdeIcons.Refresh, contentDescription = "Refresh build")
             }
 
-            if (isBuilding) {
+            if (isBuilding && canStopBuild) {
               IconButton(onClick = onStop) {
                 Icon(IdeIcons.Stop, contentDescription = "Stop build")
               }
-            } else {
+            } else if (!isBuilding) {
               Button(
                 onClick = onBuild,
                 contentPadding = PaddingValues(horizontal = 14.dp),
@@ -166,7 +168,7 @@ fun AndroidIDEProBuildCenter(
 
           when (selectedPanel) {
             0 -> PipelineList(steps)
-            1 -> ProblemsList(issues)
+            1 -> ProblemsList(issues, onIssueClick)
             else -> LogsList(logs)
           }
         }
@@ -193,7 +195,10 @@ private fun PipelineList(steps: List<BuildStepUi>) {
 }
 
 @Composable
-private fun ProblemsList(issues: List<BuildIssueUi>) {
+private fun ProblemsList(
+  issues: List<BuildIssueUi>,
+  onIssueClick: (BuildIssueUi) -> Unit,
+) {
   if (issues.isEmpty()) {
     EmptyBuildState("No errors or warnings.")
     return
@@ -205,7 +210,11 @@ private fun ProblemsList(issues: List<BuildIssueUi>) {
   ) {
     items(issues, key = { it.id }) { issue ->
       Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .clickable(enabled = issue.file != null) { onIssueClick(issue) }
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.Top,
       ) {
         Icon(

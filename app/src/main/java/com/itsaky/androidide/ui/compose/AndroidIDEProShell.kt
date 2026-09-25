@@ -17,11 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.Code
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,7 +56,7 @@ fun AndroidIDEProShell(
             modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
           ) {
-            Icon(Icons.Outlined.Code, contentDescription = null)
+            Icon(IdeIcons.Code, contentDescription = null)
             Spacer(Modifier.padding(horizontal = 5.dp))
             Text(title, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.weight(1f))
@@ -71,10 +66,10 @@ fun AndroidIDEProShell(
               style = MaterialTheme.typography.labelLarge,
             )
             IconButton(onClick = {}) {
-              Icon(Icons.Outlined.Search, contentDescription = "Search")
+              Icon(IdeIcons.Search, contentDescription = "Search")
             }
             IconButton(onClick = {}) {
-              Icon(Icons.Outlined.Build, contentDescription = "Build")
+              Icon(IdeIcons.Build, contentDescription = "Build")
             }
           }
         }
@@ -91,7 +86,7 @@ fun AndroidIDEProShell(
               horizontalAlignment = Alignment.CenterHorizontally,
               verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-              GlassIconButton(Icons.Outlined.Folder, "Explorer")
+              GlassIconButton(IdeIcons.Folder, "Explorer")
               GlassIconButton(Icons.Outlined.Code, "Editor")
               GlassIconButton(Icons.Outlined.Build, "Build")
               Spacer(Modifier.weight(1f))

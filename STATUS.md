@@ -20,7 +20,7 @@ The repository README contains the broader project continuity notes. This file r
 | Editor Host V2 | In progress | Compose host is integrated into the existing editor activity; tabs can select and close real editor instances. |
 | Modified tabs | Implemented | Existing editor modification state is reflected in Compose tabs. |
 | Breadcrumbs | Implemented | Active file path is exposed as Compose breadcrumbs. |
-| Build Center V2 | Integrated | Real build-service prepare/progress/output/success/failure events feed Compose state; compiler-style output is parsed into Problems. Cancellation remains unavailable in the current service API. |
+| Build Center V2 | Integrated | Direct BuildService start/stop, real prepare/progress/output/success/failure events, structured Problems and clickable source navigation. |
 | Command Palette | Integrated | Real editor/project actions and currently open files are exposed alongside grouped search and shortcuts. |
 | Status Bar | Implemented | Language, ABI, Git branch, cursor position and editor state are modeled. |
 | Git status | Partial | Current branch is read from the project repository when available. |
@@ -36,17 +36,12 @@ New UI should continue to prefer Compose over adding new XML layouts.
 
 The workspace UI should stay restrained: simple surfaces, clear hierarchy, modest corner radii and minimal transparency.
 
-## Recent commits
+## Recent implementation checkpoints
 
-- `f8ad812acb035235712fc9fc0f5cccf1af5cf230` — Explorer context menu actions.
-- `9a5fff55cdab11a9313bc744dc2e4f51a29675a1` — shared icon use in the Compose shell.
-- `a465556d87e45cf24cb5f4c7f6c1b7f26fa9c858` — expose real editor tab/breadcrumb/status state to Compose.
-- `67f2e8bb57d6f47271689da073fb64e9774c4dd5` — closable editor tabs, breadcrumbs and status bar UI.
-- `a37aa4d8ab1830b35afee5b35c4e14b57d807ab4` — connect Compose tab closing to real editor instances.
-- `756099715bae5a6dd713c14a4cc09e9fa8ff6435` — clarify Command Palette dismissal hint.
-- `67a202d0640ef98cf8247b18850eb415c03443dc` — harden Git branch lookup in workspace status.
-- `0bc53fdb5eeb9a7877386aa8b9fe8408c9213a0d` — refresh workspace status when editor content changes.
-- `628be33bcfe423468ae4f70dfea3879bf3addec8` — update project README with Workspace V2 continuity state.
+- Build Center now starts `assembleDebug` through `BuildService`, exposes cancellation through `cancelCurrentBuild()`, mirrors real build events/output and opens structured Problems at source locations.
+- Compose editor tabs, breadcrumbs, status bar and Explorer actions remain connected to the existing editor lifecycle.
+- Command Palette exposes real navigation, build, save and open-file actions.
+- The next native sprint starts with Toolchain Manager and tool discovery; a completed NDK/Clangd stack is not yet present in this branch.
 
 ## Validation
 
@@ -57,15 +52,16 @@ Local repository cloning from this environment was not available because outboun
 ## Immediate next work
 
 1. Validate the latest GitHub Actions build and inspect any compile errors.
-2. Make the Build Center start action invoke the existing build command directly.
-3. Polish Problems navigation so a diagnostic can open the matching source location.
-4. Polish Explorer interactions and workspace spacing.
-5. Continue Workspace V2 cleanup before Toolchain Manager and C/C++ tooling.
-6. Keep NDK implementation behind the UI sprint unless a concrete integration dependency requires it.
+2. Polish Explorer interactions and workspace spacing.
+3. Finish Command Palette coverage for real project/editor actions.
+4. Complete Workspace V2 cleanup before Toolchain Manager.
+5. Implement Toolchain Manager and real device tool discovery.
+6. Add C/C++ templates, Clang/Clangd, JNI and NativeActivity support.
+7. Implement the native compiler/NDK pipeline, then debugger and profiler work.
 
 ## NDK boundary
 
-Native build engine and NDK-related source already exist in the branch, but they are not treated as the completed NDK product.
+The branch does not yet contain a completed native compiler/NDK product. The planned native stack remains separated from the existing Gradle service so it can become the primary AndroidIDE Pro build backend later.
 
 The planned native stack remains:
 

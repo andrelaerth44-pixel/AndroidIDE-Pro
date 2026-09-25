@@ -22,6 +22,7 @@ data class NativeToolchain(
   val root: File?,
   val sysroot: File?,
   val tools: List<NativeTool>,
+  val libcxxShared: File? = null,
 ) {
   fun tool(id: NativeToolId): NativeTool? =
     tools.firstOrNull { it.id == id }

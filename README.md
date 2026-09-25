@@ -1,10 +1,61 @@
-# AndroidIDE Pro — Continuity and Development Notes
+<p align="center">
+  <img src="./images/icon.png" alt="AndroidIDE" width="80" height="80"/>
+</p>
 
-> AndroidIDE Pro is being developed as an on-device professional Android IDE. This fork is evolving its new workspace and build architecture incrementally while preserving the existing editor and project infrastructure.
+<h2 align="center"><b>AndroidIDE</b></h2>
+<p align="center">
+  An IDE to develop real, Gradle-based Android applications on Android devices.
+<p><br>
+
+<p align="center">
+<!-- Latest release -->
+<img src="https://img.shields.io/github/v/release/AndroidIDEOfficial/AndroidIDE?include_prereleases&amp;label=latest%20release" alt="Latest release">
+<!-- Build and test -->
+<img src="https://github.com/AndroidIDEOfficial/AndroidIDE/actions/workflows/build.yml/badge.svg" alt="Builds and tests">
+<!-- CodeFactor -->
+<img src="https://www.codefactor.io/repository/github/androidideofficial/androidide/badge/main" alt="CodeFactor">
+<!-- Crowdin -->
+<a href="https://crowdin.com/project/androidide"><img src="https://badges.crowdin.net/androidide/localized.svg" alt="Crowdin"></a>
+<!-- License -->
+<img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License"></p>
+
+<p align="center">
+  <a href="https://androidide.com/docs/">Explore the docs »</a> &nbsp; &nbsp;
+  <a href="https://androidide.com/blogs/">Read our blog »</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/AndroidIDEOfficial/AndroidIDE/issues">Report a bug</a> &nbsp; &#8226; &nbsp;
+  <a href="https://github.com/AndroidIDEOfficial/AndroidIDE/issues">Request a feature</a> &nbsp; &#8226; &nbsp;
+  <a href="https://t.me/androidide_discussions">Join us on Telegram</a>
+</p>
+
+## Features
+
+- [x] Gradle support.
+- [x] `JDK 11` and `JDK 17` available for use.
+- [x] Terminal with necessary packages.
+- [x] Custom environment variables (for Build & Terminal).
+- [x] SDK Manager (Available via terminal).
+- [x] API information for classes and their members (since, removed, deprecated).
+- [ ] Language servers
+    - [x] Java
+    - [x] XML
+    - [ ] Kotlin
+- [ ] UI Designer
+    - [x] Layout inflater
+    - [x] Resolve resource references
+    - [x] Auto-complete resource values when user edits attributes using the attribute editor
+    - [x] Drag & Drop
+    - [x] Visual attribute editor
+    - [x] Android Widgets
+- [ ] String Translator
+- [ ] Asset Studio (Drawable & Icon Maker)
+- [x] Git
 
 ## AndroidIDE Pro Development Track
 
-The current work focuses on a modern on-device IDE workspace built with Jetpack Compose and Material 3 while preserving the existing editor, project, and language infrastructure during the migration.
+This repository contains the AndroidIDE Pro development track. The current work focuses on a modern on-device IDE workspace built with Jetpack Compose and Material 3 while preserving the existing editor, project, and language infrastructure during the migration.
 
 ### Working branch
 
@@ -62,10 +113,6 @@ The project must not regress into making Gradle the planned primary build backen
 ### Continuity rule
 
 Repository documentation is part of the project's continuity mechanism. After meaningful architectural or UI changes, update this section and `STATUS.md` so a future development session can continue from the repository instead of relying on conversation history.
-
-## Original AndroidIDE Documentation
-
-The original AndroidIDE documentation, installation information, contributing notes and license remain below this development-track section.
 
 ## Installation
 

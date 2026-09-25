@@ -2,7 +2,7 @@ name: Build and test
 
 on:
   push:
-    branches: [ "dev", "main", "apk-v3-signing" ]
+    branches: [ "dev", "main", "apk-v3-signing", "compose-glass-foundation" ]
     paths-ignore:
       - '**.md'
       - 'fastlane/**'

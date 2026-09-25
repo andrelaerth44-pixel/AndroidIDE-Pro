@@ -17,7 +17,6 @@ class NativeBuildCache(
 ) {
 
   private val properties = Properties()
-  private val activeDigest = ThreadLocal<MessageDigest>()
 
   init {
     if (stateFile.isFile) {
@@ -49,28 +48,29 @@ class NativeBuildCache(
 
   private fun fingerprint(command: NativeCommandSpec): String {
     val digest = MessageDigest.getInstance("SHA-256")
-    activeDigest.set(digest)
-    try {
-      command.asCommandLine().forEach { argument ->
+
+    command.asCommandLine().forEach { argument ->
       digest.update(argument.toByteArray())
       digest.update(0)
     }
 
-    command.executable.takeIf(File::isFile)?.let(::hashFile)
+    command.executable
+      .takeIf(File::isFile)
+      ?.let { hashFile(it, digest) }
+
     commandInputFiles(command)
       .plus(commandHeaderFiles(command))
       .distinct()
       .sortedBy(File::getAbsolutePath)
-      .forEach(::hashFile)
+      .forEach { hashFile(it, digest) }
 
-      return digest.digest().joinToString("") { "%02x".format(it) }
-    } finally {
-      activeDigest.remove()
-    }
+    return digest.digest().joinToString("") { "%02x".format(it) }
   }
 
-  private fun hashFile(file: File) {
-    val digest = activeDigest.get()
+  private fun hashFile(
+    file: File,
+    digest: MessageDigest,
+  ) {
     digest.update(file.absolutePath.toByteArray())
     digest.update(0)
     digest.update(file.length().toString().toByteArray())

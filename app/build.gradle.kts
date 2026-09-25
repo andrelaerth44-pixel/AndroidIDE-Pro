@@ -137,6 +137,7 @@ dependencies {
   implementation(projects.eventbusEvents)
   implementation(projects.idestats)
   implementation(projects.subprojects.aaptcompiler)
+  implementation(projects.subprojects.buildEngine)
   implementation(projects.subprojects.javacServices)
   implementation(projects.subprojects.javapoet)
   implementation(projects.subprojects.xmlUtils)

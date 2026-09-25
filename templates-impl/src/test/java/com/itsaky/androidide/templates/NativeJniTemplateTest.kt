@@ -26,7 +26,13 @@ class NativeJniTemplateTest {
       assertTrue(project.resolve("src/main/java/com/example/jnidemo/NativeBridge.java").isFile)
       assertTrue(project.resolve("src/main/java/com/example/jnidemo/MainActivity.java").isFile)
       assertTrue(project.resolve("src/main/cpp/native_bridge.cpp").isFile)
+      assertTrue(project.resolve("src/main/res").isDirectory)
       assertTrue(project.resolve("src/main/AndroidManifest.xml").isFile)
+      assertTrue(
+        project.resolve("src/main/java/com/example/jnidemo/NativeBridge.java")
+          .readText()
+          .contains("System.loadLibrary(\"jni_demo\")")
+      )
       assertTrue(project.resolve(".androidide/native.json").isFile)
       assertTrue(project.resolve("build.gradle").exists().not())
     } finally {

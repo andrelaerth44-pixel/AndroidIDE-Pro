@@ -75,11 +75,8 @@ fun CommandPalette(
           .padding(horizontal = 18.dp, vertical = 48.dp),
       contentAlignment = Alignment.TopCenter,
     ) {
-      Surface(
+      GlassSurface(
         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.72f),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 6.dp,
       ) {
         Column(
           modifier = Modifier.fillMaxSize().padding(14.dp),
@@ -109,17 +106,23 @@ fun CommandPalette(
             verticalArrangement = Arrangement.spacedBy(6.dp),
           ) {
             items(filteredItems, key = { it.title }) { item ->
-              Row(
+              GlassRow(
                 modifier =
                   Modifier
                     .fillMaxWidth()
-                    .clickable {
-                      onDismiss()
-                      item.onClick()
-                    }
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(horizontal = 0.dp, vertical = 1.dp),
               ) {
+                Row(
+                  modifier =
+                    Modifier
+                      .fillMaxWidth()
+                      .clickable {
+                        onDismiss()
+                        item.onClick()
+                      }
+                      .padding(horizontal = 12.dp, vertical = 12.dp),
+                  verticalAlignment = Alignment.CenterVertically,
+                ) {
                 Icon(
                   imageVector = item.icon,
                   contentDescription = null,
@@ -139,6 +142,7 @@ fun CommandPalette(
                       color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                   }
+                }
                 }
               }
             }

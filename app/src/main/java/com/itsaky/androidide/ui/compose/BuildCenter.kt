@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -119,8 +121,11 @@ fun AndroidIDEProBuildCenter(
 
 @Composable
 private fun BuildStepRow(step: BuildStepUi) {
-  Row(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+  GlassRow(
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Icon(

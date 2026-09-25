@@ -77,6 +77,10 @@ class ClangdProcessSession(
     notificationHandler = handler
   }
 
+  fun setNotificationHandler(handler: (String) -> Unit) {
+    responseRouter.setNotificationHandler(handler)
+  }
+
   fun send(json: String) {
     check(isRunning) { "clangd session is not running" }
     checkNotNull(transport).sendJson(json)

@@ -171,6 +171,7 @@ class ClangdLanguageServer : ILanguageServer {
     diagnostics.remove(event.closedFile)
   }
 
+  @Synchronized
   private fun startWorkspace(moduleRoot: File) {
     if (workspaceRoot?.canonicalFile == moduleRoot.canonicalFile && workspace != null) return
 

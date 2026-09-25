@@ -9,6 +9,7 @@ import com.itsaky.androidide.native.model.NativeTarget
 import java.nio.file.Path
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NativeBuildGraphTest {
@@ -58,6 +59,38 @@ class NativeBuildGraphTest {
     assertThrows(IllegalStateException::class.java) {
       NativeBuildGraph(listOf(first, second))
     }
+  }
+
+
+  @Test
+  fun staticPipelineAddsArchiveStage() {
+    val module =
+      NativeModule(
+        moduleName = "static",
+        targets =
+          listOf(
+            NativeTarget(
+              name = "static",
+              abi = AbiTarget.ARM64_V8A,
+              variant = BuildVariant.RELEASE,
+              libraryType = NativeLibraryType.STATIC,
+              sourceSet = NativeSourceSet(),
+            )
+          ),
+      )
+
+    val graph =
+      NativePipeline.createGraph(
+        NativeBuildRequest(
+          module = module,
+          abi = AbiTarget.ARM64_V8A,
+          variant = BuildVariant.RELEASE,
+        )
+      )
+
+    val kinds = graph.topologicalOrder().map { it.kind }
+    assertTrue(kinds.contains(NativeBuildTask.Kind.ARCHIVE_OBJECTS))
+    assertEquals(NativeBuildTask.Kind.LINK_NATIVE, kinds[kinds.lastIndex - 1])
   }
 
   @Test

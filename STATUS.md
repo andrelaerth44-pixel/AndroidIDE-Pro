@@ -81,10 +81,18 @@ The clangd transport is now connected to AndroidIDE Pro's existing language-serv
 - Generates a launcher manifest and Gradle-free `.androidide/native.json`.
 
 #### APK native packaging
+- AAPT2 resource compile planner.
+- AAPT2 resource link planner.
+- Native APK package planner/executor.
 - Native shared-library merge stage for unsigned APKs.
 - ABI-aware entry path: `lib/arm64-v8a/lib<module>.so`.
 - Native libraries are emitted as ZIP `STORED` entries.
 - Merge occurs before signing; v2/v3 signatures must be generated afterward.
+
+### Important architecture finding
+- A second native backend also exists under `subprojects/build-engine`.
+- The editor Native Build action currently uses the app-level `native/build` backend.
+- These native backends must be reconciled before AndroidIDE Pro has one authoritative native build architecture.
 
 ## Validation state
 
@@ -92,12 +100,14 @@ GitHub Actions for the newest commits are currently queued. No successful or fai
 
 ## Next work
 
-1. Add clangd request cancellation plus formatting, definition and references support.
-2. Integrate JNI and NativeActivity generators into the project-template wizard.
-3. Build the unsigned APK packaging pipeline around resource compilation, Java/Dex outputs and native-library merge.
-5. Add zip alignment and APK signing as explicit stages after native merge.
-6. Promote the native backend to the primary AndroidIDE Pro build path; keep Gradle only as compatibility infrastructure.
-7. Add additional ABIs, then LLDB/debugger and profiler support.
+1. Stabilize CI against the current HEAD.
+2. Reconcile the app-level native backend with subprojects/build-engine.
+3. Add clangd request cancellation plus formatting, definition and references support.
+4. Add Java/Kotlin compilation and DEX to the native APK graph.
+5. Add zip alignment and v2/v3 APK signing to the native pipeline.
+6. Promote Native Build to the primary Build Center path; keep Gradle only as compatibility infrastructure.
+7. Package and provision the complete AndroidIDE Pro LLVM/NDK toolchain.
+8. Add additional ABIs, then LLDB/debugger and profiler support.
 
 ## Architecture direction
 

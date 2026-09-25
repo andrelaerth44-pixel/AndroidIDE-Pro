@@ -36,26 +36,38 @@ object NativePipeline {
         dependencies = listOf(scan.id, headers.id),
       )
 
+    val tasks = mutableListOf(
+      scan,
+      headers,
+      compileC,
+      compileCpp,
+    )
+
+    val staticTarget = request.module.targets.any {
+      it.libraryType == NativeLibraryType.STATIC
+    }
+
     val linkDependencies =
-      if (request.module.targets.any { it.libraryType == NativeLibraryType.STATIC }) {
+      if (staticTarget) {
         val archive =
           task(
             prefix = prefix,
             kind = NativeBuildTask.Kind.ARCHIVE_OBJECTS,
             dependencies = listOf(compileC.id, compileCpp.id),
           )
-        listOf(archive)
+        tasks += archive
+        listOf(archive.id)
       } else {
-        listOf(compileC, compileCpp)
+        listOf(compileC.id, compileCpp.id)
       }
 
     val link =
       task(
         prefix = prefix,
         kind = NativeBuildTask.Kind.LINK_NATIVE,
-        dependencies = linkDependencies.map { it.id },
+        dependencies = linkDependencies,
         description =
-          if (request.module.targets.any { it.libraryType == NativeLibraryType.STATIC }) {
+          if (staticTarget) {
             "Link native static output"
           } else {
             "Link shared native library"
@@ -69,19 +81,10 @@ object NativePipeline {
         dependencies = listOf(link.id),
       )
 
-    return NativeBuildGraph(
-      listOf(
-        scan,
-        headers,
-        compileC,
-        compileCpp,
-      ) +
-        linkDependencies +
-        listOf(
-          link,
-          packageLibraries,
-        )
-    )
+    tasks += link
+    tasks += packageLibraries
+
+    return NativeBuildGraph(tasks)
   }
 
   private fun task(

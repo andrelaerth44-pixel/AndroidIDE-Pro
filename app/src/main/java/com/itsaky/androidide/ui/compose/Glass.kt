@@ -21,7 +21,7 @@ private val GlassBorderAlpha = 0.18f
 
 @Composable
 private fun glassColor(): Color =
-  MaterialTheme.colorScheme.surfaceContainer.copy(alpha = GlassContainerAlpha)
+  MaterialTheme.colorScheme.surfaceVariant.copy(alpha = GlassContainerAlpha)
 
 @Composable
 private fun glassBorder(): BorderStroke =
@@ -42,7 +42,7 @@ fun GlassSurface(
     tonalElevation = 0.dp,
     shadowElevation = 0.dp,
     border = glassBorder(),
-    content = content,
+    content = { androidx.compose.foundation.layout.Row { content() } },
   )
 }
 
@@ -58,7 +58,7 @@ fun GlassPanel(
     tonalElevation = 0.dp,
     shadowElevation = 0.dp,
     border = glassBorder(),
-    content = content,
+    content = { androidx.compose.foundation.layout.Column { content() } },
   )
 }
 

@@ -32,6 +32,28 @@ class AndroidProjectModelTest {
   }
 
   @Test
+  fun loaderReadsSdkLevelsFromManifest() {
+    val root = Files.createTempDirectory("android-project-sdk").toFile()
+    try {
+      val main = root.resolve("src/main")
+      main.resolve("res/values").mkdirs()
+      main.resolve("AndroidManifest.xml").writeText(
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app">
+          <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
+        </manifest>
+        """.trimIndent()
+      )
+
+      val model = checkNotNull(AndroidProjectModelLoader.load(root))
+      assertEquals(26, model.minSdk)
+      assertEquals(34, model.targetSdk)
+    } finally {
+      root.deleteRecursively()
+    }
+  }
+
+  @Test
   fun loaderRejectsIncompleteModule() {
     val root = Files.createTempDirectory("android-project-invalid").toFile()
     try {

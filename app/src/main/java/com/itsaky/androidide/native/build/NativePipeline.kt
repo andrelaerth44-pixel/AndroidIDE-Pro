@@ -7,7 +7,7 @@ object NativePipeline {
 
   fun createGraph(request: NativeBuildRequest): NativeBuildGraph {
     val prefix =
-      "\${request.module.moduleName}:\${request.abi}:\${request.variant}"
+      "${request.module.moduleName}:${request.abi}:${request.variant}"
 
     val scan =
       task(
@@ -83,7 +83,7 @@ object NativePipeline {
     description: String = kind.displayName,
   ): NativeBuildTask =
     NativeBuildTask(
-      id = "$prefix:\${kind.name.lowercase()}",
+      id = "$prefix:${kind.name.lowercase()}",
       kind = kind,
       dependencies = dependencies,
       description = description,

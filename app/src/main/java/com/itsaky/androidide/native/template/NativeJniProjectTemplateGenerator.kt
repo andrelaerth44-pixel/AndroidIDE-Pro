@@ -76,7 +76,7 @@ object NativeJniProjectTemplateGenerator {
     return """
     #include <jni.h>
 
-    extern "C" JNIEXPORT jstring JNICALL \$nativeSymbol(
+    extern "C" JNIEXPORT jstring JNICALL ${nativeSymbol}(
         JNIEnv* env,
         jclass) {
       return env->NewStringUTF("Hello from AndroidIDE Pro");

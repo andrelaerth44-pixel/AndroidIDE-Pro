@@ -17,6 +17,7 @@ import com.itsaky.androidide.templates.stringParameter
 import com.itsaky.androidide.templates.impl.ProjectTemplateRecipeResultImpl
 import com.itsaky.androidide.templates.impl.R
 import com.itsaky.androidide.utils.Environment
+import com.itsaky.androidide.utils.NativeLibraryNaming
 import java.io.File
 
 fun nativeJniProject(): ProjectTemplate {
@@ -78,7 +79,7 @@ private fun writeNativeJniProject(
   packageName: String,
 ) {
   val packagePath = packageName.replace('.', File.separatorChar)
-  val moduleName = data.name.lowercase().replace(Regex("[^a-z0-9_]"), "_")
+  val moduleName = NativeLibraryNaming.sanitize(data.name)
   val javaDir = File(data.projectDir, "src/main/java/$packagePath")
   val bridge = File(javaDir, "NativeBridge.java")
   val activity = File(javaDir, "MainActivity.java")

@@ -22,7 +22,7 @@ object NativeActivityTemplateGenerator {
     }
     validate(spec)
 
-    val moduleName = moduleRoot.name
+    val moduleName = NativeLibraryNaming.sanitize(moduleRoot.name)
     val packagePath = spec.packageName.replace('.', File.separatorChar)
 
     val javaFile =
@@ -32,10 +32,12 @@ object NativeActivityTemplateGenerator {
       )
     val cppFile = File(moduleRoot, "src/main/cpp/native_activity.cpp")
     val manifestFile = File(moduleRoot, "src/main/AndroidManifest.xml")
+    val resourceDirectory = File(moduleRoot, "src/main/res")
 
     javaFile.parentFile?.mkdirs()
     cppFile.parentFile?.mkdirs()
     manifestFile.parentFile?.mkdirs()
+    resourceDirectory.mkdirs()
 
     javaFile.writeText(javaSource(spec))
     cppFile.writeText(cppSource())

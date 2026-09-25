@@ -778,6 +778,16 @@ abstract class BaseEditorActivity :
   }
 
   internal fun stopBuildCenterBuild() {
+    nativeAndroidBuildService?.let { service ->
+      if (service.isBuildInProgress) {
+        buildCenterState = buildCenterState.copy(status = "Cancelling native Android build…")
+        if (!service.cancelCurrentBuild()) {
+          appendBuildCenterOutput("Unable to cancel native Android build.")
+        }
+        return
+      }
+    }
+
     nativeBuildService?.let { nativeService ->
       if (nativeService.isBuildInProgress) {
         buildCenterState = buildCenterState.copy(status = "Cancelling native build…")

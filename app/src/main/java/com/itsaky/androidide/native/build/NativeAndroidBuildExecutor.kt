@@ -341,7 +341,7 @@ class NativeAndroidBuildExecutor(
 
     val dexEntries =
       dexDirectory.listFiles()
-        ?.filter { it.isFile && it.name.matches(Regex("classes(\d*)\.dex")) }
+        ?.filter { it.isFile && it.name.matches(Regex("""classes(\d*)\.dex""")) }
         ?.sortedBy(File::getName)
         .orEmpty()
     if (dexEntries.isEmpty()) {

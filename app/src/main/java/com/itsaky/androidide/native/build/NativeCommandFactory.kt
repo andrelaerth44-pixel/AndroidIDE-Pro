@@ -86,6 +86,9 @@ class NativeCommandFactory(
             add("--sysroot=" + it.absolutePath)
           }
           add("-stdlib=libc++")
+          if (toolchain.libcxxShared?.isFile == true) {
+            add("-lc++_shared")
+          }
           add("-shared")
           add("-fuse-ld=lld")
           objects.forEach { add(it.absolutePath) }

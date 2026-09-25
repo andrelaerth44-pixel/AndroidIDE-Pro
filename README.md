@@ -1,61 +1,10 @@
-<p align="center">
-  <img src="./images/icon.png" alt="AndroidIDE" width="80" height="80"/>
-</p>
+# AndroidIDE Pro — Continuity and Development Notes
 
-<h2 align="center"><b>AndroidIDE</b></h2>
-<p align="center">
-  An IDE to develop real, Gradle-based Android applications on Android devices.
-<p><br>
-
-<p align="center">
-<!-- Latest release -->
-<img src="https://img.shields.io/github/v/release/AndroidIDEOfficial/AndroidIDE?include_prereleases&amp;label=latest%20release" alt="Latest release">
-<!-- Build and test -->
-<img src="https://github.com/AndroidIDEOfficial/AndroidIDE/actions/workflows/build.yml/badge.svg" alt="Builds and tests">
-<!-- CodeFactor -->
-<img src="https://www.codefactor.io/repository/github/androidideofficial/androidide/badge/main" alt="CodeFactor">
-<!-- Crowdin -->
-<a href="https://crowdin.com/project/androidide"><img src="https://badges.crowdin.net/androidide/localized.svg" alt="Crowdin"></a>
-<!-- License -->
-<img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License"></p>
-
-<p align="center">
-  <a href="https://androidide.com/docs/">Explore the docs »</a> &nbsp; &nbsp;
-  <a href="https://androidide.com/blogs/">Read our blog »</a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/AndroidIDEOfficial/AndroidIDE/issues">Report a bug</a> &nbsp; &#8226; &nbsp;
-  <a href="https://github.com/AndroidIDEOfficial/AndroidIDE/issues">Request a feature</a> &nbsp; &#8226; &nbsp;
-  <a href="https://t.me/androidide_discussions">Join us on Telegram</a>
-</p>
-
-## Features
-
-- [x] Gradle support.
-- [x] `JDK 11` and `JDK 17` available for use.
-- [x] Terminal with necessary packages.
-- [x] Custom environment variables (for Build & Terminal).
-- [x] SDK Manager (Available via terminal).
-- [x] API information for classes and their members (since, removed, deprecated).
-- [ ] Language servers
-    - [x] Java
-    - [x] XML
-    - [ ] Kotlin
-- [ ] UI Designer
-    - [x] Layout inflater
-    - [x] Resolve resource references
-    - [x] Auto-complete resource values when user edits attributes using the attribute editor
-    - [x] Drag & Drop
-    - [x] Visual attribute editor
-    - [x] Android Widgets
-- [ ] String Translator
-- [ ] Asset Studio (Drawable & Icon Maker)
-- [x] Git
+> AndroidIDE Pro is being developed as an on-device professional Android IDE. This fork is evolving its new workspace and build architecture incrementally while preserving the existing editor and project infrastructure.
 
 ## AndroidIDE Pro Development Track
 
-This repository contains the AndroidIDE Pro development track. The current work focuses on a modern on-device IDE workspace built with Jetpack Compose and Material 3 while preserving the existing editor, project, and language infrastructure during the migration.
+The current work focuses on a modern on-device IDE workspace built with Jetpack Compose and Material 3 while preserving the existing editor, project, and language infrastructure during the migration.
 
 ### Working branch
 
@@ -70,7 +19,7 @@ The branch is intentionally incremental. Existing AndroidIDE editor services rem
 - Simple, fast, organized IDE workspace.
 - Jetpack Compose + Material 3 for new UI.
 - Light glass surfaces with restrained transparency.
-- Material/Lucide/Phosphor-style iconography through the shared `IdeIcons` layer.
+- Shared IDE icons through `IdeIcons`.
 - No neon/RGB/cyberpunk styling.
 - Existing functionality is reused instead of being rewritten without a concrete reason.
 
@@ -81,16 +30,16 @@ Current sprint: **Workspace V2**.
 Implemented in the current branch:
 
 - Compose project/file Explorer with expandable tree, state restoration, file filtering and row context actions.
-- Compose editor workspace header with real editor-tab state.
+- Compose editor workspace header backed by the real editor tab state.
 - Closable editor tabs connected to the existing `EditorHandlerActivity` file lifecycle.
 - Modified-file indicators and save action.
 - File breadcrumbs derived from the active project path.
-- Status bar data for language, device ABI, Git branch and cursor position.
+- Status bar data for language, device ABI, Git branch, cursor position and editor state.
 - Command Palette with grouped actions, search, keywords and shortcut labels.
-- Build Center with pipeline state, progress, problems and log panels.
+- Build Center UI with pipeline state, progress, problems and log models.
 - Shared Compose icon set and glass surface primitives.
 
-The Compose editor host is integrated incrementally into the existing editor activity. The legacy `TabLayout` remains available internally while its visible presentation is handled by Compose.
+The visible editor-tab presentation is now Compose-driven, while the legacy `TabLayout` remains internally available so existing selection and editor lifecycle code continues to work.
 
 ### Build architecture direction
 
@@ -100,19 +49,23 @@ The native build engine/NDK work present in the branch is still experimental fou
 
 The project must not regress into making Gradle the planned primary build backend for the AndroidIDE Pro architecture.
 
-### Next work
+### Immediate next work
 
-1. Finish Workspace V2 polish and validation.
-2. Complete the real Build Center event/log bridge.
-3. Add command execution and file-opening actions to Command Palette.
-4. Finish Toolchain Manager foundations.
-5. Integrate Clang/Clangd and C/C++ project templates.
-6. Add JNI/NativeActivity tooling.
+1. Validate the latest GitHub Actions build and fix any compile errors.
+2. Polish Explorer context interactions and preserve existing file-action flows.
+3. Bridge Build Center state to real build events and output streams.
+4. Make Command Palette execute real file, build and navigation actions.
+5. Finish Workspace V2 cleanup before Toolchain Manager and C/C++ tooling.
+6. Add Clang/Clangd, C/C++ templates, JNI and NativeActivity tooling.
 7. Return to the full NDK/toolchain implementation, then debugger and profiler work.
 
 ### Continuity rule
 
-The repository documentation is part of the project's continuity mechanism. After meaningful architectural or UI changes, update this section and the project status documentation so a future development session can continue from the repository instead of relying on conversation history.
+Repository documentation is part of the project's continuity mechanism. After meaningful architectural or UI changes, update this section and `STATUS.md` so a future development session can continue from the repository instead of relying on conversation history.
+
+## Original AndroidIDE Documentation
+
+The original AndroidIDE documentation, installation information, contributing notes and license remain below this development-track section.
 
 ## Installation
 

@@ -710,7 +710,7 @@ abstract class BaseEditorActivity :
     }
   }
 
-  internal fun startBuildCenterBuild() {
+  internal fun startLegacyGradleBuild() {
     val buildService = Lookup.getDefault().lookup(BuildService.KEY_BUILD_SERVICE)
     if (buildService == null) {
       flashError("Build service is unavailable")

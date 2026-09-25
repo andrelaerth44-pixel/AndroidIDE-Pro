@@ -5,113 +5,203 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
- * AndroidIDE is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with AndroidIDE.  If not, see <https://www.gnu.org/licenses/>.
- *
  */
+
 package com.itsaky.androidide.fragments
 
 import android.content.Context
 import android.os.Bundle
-import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.WindowInsetsCompat.Type.statusBars
-import androidx.core.view.updatePadding
-import androidx.transition.ChangeBounds
-import androidx.transition.TransitionManager
-import com.blankj.utilcode.util.SizeUtils
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.fragment.app.BottomSheetDialogFragment
+import com.itsaky.androidide.R
 import com.itsaky.androidide.adapters.viewholders.FileTreeViewHolder
-import com.itsaky.androidide.databinding.LayoutEditorFileTreeBinding
 import com.itsaky.androidide.eventbus.events.filetree.FileClickEvent
 import com.itsaky.androidide.eventbus.events.filetree.FileLongClickEvent
 import com.itsaky.androidide.events.ExpandTreeNodeRequestEvent
 import com.itsaky.androidide.events.ListProjectFilesRequestEvent
 import com.itsaky.androidide.projects.ProjectManager.getProjectDirPath
-import com.itsaky.androidide.resources.R.drawable
 import com.itsaky.androidide.tasks.TaskExecutor.executeAsync
 import com.itsaky.androidide.tasks.callables.FileTreeCallable
 import com.itsaky.androidide.tasks.callables.FileTreeCallable.SortFileName
 import com.itsaky.androidide.tasks.callables.FileTreeCallable.SortFolder
+import com.itsaky.androidide.ui.compose.AndroidIDETheme
+import com.itsaky.androidide.ui.compose.GlassPanel
 import com.itsaky.androidide.utils.ILogger
-import com.itsaky.androidide.utils.doOnApplyWindowInsets
 import com.unnamed.b.atv.model.TreeNode
 import com.unnamed.b.atv.model.TreeNode.TreeNodeClickListener
 import com.unnamed.b.atv.model.TreeNode.TreeNodeLongClickListener
-import com.unnamed.b.atv.view.AndroidTreeView
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode.MAIN
 import java.io.File
 import java.util.Arrays
 
+private data class VisibleTreeNode(
+  val node: TreeNode,
+  val depth: Int,
+)
+
 class FileTreeFragment :
   BottomSheetDialogFragment(), TreeNodeClickListener, TreeNodeLongClickListener {
-  private var binding: LayoutEditorFileTreeBinding? = null
-  private var mFileTreeView: AndroidTreeView? = null
+
   private var mRoot: TreeNode? = null
   private var mTreeState: String? = null
+
+  private var treeVersion by mutableIntStateOf(0)
+  private var isLoading by mutableStateOf(false)
 
   override fun onCreateView(
     inflater: LayoutInflater,
     container: ViewGroup?,
     savedInstanceState: Bundle?
   ): View {
-    binding = LayoutEditorFileTreeBinding.inflate(inflater, container, false)
-    binding?.root?.doOnApplyWindowInsets { view, insets, _, _ ->
-      insets.getInsets(statusBars()).apply { view.updatePadding(top = top + SizeUtils.dp2px(8f)) }
+    if (savedInstanceState != null && savedInstanceState.containsKey(KEY_STORED_TREE_STATE)) {
+      mTreeState = savedInstanceState.getString(KEY_STORED_TREE_STATE)
     }
-    return binding!!.root
+
+    return ComposeView(requireContext()).apply {
+      setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+      setContent {
+        AndroidIDETheme {
+          GlassPanel(
+            modifier = Modifier.fillMaxSize(),
+          ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+              Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+              ) {
+                Column(modifier = Modifier.weight(1f)) {
+                  Text(
+                    text = getString(R.string.app_name),
+                    style = MaterialTheme.typography.titleMedium,
+                  )
+                  Text(
+                    text = File(getProjectDirPath()).name.ifBlank { "Project" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  )
+                }
+
+                if (isLoading) {
+                  CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                  )
+                } else {
+                  IconButton(onClick = { listProjectFiles() }) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = "Refresh")
+                  }
+                }
+              }
+
+              val visibleNodes = buildVisibleTree()
+              LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+              ) {
+                items(
+                  items = visibleNodes,
+                  key = { it.node.path },
+                ) { item ->
+                  FileTreeRow(
+                    node = item.node,
+                    depth = item.depth,
+                    onClick = { onClick(item.node, item.node.value) },
+                    onLongClick = { onLongClick(item.node, item.node.value) },
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    if (savedInstanceState != null && savedInstanceState.containsKey(KEY_STORED_TREE_STATE)) {
-      mTreeState = savedInstanceState.getString(KEY_STORED_TREE_STATE, null)
-    }
     listProjectFiles()
   }
 
   override fun onStart() {
     super.onStart()
-    if (!EventBus.getDefault().isRegistered(this)) {
-      EventBus.getDefault().register(this)
+    if (!org.greenrobot.eventbus.EventBus.getDefault().isRegistered(this)) {
+      org.greenrobot.eventbus.EventBus.getDefault().register(this)
     }
   }
 
   override fun onSaveInstanceState(outState: Bundle) {
-    super.onSaveInstanceState(outState)
     saveTreeState()
     outState.putString(KEY_STORED_TREE_STATE, mTreeState)
+    super.onSaveInstanceState(outState)
   }
 
   override fun onStop() {
     super.onStop()
-    EventBus.getDefault().unregister(this)
+    org.greenrobot.eventbus.EventBus.getDefault().unregister(this)
   }
 
   override fun onDestroyView() {
     super.onDestroyView()
-    binding = null
-    mFileTreeView = null
+    mRoot = null
   }
 
   fun saveTreeState() {
-    mTreeState =
-      if (mFileTreeView != null) {
-        mFileTreeView!!.saveState
-      } else {
-        LOG.error("Unable to save tree state. TreeView is null.")
-        null
+    val root = mRoot
+    if (root == null) {
+      mTreeState = null
+      return
+    }
+
+    val expanded = mutableListOf<String>()
+    collectExpandedNodes(root, expanded)
+    mTreeState = expanded.joinToString(AndroidIDE_STATE_SEPARATOR)
+  }
+
+  private fun collectExpandedNodes(node: TreeNode, output: MutableList<String>) {
+    for (child in node.children) {
+      if (child.isExpanded) {
+        output += child.path
+        collectExpandedNodes(child, output)
       }
+    }
   }
 
   override fun onClick(node: TreeNode, p2: Any) {
@@ -119,6 +209,7 @@ class FileTreeFragment :
     if (!file.exists()) {
       return
     }
+
     if (file.isDirectory) {
       if (node.isExpanded) {
         collapseNode(node)
@@ -127,33 +218,20 @@ class FileTreeFragment :
         listNode(node) { expandNode(node) }
       }
     }
+
     val event = FileClickEvent(file)
     event.put(Context::class.java, requireContext())
-    EventBus.getDefault().post(event)
+    org.greenrobot.eventbus.EventBus.getDefault().post(event)
   }
 
   private fun collapseNode(node: TreeNode) {
-    if (mFileTreeView == null) {
-      return
-    }
-    TransitionManager.beginDelayedTransition(binding!!.root, ChangeBounds())
-    mFileTreeView!!.collapseNode(node)
-    updateChevron(node)
-  }
-
-  private fun updateChevron(node: TreeNode) {
-    if (node.viewHolder is FileTreeViewHolder) {
-      (node.viewHolder as FileTreeViewHolder).updateChevron(node.isExpanded)
-    }
+    node.isExpanded = false
+    invalidateComposeTree()
   }
 
   private fun expandNode(node: TreeNode) {
-    if (mFileTreeView == null) {
-      return
-    }
-    TransitionManager.beginDelayedTransition(binding!!.root, ChangeBounds())
-    mFileTreeView!!.expandNode(node)
-    updateChevron(node)
+    node.isExpanded = true
+    invalidateComposeTree()
   }
 
   private fun setLoading(node: TreeNode) {
@@ -165,6 +243,8 @@ class FileTreeFragment :
   private fun listNode(node: TreeNode, whenDone: Runnable) {
     node.children.clear()
     node.isExpanded = false
+    invalidateComposeTree()
+
     executeAsync({
       listFilesForNode(node.value.listFiles() ?: return@executeAsync null, node)
       var temp = node
@@ -179,6 +259,7 @@ class FileTreeFragment :
       null
     }) {
       whenDone.run()
+      invalidateComposeTree()
     }
   }
 
@@ -193,115 +274,176 @@ class FileTreeFragment :
   }
 
   override fun onLongClick(node: TreeNode, value: Any): Boolean {
-    val event = FileLongClickEvent((value as File))
+    val event = FileLongClickEvent(value as File)
     event.put(Context::class.java, requireContext())
     event.put(TreeNode::class.java, node)
-    EventBus.getDefault().post(event)
+    org.greenrobot.eventbus.EventBus.getDefault().post(event)
     return true
   }
 
   @Suppress("unused", "UNUSED_PARAMETER")
-  @Subscribe(threadMode = MAIN)
+  @org.greenrobot.eventbus.Subscribe(threadMode = org.greenrobot.eventbus.ThreadMode.MAIN)
   fun onGetListFilesRequested(event: ListProjectFilesRequestEvent?) {
-    if (!isVisible || context == null) {
-      return
-    }
+    if (!isVisible || context == null) return
     listProjectFiles()
   }
 
   @Suppress("unused")
-  @Subscribe(threadMode = MAIN)
+  @org.greenrobot.eventbus.Subscribe(threadMode = org.greenrobot.eventbus.ThreadMode.MAIN)
   fun onGetExpandTreeNodeRequest(event: ExpandTreeNodeRequestEvent) {
-    if (!isVisible || context == null) {
-      return
-    } else {
-      event.node
-    }
+    if (!isVisible || context == null) return
     expandNode(event.node)
   }
 
   fun listProjectFiles() {
-    if (binding == null) {
-      // Fragment has been destroyed
-      return
-    }
-    val projectDirPath = getProjectDirPath()
-    val projectDir = File(projectDirPath)
+    if (context == null) return
+
+    isLoading = true
+    treeVersion++
+
+    val projectDir = File(getProjectDirPath())
     mRoot = TreeNode(File(""))
     mRoot!!.viewHolder = FileTreeViewHolder(requireContext())
 
     val projectRoot = TreeNode.root(projectDir)
-    projectRoot.viewHolder = FileTreeViewHolder(context)
+    projectRoot.viewHolder = FileTreeViewHolder(requireContext())
     mRoot!!.addChild(projectRoot)
 
-    binding!!.horizontalCroll.visibility = View.GONE
-    binding!!.horizontalCroll.visibility = View.VISIBLE
     executeAsync(FileTreeCallable(context, projectRoot, projectDir)) {
-      if (binding == null) {
-        // Fragment has been destroyed
-        return@executeAsync
+      if (context == null) return@executeAsync
+
+      isLoading = false
+      treeVersion++
+
+      val root = mRoot
+      if (root != null && root.children.isNotEmpty()) {
+        tryRestoreState()
       }
-      binding!!.horizontalCroll.visibility = View.VISIBLE
-      binding!!.loading.visibility = View.GONE
-      val tree = createTreeView(mRoot)
-      if (tree != null) {
-        tree.setUseAutoToggle(false)
-        tree.setDefaultNodeClickListener(this@FileTreeFragment)
-        tree.setDefaultNodeLongClickListener(this@FileTreeFragment)
-        binding!!.horizontalCroll.removeAllViews()
-        val view = tree.view
-        binding!!.horizontalCroll.addView(view)
-        view.post { tryRestoreState() }
-      }
+      invalidateComposeTree()
     }
   }
 
-  private fun createTreeView(node: TreeNode?): AndroidTreeView? {
-    return if (context == null) {
-      null
-    } else AndroidTreeView(context, node, drawable.bg_ripple).also { mFileTreeView = it }
-  }
+  private fun tryRestoreState() {
+    val openNodes =
+      mTreeState
+        ?.split(AndroidIDE_STATE_SEPARATOR)
+        ?.filter { it.isNotBlank() }
+        ?.toHashSet()
+        ?: hashSetOf()
 
-  private fun tryRestoreState(state: String? = mTreeState) {
-    if (!TextUtils.isEmpty(state) && mFileTreeView != null) {
-      mFileTreeView!!.collapseAll()
-      val openNodes =
-        state!!.split(AndroidTreeView.NODES_PATH_SEPARATOR.toRegex()).dropLastWhile { it.isEmpty() }
-      restoreNodeState(mRoot!!, HashSet(openNodes))
-    }
-
-    mRoot?.let { rootNode ->
-      if (rootNode.children.isNotEmpty()) {
-        rootNode.childAt(0)?.let { projectRoot -> expandNode(projectRoot) }
+    mRoot?.childAt(0)?.let { projectRoot ->
+      if (!projectRoot.isExpanded) {
+        expandNode(projectRoot)
       }
+      restoreNodeState(projectRoot, openNodes)
     }
   }
 
   private fun restoreNodeState(root: TreeNode, openNodes: Set<String>) {
-    val children = root.children
-    var i = 0
-    val childrenSize = children.size
-    while (i < childrenSize) {
-      val node = children[i]
-      if (openNodes.contains(node.path)) {
+    for (node in root.children) {
+      if (openNodes.contains(node.path) && node.value.isDirectory) {
         listNode(node) {
           expandNode(node)
           restoreNodeState(node, openNodes)
         }
       }
-      i++
     }
   }
 
-  companion object {
+  private fun buildVisibleTree(): List<VisibleTreeNode> {
+    // Touch state so Compose observes asynchronous tree changes.
+    treeVersion
 
-    // Should be same as defined in layout/activity_editor.xml
+    val root = mRoot ?: return emptyList()
+    val result = mutableListOf<VisibleTreeNode>()
+
+    fun append(node: TreeNode, depth: Int) {
+      result += VisibleTreeNode(node, depth)
+      if (node.isExpanded) {
+        for (child in node.children) {
+          append(child, depth + 1)
+        }
+      }
+    }
+
+    for (child in root.children) {
+      append(child, 0)
+    }
+
+    return result
+  }
+
+  private fun invalidateComposeTree() {
+    treeVersion++
+  }
+
+  companion object {
     const val TAG = "editor.fileTree"
     private const val KEY_STORED_TREE_STATE = "fileTree_state"
+    private const val ANDROIDIDE_STATE_SEPARATOR = "\n"
     private val LOG = ILogger.newInstance("FileTreeFragment")
+
     @JvmStatic
-    fun newInstance(): FileTreeFragment {
-      return FileTreeFragment()
+    fun newInstance(): FileTreeFragment = FileTreeFragment()
+  }
+}
+
+@androidx.compose.runtime.Composable
+private fun FileTreeRow(
+  node: TreeNode,
+  depth: Int,
+  onClick: () -> Unit,
+  onLongClick: () -> Unit,
+) {
+  val file = node.value
+
+  Row(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .padding(start = (depth * 14).dp)
+        .combinedClickable(
+          onClick = onClick,
+          onLongClick = onLongClick,
+        )
+        .padding(horizontal = 10.dp, vertical = 9.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    if (file.isDirectory) {
+      Icon(
+        imageVector =
+          if (node.isExpanded) Icons.Outlined.ExpandMore else Icons.Outlined.ChevronRight,
+        contentDescription = null,
+        modifier = Modifier.size(18.dp),
+      )
+    } else {
+      Spacer(Modifier.width(18.dp))
     }
+
+    Spacer(Modifier.width(4.dp))
+
+    Icon(
+      imageVector = fileIcon(file),
+      contentDescription = null,
+      modifier = Modifier.size(19.dp),
+      tint = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    Spacer(Modifier.width(10.dp))
+
+    Text(
+      text = file.name.ifBlank { "Project" },
+      style = MaterialTheme.typography.bodyMedium,
+      maxLines = 1,
+    )
+  }
+}
+
+private fun fileIcon(file: File): ImageVector {
+  if (file.isDirectory) return Icons.Outlined.Folder
+
+  return when (file.extension.lowercase()) {
+    "kt", "kts", "java", "cpp", "c", "h", "xml", "json", "gradle" -> Icons.Outlined.Code
+    else -> Icons.Outlined.Description
   }
 }

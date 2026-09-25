@@ -20,9 +20,9 @@ package com.itsaky.androidide.activities.editor
 import android.content.Intent
 import android.content.pm.PackageInstaller.SessionCallback
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
-import android.os.Build
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.TextUtils
@@ -335,6 +335,10 @@ abstract class BaseEditorActivity :
 
   protected open fun closeWorkspaceTab(index: Int) {}
 
+  protected fun refreshWorkspaceStatus(index: Int = workspaceSelectedTab) {
+    syncWorkspaceStatus(index)
+  }
+
   private fun syncWorkspaceStatus(index: Int = workspaceSelectedTab) {
     val editorView = provideEditorAt(index) ?: run {
       workspaceBreadcrumbs.clear()
@@ -374,7 +378,12 @@ abstract class BaseEditorActivity :
 
     val branch =
       runCatching {
-        Git.open(File(getProjectDirPath())).use { git -> git.repository.branch }
+        val git = Git.open(File(getProjectDirPath()))
+        try {
+          git.repository.branch
+        } finally {
+          git.close()
+        }
       }.getOrDefault("-")
 
     workspaceStatus =

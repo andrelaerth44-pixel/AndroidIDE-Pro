@@ -58,7 +58,9 @@ The Compose workspace, Build Center, Command Palette and Toolchain Manager found
 - `compile_commands.json` generated from the exact native compile commands.
 - Database written at the native module root.
 - Clangd launch command planner.
+- Persistent clangd process session with stderr capture and lifecycle control.
 - JSON-RPC framing transport using UTF-8 and `Content-Length`.
+- Core initialize, document open/change/close, completion, shutdown and exit message generation.
 
 The next step is to connect this transport to AndroidIDE Pro's existing language-server registry and editor client rather than building a second editor protocol.
 

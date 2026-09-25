@@ -6,7 +6,10 @@ import com.itsaky.androidide.utils.Environment
 import java.io.BufferedReader
 import java.io.Closeable
 import java.io.File
+import com.google.gson.JsonParser
 import java.io.InputStreamReader
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 
 class ClangdProcessSession(
   private val command: NativeCommandSpec,
@@ -17,6 +20,10 @@ class ClangdProcessSession(
 
   private var process: Process? = null
   private var transport: ClangdJsonRpcTransport? = null
+  private var readerThread: Thread? = null
+  private val nextRequestId = AtomicInteger(1)
+  private val responseRouter =
+    ClangdJsonRpcResponseRouter(onNotification)
 
   val isRunning: Boolean
     get() = process?.isAlive == true
@@ -38,6 +45,21 @@ class ClangdProcessSession(
       output = started.outputStream,
     )
 
+    readerThread =
+      Thread({
+        try {
+          while (started.isAlive) {
+            val message = transport?.readJson() ?: break
+            responseRouter.route(message)
+          }
+        } catch (error: Throwable) {
+          responseRouter.failAll(error)
+        }
+      }, "androidide-clangd-reader").apply {
+        isDaemon = true
+        start()
+      }
+
     Thread({
       BufferedReader(InputStreamReader(started.errorStream)).useLines { lines ->
         lines.forEach(onStderrLine)
@@ -53,14 +75,29 @@ class ClangdProcessSession(
     checkNotNull(transport).sendJson(json)
   }
 
-  fun read(): String? {
+  fun sendRequest(
+    json: String,
+    requestId: Int = nextRequestId.getAndIncrement(),
+  ): CompletableFuture<String> {
     check(isRunning) { "clangd session is not running" }
-    return checkNotNull(transport).readJson()
+    val future = responseRouter.register(requestId)
+    try {
+      send(json)
+    } catch (error: Throwable) {
+      responseRouter.failAll(error)
+      throw error
+    }
+    return future
   }
 
-  fun initialize(workspaceRoot: File, requestId: Int = 1) {
-    send(ClangdProtocolMessageFactory.initialize(requestId, workspaceRoot))
-  }
+  fun initialize(
+    workspaceRoot: File,
+    requestId: Int = nextRequestId.getAndIncrement(),
+  ): CompletableFuture<String> =
+    sendRequest(
+      json = ClangdProtocolMessageFactory.initialize(requestId, workspaceRoot),
+      requestId = requestId,
+    )
 
   fun initialized() {
     send(ClangdProtocolMessageFactory.initialized())
@@ -71,9 +108,11 @@ class ClangdProcessSession(
     val current = process ?: return
     processController.cancel()
     runCatching { current.waitFor() }
+    responseRouter.failAll(IllegalStateException("clangd session stopped"))
     processController.clear(current)
     process = null
     transport = null
+    readerThread = null
   }
 
   override fun close() {

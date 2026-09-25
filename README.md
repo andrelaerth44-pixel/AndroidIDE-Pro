@@ -32,7 +32,7 @@
 
 ## Features
 
-- [x] Gradle support.
+- [x] Legacy Gradle compatibility path retained for existing projects.
 - [x] `JDK 11` and `JDK 17` available for use.
 - [x] Terminal with necessary packages.
 - [x] Custom environment variables (for Build & Terminal).
@@ -96,6 +96,7 @@ Implemented in the current branch:
 - Native build executor with asynchronous service, real process cancellation and Build Center integration.
 - Clangd `compile_commands.json` generation from the same compiler commands.
 - Clangd launch planning, persistent process sessions and JSON-RPC `Content-Length` transport foundation.
+- Clangd `ILanguageServer` adapter with C/C++ document synchronization, diagnostics and completion mapping.
 - Real JNI `javac -h` header-generation stage with explicit JDK/javac validation.
 - Reusable JNI project template generator with a C++ JNI bridge.
 - Reusable NativeActivity project template with native entrypoint and manifest.
@@ -117,10 +118,9 @@ The project must not regress into making Gradle the planned primary build backen
 ### Immediate next work
 
 1. Let the queued GitHub Actions validation run and fix any compile errors it reports.
-2. Connect the persistent clangd session and JSON-RPC transport to the existing `ILanguageServer` / editor lifecycle.
-3. Add clangd `initialize`, document sync, diagnostics, completion and shutdown handling.
-4. Add NativeActivity template integration to the existing project-template wizard.
-5. Turn the native APK library merge stage into a complete unsigned-package pipeline with resource/APK merge.
+2. Connect clangd request cancellation, formatting, definition and references to the existing editor contracts.
+3. Integrate the NativeActivity and JNI generators into the existing project-template wizard.
+4. Turn the native APK library merge stage into a complete unsigned-package pipeline with resource/APK merge.
 6. Add zip alignment and signing as explicit post-package stages.
 7. Make the native pipeline the primary path while keeping Gradle only as compatibility infrastructure.
 8. Expand the toolchain to remaining ABIs, then debugger and profiler work.
